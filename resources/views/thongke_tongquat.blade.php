@@ -8,8 +8,8 @@
     </header>
     <div class="container mt-3">
         <div class="d-flex justify-content-between align-items-center">
-            <h2 class="text-center mb-0">Thống kê tổng quát</h2>
             <div class="d-flex align-items-center">
+                <h2 class="text-center mb-0">Thống kê tổng quát &nbsp;</h2>
                 <select id="selectMonth" class="form-control mr-2">
                     @for ($i = 1; $i <= 12; $i++)
                         <option value="{{ $i }}" {{ $i == date('n') ? 'selected' : '' }}>Tháng {{ $i }}</option>
@@ -20,24 +20,24 @@
                         <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
                     @endfor
                 </select>
-                <a href="/thongke/khuvuc/" class="simple-link">&nbsp; Xem chi tiết</a>
+                </div>
+                <a href="/thongke/khuvuc/" class="simple-link h4 mb-0"> Xem chi tiết</a>
                 {{-- <a href="/thongke/filter/" class="simple-link">Lọc</a> --}}
-            </div>
         </div>
         <hr>
         <div class="row">
             <div class="col-lg-4 col-md-12">
-                <h3>Thống kê theo Tháng</h3>
+                <h4>Thống kê theo Tháng <br>(đơn vị tính: tỉ đồng)</h4>
                 <canvas id="barChartThang"></canvas>
                 <div class="table-container mt-lg-3" id="thangTable"></div>
             </div>
             <div class="col-lg-4 col-md-12">
-                <h3>Thống kê theo Quý</h3>
+                <h4>Thống kê theo Quý <br>(đơn vị tính: tỉ đồng)</h4>
                 <canvas id="barChartQuy"></canvas>
                 <div class="table-container mt-lg-3" id="quyTable"></div>
             </div>
             <div class="col-lg-4 col-md-12">
-                <h3>Thống kê theo Năm</h3>
+                <h4>Thống kê theo Năm <br>(đơn vị tính: tỉ đồng)</h4>
                 <canvas id="barChartNam"></canvas>
                 <div class="table-container mt-lg-3" id="namTable"></div>
             </div>

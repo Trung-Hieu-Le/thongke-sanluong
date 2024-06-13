@@ -6,6 +6,16 @@
         </a>
     </header>
     <div class="container mt-3">
+        <div class="row">
+            <div class="col-12 breadcrumb-wrapper mt-3">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a class="simple-link" href="/">Tổng quát</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Khu vực</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
         <h2>Biểu đồ sản lượng của khu vực theo thời gian</h2>
         <center>
             <div class="mt-3">
@@ -16,23 +26,52 @@
                         <option value="{{ $khuVuc->ten_khu_vuc }}">{{ $khuVuc->ten_khu_vuc }}</option>
                     @endforeach
                 </select>
-                <span>Theo thời gian </span>
+                {{-- <span>Theo thời gian </span>
                 <select class="form-control" id="thoi-gian-chon">
                     <option value="ngay">Ngày</option>
                     <option value="tuan">Tuần</option>
                     <option value="thang">Tháng</option>
                     <option value="quy">Quý</option>
                     <option value="nam">Năm</option>
-                </select>
-                <span>Chi tiết </span>
-                <input type="date" id="ngay-chon">
+                </select> --}}
+                <span>Chi tiết ngày </span>
+                <input type="date" id="ngay-chon" value="{{ date('Y-m-d') }}">
             </div>
         </center>
     </div>
     
     <div class="container">
-        <div class="bar-chart">
-            <canvas id="chart"></canvas>
+        <div class="row">
+            <div class="col-lg-4 col-md-12">
+                <div class="bar-chart">
+                    <canvas id="chart-ngay"></canvas>
+                    <p class="text-center">Thống kê theo ngày</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-12">
+                <div class="bar-chart">
+                    <canvas id="chart-tuan"></canvas>
+                    <p class="text-center">Thống kê theo tuần</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-12">
+                <div class="bar-chart">
+                    <canvas id="chart-thang"></canvas>
+                    <p class="text-center">Thống kê theo tháng</p>
+                </div>
+            </div>
+            <div class="col-lg-6 col-md-12">
+                <div class="bar-chart">
+                    <canvas id="chart-quy"></canvas>
+                    <p class="text-center">Thống kê theo quý</p>
+                </div>
+            </div>
+            <div class="col-lg-6 col-md-12">
+                <div class="bar-chart">
+                    <canvas id="chart-nam"></canvas>
+                    <p class="text-center">Thống kê theo năm</p>
+                </div>
+            </div>
         </div>
         <h2>Bảng thống kê chi tiết của khu vực:</h2>
         <div class="scrollable-table">
@@ -67,42 +106,53 @@
     </div>  
 
     <script>
-        var ctx = document.getElementById('chart').getContext('2d');
-        var chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Tổng Sản Lượng',
-                    data: [],
-                    backgroundColor: '#FE504F',
-                    borderColor: 'red',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
+        function createChart(ctx) {
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Tổng Sản Lượng',
+                        data: [],
+                        backgroundColor: '#FE504F',
+                        borderColor: 'red',
+                        borderWidth: 1
+                    }]
                 },
-                plugins: {
-                    legend: {
-                        display: false,
-                        labels: {
-                            color: 'white'
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false,
+                            labels: {
+                                color: 'white'
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
+
+        // Initialize all charts
+        var charts = {
+            ngay: createChart(document.getElementById('chart-ngay').getContext('2d')),
+            tuan: createChart(document.getElementById('chart-tuan').getContext('2d')),
+            thang: createChart(document.getElementById('chart-thang').getContext('2d')),
+            quy: createChart(document.getElementById('chart-quy').getContext('2d')),
+            nam: createChart(document.getElementById('chart-nam').getContext('2d'))
+        };
 
         function updateChart(time_format, khu_vuc, ngay_chon) {
+            console.log(time_format, ngay_chon);
             $.ajax({
                 url: `/thongke/khuvuc/all`,
                 method: 'GET',
@@ -116,9 +166,9 @@
                         values.push(item.total);
                     });
 
-                    chart.data.labels = labels;
-                    chart.data.datasets[0].data = values;
-                    chart.update();
+                    charts[time_format].data.labels = labels;
+                    charts[time_format].data.datasets[0].data = values;
+                    charts[time_format].update();
                 }
             });
         }
@@ -161,43 +211,54 @@
             });
         }
 
-        $('#thoi-gian-chon').on('change', function() {
-            var selectedTimeFrame = $(this).val();
-            var selectedKhuVuc = $('#khu-vuc-chon').val();
-            var selectedNgay = $('#ngay-chon').val();
-            updateChart(selectedTimeFrame, selectedKhuVuc, selectedNgay);
-            updateTable(selectedKhuVuc);
-        });
-
         $('#khu-vuc-chon').on('change', function() {
             var selectedKhuVuc = $(this).val();
-            var selectedTimeFrame = $('#thoi-gian-chon').val();
+            // var selectedTimeFrame = $('#thoi-gian-chon').val();
             var selectedNgay = $('#ngay-chon').val();
-            updateChart(selectedTimeFrame, selectedKhuVuc, selectedNgay);
+            updateChart('ngay', selectedKhuVuc, selectedNgay);
+            updateChart('tuan', selectedKhuVuc, selectedNgay);
+            updateChart('thang', selectedKhuVuc, selectedNgay);
+            updateChart('quy', selectedKhuVuc, selectedNgay);
+            updateChart('nam', selectedKhuVuc, selectedNgay);            
             updateTable(selectedKhuVuc);
         });
 
         $('#ngay-chon').on('change', function() {
             var selectedKhuVuc = $('#khu-vuc-chon').val();
-            var selectedTimeFrame = $('#thoi-gian-chon').val();
+            // var selectedTimeFrame = $('#thoi-gian-chon').val();
             var selectedNgay = $(this).val();
-            updateChart(selectedTimeFrame, selectedKhuVuc, selectedNgay);
+            updateChart('ngay', selectedKhuVuc, selectedNgay);
+            updateChart('tuan', selectedKhuVuc, selectedNgay);
+            updateChart('thang', selectedKhuVuc, selectedNgay);
+            updateChart('quy', selectedKhuVuc, selectedNgay);
+            updateChart('nam', selectedKhuVuc, selectedNgay);
+
+          
         });
 
         $(document).ready(function() {
             var initialKhuVuc = $('#khu-vuc-chon').val();
-            var initialTimeFrame = 'ngay'; 
+            // var initialTimeFrame = 'ngay'; 
             $('#khu-vuc-chon').val(initialKhuVuc);
-            $('#thoi-gian-chon').val(initialTimeFrame);
-            updateChart(initialTimeFrame, initialKhuVuc, null);
+            // $('#thoi-gian-chon').val(initialTimeFrame);
+            // updateChart(initialTimeFrame, initialKhuVuc, null);
+            updateChart('ngay', initialKhuVuc, null);
+            updateChart('tuan', initialKhuVuc, null);
+            updateChart('thang', initialKhuVuc, null);
+            updateChart('quy', initialKhuVuc, null);
+            updateChart('nam', initialKhuVuc, null);
             updateTable(initialKhuVuc);
         });
 
         setInterval(function() {
             var selectedKhuVuc = $('#khu-vuc-chon').val();
-            var selectedTimeFrame = $('#thoi-gian-chon').val();
+            // var selectedTimeFrame = $('#thoi-gian-chon').val();
             var selectedNgay = $('#ngay-chon').val();
-            updateChart(selectedTimeFrame, selectedKhuVuc, selectedNgay);
+            updateChart('ngay', selectedKhuVuc, selectedNgay);
+            updateChart('tuan', selectedKhuVuc, selectedNgay);
+            updateChart('thang', selectedKhuVuc, selectedNgay);
+            updateChart('quy', selectedKhuVuc, selectedNgay);
+            updateChart('nam', selectedKhuVuc, selectedNgay);            
             updateTable(selectedKhuVuc);
         }, 3600000);
 

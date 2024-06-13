@@ -7,6 +7,17 @@
         {{-- <h1>Thống kê sản lượng các Tỉnh</h1> --}}
     </header>
     <div class="container mt-3">
+        <div class="row">
+            <div class="col-12 breadcrumb-wrapper mt-3">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a class="simple-link" href="/">Tổng quát</a></li>
+                        <li class="breadcrumb-item"><a class="simple-link" href="/thongke/khuvuc">Khu vực</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Tỉnh</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
         {{-- <div class="breadcrumb">
             <a class="simple-link" href="/thongke">Thống kê tỉnh</a> > 
             <span>Thống kê trạm</span>
@@ -15,23 +26,52 @@
         <center>
             <div class="mt-3">
                 <span>Thống kê sản lượng các Trạm: </span>
-                <span>Theo thời gian </span>
+                {{-- <span>Theo thời gian </span>
                 <select class="form-control" id="thoi-gian-chon">
                     <option value="ngay">Ngày</option>
                     <option value="tuan">Tuần</option>
                     <option value="thang">Tháng</option>
                     <option value="quy">Quý</option>
                     <option value="nam">Năm</option>
-                </select>
-                <span>Chi tiết </span>
-                <input type="date" id="ngay-chon">
+                </select> --}}
+                <span>Chi tiết ngày </span>
+                <input type="date" id="ngay-chon" value="{{ date('Y-m-d') }}">
             </div>
         </center>
     </div>
     
     <div class="container">
-        <div class="bar-chart">
-            <canvas id="chart"></canvas>
+        <div class="row">
+            <div class="col-lg-4 col-md-12">
+                <div class="bar-chart">
+                    <canvas id="chart-ngay"></canvas>
+                    <p class="text-center">Thống kê theo ngày</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-12">
+                <div class="bar-chart">
+                    <canvas id="chart-tuan"></canvas>
+                    <p class="text-center">Thống kê theo tuần</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-12">
+                <div class="bar-chart">
+                    <canvas id="chart-thang"></canvas>
+                    <p class="text-center">Thống kê theo tháng</p>
+                </div>
+            </div>
+            <div class="col-lg-6 col-md-12">
+                <div class="bar-chart">
+                    <canvas id="chart-quy"></canvas>
+                    <p class="text-center">Thống kê theo quý</p>
+                </div>
+            </div>
+            <div class="col-lg-6 col-md-12">
+                <div class="bar-chart">
+                    <canvas id="chart-nam"></canvas>
+                    <p class="text-center">Thống kê theo năm</p>
+                </div>
+            </div>
         </div>
         <h2>Bảng thống kê chi tiết của tỉnh {{$maTinhChose}}:</h2>
         <div class="scrollable-table">
@@ -66,45 +106,55 @@
     </div>         
 
     <script>
-        // Khởi tạo biểu đồ
-        var ctx = document.getElementById('chart').getContext('2d');
-        var chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Tổng Sản Lượng',
-                    data: [],
-                    backgroundColor: '#FE504F',
-                    borderColor: 'red',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
+        function createChart(ctx) {
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Tổng Sản Lượng',
+                        data: [],
+                        backgroundColor: '#FE504F',
+                        borderColor: 'red',
+                        borderWidth: 1
+                    }]
                 },
-                plugins: {
-                    legend: {
-                        display: false,
-                        labels: {
-                            color: 'white'
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false,
+                            labels: {
+                                color: 'white'
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
+
+        // Initialize all charts
+        var charts = {
+            ngay: createChart(document.getElementById('chart-ngay').getContext('2d')),
+            tuan: createChart(document.getElementById('chart-tuan').getContext('2d')),
+            thang: createChart(document.getElementById('chart-thang').getContext('2d')),
+            quy: createChart(document.getElementById('chart-quy').getContext('2d')),
+            nam: createChart(document.getElementById('chart-nam').getContext('2d'))
+        };
 
         // Hàm cập nhật dữ liệu
         var maTinhChose = "<?php echo $maTinhChose; ?>";
         function updateChart(time_format, ngay_chon) {
+            console.log(time_format, ngay_chon);
             $.ajax({
                 url: `/thongke/tinh/${maTinhChose}/all`,
                 method: 'GET',
@@ -118,10 +168,9 @@
                         values.push(item.total);
                     });
 
-                    chart.data.labels = labels;
-                    chart.data.datasets[0].data = values;
-
-                    chart.update();
+                    charts[time_format].data.labels = labels;
+                    charts[time_format].data.datasets[0].data = values;
+                    charts[time_format].update();
                 }
             });
         }
@@ -162,31 +211,36 @@
             });
         }
 
-        $('#thoi-gian-chon').on('change', function() {
-            var selectedTimeFrame = $(this).val();
-            var selectedNgay = $('#ngay-chon').val();
-            updateChart(selectedTimeFrame, selectedNgay);
-            updateTable();
-        });
-
         $('#ngay-chon').on('change', function() {
-            var selectedTimeFrame = $('#thoi-gian-chon').val();
-            var selectedNgay = $(this).val();
-            updateChart(selectedTimeFrame, selectedNgay);
+            // var selectedTimeFrame = $('#thoi-gian-chon').val();
+            var selectedNgay = $('#ngay-chon').val();
+            // updateChart(selectedTimeFrame, selectedNgay);
+            updateChart('ngay', selectedNgay);
+            updateChart('tuan', selectedNgay);
+            updateChart('thang', selectedNgay);
+            updateChart('quy', selectedNgay);
+            updateChart('nam', selectedNgay);
         });
 
         $(document).ready(function() {
-            var initialTimeFrame = 'ngay'; // Thời gian mặc định là ngày
-            $('#thoi-gian-chon').val(initialTimeFrame);
-            updateChart(initialTimeFrame, null);
+            updateChart('ngay', null);
+            updateChart('tuan', null);
+            updateChart('thang', null);
+            updateChart('quy', null);
+            updateChart('nam', null);
             updateTable();
         });
 
         // Cập nhật biểu đồ và bảng theo thời gian
         setInterval(function() {
-            var selectedTimeFrame = $('#thoi-gian-chon').val();
+            // var selectedTimeFrame = $('#thoi-gian-chon').val();
             var selectedNgay = $('#ngay-chon').val();
-            updateChart(selectedTimeFrame, selectedNgay);
+            // updateChart(selectedTimeFrame, selectedNgay);
+            updateChart('ngay', selectedNgay);
+            updateChart('tuan', selectedNgay);
+            updateChart('thang', selectedNgay);
+            updateChart('quy', selectedNgay);
+            updateChart('nam', selectedNgay);
             updateTable();
         }, 3600000);
     

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -16,50 +17,53 @@ class SanLuongTinhController extends Controller
         return view('thongke_tinh', compact('khuVucList'));
     }
     public function thongKeTinh(Request $request)
-{
-    $khuVuc = $request->input('khu_vuc');
-    $timeFormat = $request->input('time_format');
-    $ngayChon = $request->input('ngay',date('Y-m-d'));
-    $maTinhs = DB::table('tbl_tinh')
-        ->where('ten_khu_vuc', $khuVuc)
-        ->pluck('ma_tinh');
+    {
+        $khuVuc = $request->input('khu_vuc');
+        $timeFormat = $request->input('time_format');
+        $ngayChon = $request->input('ngay');
+        if (is_null($ngayChon) || $ngayChon === '') {
+            $ngayChon = date('Y-m-d');
+        }
+        $maTinhs = DB::table('tbl_tinh')
+            ->where('ten_khu_vuc', $khuVuc)
+            ->pluck('ma_tinh');
 
-    $results = [];
-    foreach ($maTinhs as $maTinh) {
-        switch ($timeFormat) {
-            case 'ngay':
-                $whereClause ="STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = STR_TO_DATE('$ngayChon', '%Y-%m-%d')";
-                break;
-            case 'tuan':
-                $whereClause ="WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
-                break;
-            case 'thang':
-                $whereClause ="MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = MONTH(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
-                break;
-            case 'quy':
-                $whereClause ="QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = QUARTER(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
-                break;
-            case 'nam':
-                $whereClause ="YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
-                break;
-            default:
-                return response()->json(['error' => 'Thời gian không hợp lệ']);
+        $results = [];
+        foreach ($maTinhs as $maTinh) {
+            switch ($timeFormat) {
+                case 'ngay':
+                    $whereClause = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = STR_TO_DATE('$ngayChon', '%Y-%m-%d')";
+                    break;
+                case 'tuan':
+                    $whereClause = "WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
+                    break;
+                case 'thang':
+                    $whereClause = "MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = MONTH(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
+                    break;
+                case 'quy':
+                    $whereClause = "QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = QUARTER(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
+                    break;
+                case 'nam':
+                    $whereClause = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
+                    break;
+                default:
+                    return response()->json(['error' => 'Thời gian không hợp lệ']);
+            }
+
+            $total = DB::table('tbl_sanluong')
+                ->where('SanLuong_Tram', 'LIKE', "$maTinh%")
+                ->whereRaw($whereClause)
+                ->orderBy('SanLuong_Tram')
+                ->sum('SanLuong_Gia');
+
+            $results[] = [
+                'ma_tinh' => $maTinh,
+                'total' => round($total, 4)
+            ];
         }
 
-        $total = DB::table('tbl_sanluong')
-            ->where('SanLuong_Tram', 'LIKE', "$maTinh%")
-            ->whereRaw($whereClause)
-            ->orderBy('SanLuong_Tram')
-            ->sum('SanLuong_Gia');
-
-        $results[] = [
-            'ma_tinh' => $maTinh,
-            'total' => round($total, 4)
-        ];
+        return response()->json($results);
     }
-
-    return response()->json($results);
-}
 
     public function thongKeTinhTongQuat(Request $request)
     {

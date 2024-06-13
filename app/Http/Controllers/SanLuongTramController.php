@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -15,22 +16,26 @@ class SanLuongTramController extends Controller
     {
         $maTinh = $request->ma_tinh;
         $timeFormat = $request->input('time_format');
-        $ngayChon = $request->input('ngay',date('Y-m-d'));        
+        $ngayChon = $request->input('ngay');
+        if (is_null($ngayChon) || $ngayChon === '') {
+            $ngayChon = date('Y-m-d');
+        }
+
         switch ($timeFormat) {
             case 'ngay':
-                $whereClause ="STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = STR_TO_DATE('$ngayChon', '%Y-%m-%d')";
+                $whereClause = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = STR_TO_DATE('$ngayChon', '%Y-%m-%d')";
                 break;
             case 'tuan':
-                $whereClause ="WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
+                $whereClause = "WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
                 break;
             case 'thang':
-                $whereClause ="MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = MONTH(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
+                $whereClause = "MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = MONTH(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
                 break;
             case 'quy':
-                $whereClause ="QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = QUARTER(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
+                $whereClause = "QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = QUARTER(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
                 break;
             case 'nam':
-                $whereClause ="YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
+                $whereClause = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
                 break;
             default:
                 return response()->json(['error' => 'Thời gian không hợp lệ']);
