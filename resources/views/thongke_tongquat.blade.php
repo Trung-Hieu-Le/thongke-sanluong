@@ -1,0 +1,174 @@
+@include('layouts.header_thongke')
+<body>
+    <header class="header">
+        <a href="/">
+            <img src="{{ asset('images/vtk_logo.jpg') }}" alt="Logo">
+        </a>
+        {{-- <h1>Thống kê sản lượng các Tỉnh</h1> --}}
+    </header>
+    <div class="container mt-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="text-center mb-0">Thống kê tổng quát</h2>
+            <div class="d-flex align-items-center">
+                <select id="selectMonth" class="form-control mr-2">
+                    @for ($i = 1; $i <= 12; $i++)
+                        <option value="{{ $i }}" {{ $i == date('n') ? 'selected' : '' }}>Tháng {{ $i }}</option>
+                    @endfor
+                </select>
+                <select id="selectYear" class="form-control mr-2">
+                    @for ($year = 2020; $year <= date('Y'); $year++)
+                        <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
+                    @endfor
+                </select>
+                <a href="/thongke/khuvuc/" class="simple-link">&nbsp; Xem chi tiết</a>
+                {{-- <a href="/thongke/filter/" class="simple-link">Lọc</a> --}}
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-lg-4 col-md-12">
+                <h3>Thống kê theo Tháng</h3>
+                <canvas id="barChartThang"></canvas>
+                <div class="table-container mt-lg-3" id="thangTable"></div>
+            </div>
+            <div class="col-lg-4 col-md-12">
+                <h3>Thống kê theo Quý</h3>
+                <canvas id="barChartQuy"></canvas>
+                <div class="table-container mt-lg-3" id="quyTable"></div>
+            </div>
+            <div class="col-lg-4 col-md-12">
+                <h3>Thống kê theo Năm</h3>
+                <canvas id="barChartNam"></canvas>
+                <div class="table-container mt-lg-3" id="namTable"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let barChartThang, barChartQuy, barChartNam;
+    
+        async function fetchData(thoiGian, thang, nam) {
+            const response = await fetch(`/thongke/all?time_format=${thoiGian}&thang=${thang}&nam=${nam}`);
+            return response.json();
+        }
+    
+        function createBarChart(ctx, labels, dataKPI, dataTotal, tableId) {
+            if (ctx.chart) {
+                ctx.chart.destroy();
+            }
+            const newChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'KPI',
+                            data: dataKPI,
+                            backgroundColor: 'gray'
+                        },
+                        {
+                            label: 'Total',
+                            data: dataTotal,
+                            backgroundColor: 'red'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            ctx.chart = newChart;
+    
+            const tableRows = dataTotal.map((total, index) => {
+                const kpi = dataKPI[index];
+                const percentage = kpi ? ((total / kpi) * 100).toFixed(2) : 'N/A';
+                return `
+                    <tr>
+                        <td>${percentage}%</td>
+                        <td>${labels[index]}</td>
+                        <td>${kpi.toFixed(2)}</td>
+                        <td>${total.toFixed(2)}</td>
+                    </tr>
+                `;
+            }).join('');
+    
+            const totalKPI = dataKPI.reduce((acc, curr) => acc + curr, 0);
+            const totalTotal = dataTotal.reduce((acc, curr) => acc + curr, 0);
+            const totalPercentage = totalKPI ? ((totalTotal / totalKPI) * 100).toFixed(2) : 'N/A';
+    
+            const totalRow = `
+                <tr>
+                    <td><strong>${totalPercentage}%</strong></td>
+                    <td><strong>Tổng cộng</strong></td>
+                    <td><strong>${totalKPI.toFixed(2)}</strong></td>
+                    <td><strong>${totalTotal.toFixed(2)}</strong></td>
+                </tr>
+            `;
+    
+            document.getElementById(tableId).innerHTML = `
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Tỷ lệ</th>
+                            <th>Đơn vị</th>
+                            <th>KPI</th>
+                            <th>Thực hiện</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                        ${totalRow}
+                    </tbody>
+                </table>
+            `;
+        }
+    
+        async function renderCharts() {
+            const thang = document.getElementById('selectMonth').value;
+            const nam = document.getElementById('selectYear').value;
+    
+            const dataThang = await fetchData('thang', thang, nam);
+            const dataQuy = await fetchData('quy', thang, nam);
+            const dataNam = await fetchData('nam', thang, nam);
+    
+            const labelsThang = dataThang.map(item => item.ten_khu_vuc);
+            const kpiThang = dataThang.map(item => item.kpi);
+            const totalThang = dataThang.map(item => item.total);
+    
+            const labelsQuy = dataQuy.map(item => item.ten_khu_vuc);
+            const kpiQuy = dataQuy.map(item => item.kpi);
+            const totalQuy = dataQuy.map(item => item.total);
+    
+            const labelsNam = dataNam.map(item => item.ten_khu_vuc);
+            const kpiNam = dataNam.map(item => item.kpi);
+            const totalNam = dataNam.map(item => item.total);
+    
+            if (barChartThang) {
+                barChartThang.destroy();
+            }
+            if (barChartQuy) {
+                barChartQuy.destroy();
+            }
+            if (barChartNam) {
+                barChartNam.destroy();
+            }
+    
+            barChartThang = createBarChart(document.getElementById('barChartThang').getContext('2d'), labelsThang, kpiThang, totalThang, 'thangTable');
+            barChartQuy = createBarChart(document.getElementById('barChartQuy').getContext('2d'), labelsQuy, kpiQuy, totalQuy, 'quyTable');
+            barChartNam = createBarChart(document.getElementById('barChartNam').getContext('2d'), labelsNam, kpiNam, totalNam, 'namTable');
+        }
+    
+        document.getElementById('selectMonth').addEventListener('change', renderCharts);
+        document.getElementById('selectYear').addEventListener('change', renderCharts);
+    
+        setInterval(renderCharts, 3600000); // Update every hour
+        renderCharts(); // Initial render
+    </script>
+    
+</body>
+</html>
