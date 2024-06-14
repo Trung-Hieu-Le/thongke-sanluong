@@ -9,18 +9,31 @@
     
     <div>
         <label for="selectMonth">Chọn tháng:</label>
-        <select id="selectMonth"></select>
+        <select id="selectMonth" name="month" onchange="updateURL()">
+            @for ($month = 1; $month <= 12; $month++)
+                <option value="{{ str_pad($month, 2, '0', STR_PAD_LEFT) }}" {{ $month == $selectedMonth ? 'selected' : '' }}>
+                    {{ $month }}
+                </option>
+            @endfor
+        </select>
         
         <label for="selectYear">Chọn năm:</label>
-        <select id="selectYear"></select>
+        <select id="selectYear" name="year" onchange="updateURL()">
+            @for ($year = date('Y'); $year >= 2000; $year--)
+                <option value="{{ $year }}" {{ $year == $selectedYear ? 'selected' : '' }}>
+                    {{ $year }}
+                </option>
+            @endfor
+        </select>
     </div>
     
-    <form id="filterForm" method="POST" action="/thongke/filter">
+    <form id="filterForm" method="GET" action="{{ route('tram.filter') }}">
         @csrf
+        <input type="hidden" id="inputMonth" name="month" value="{{ $selectedMonth }}">
+        <input type="hidden" id="inputYear" name="year" value="{{ $selectedYear }}">
         <div id="dayCheckboxes">
             <!-- Checkboxes for days will be added here dynamically -->
         </div>
-        {{-- <input type="hidden" name="filtered" value="true"> --}}
         <button type="submit">Lọc</button>
     </form>
     
@@ -48,7 +61,7 @@
                 @endforeach
             </tbody>
         </table>
-        {{ $data->links() }}
+        {{ $data->appends(['days' => $days, 'month' => $selectedMonth, 'year' => $selectedYear])->links() }}
     </div>
     
     <h2>Tổng sản lượng</h2>
@@ -57,37 +70,24 @@
     </div>
     <script>
         $(document).ready(function() {
-            // Set default month and year to current month and year
-            const currentDate = new Date();
-            const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
-            const currentYear = currentDate.getFullYear();
-            
-            // Populate month and year dropdowns
-            for (let month = 1; month <= 12; month++) {
-                const monthValue = month.toString().padStart(2, '0');
-                const selected = monthValue === currentMonth ? 'selected' : '';
-                $('#selectMonth').append(`<option value="${monthValue}" ${selected}>${month}</option>`);
-            }
-            for (let year = currentYear; year >= 2000; year--) {
-                const selected = year === currentYear ? 'selected' : '';
-                $('#selectYear').append(`<option value="${year}" ${selected}>${year}</option>`);
-            }
+            const selectedDays = @json($days);
 
-            // Fetch days when month or year changes
             function fetchDays() {
                 const month = $('#selectMonth').val();
                 const year = $('#selectYear').val();
                 if (month && year) {
                     $.ajax({
-                        url: '/thongke/filter/get-day',
+                        url: '{{ route('tram.filter.days') }}',
                         method: 'GET',
                         data: { thang: month, nam: year },
                         success: function(data) {
                             $('#dayCheckboxes').empty();
                             data.forEach(day => {
+                                const isChecked = selectedDays.includes(day);
+                                const checkedAttribute = isChecked ? 'checked' : '';
                                 $('#dayCheckboxes').append(`
                                     <div>
-                                        <input type="checkbox" id="day-${day}" name="days[]" value="${day}">
+                                        <input type="checkbox" id="day-${day}" name="days[]" value="${day}" ${checkedAttribute}>
                                         <label for="day-${day}">${day}</label>
                                     </div>
                                 `);
@@ -97,15 +97,23 @@
                 }
             }
 
-            $('#selectMonth, #selectYear').on('change', fetchDays);
+            function updateURL() {
+                const month = $('#selectMonth').val();
+                const year = $('#selectYear').val();
+                $('#inputMonth').val(month);
+                $('#inputYear').val(year);
 
-            // Initially fetch days for current month and year
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.set('month', month);
+                urlParams.set('year', year);
+                window.history.replaceState(null, null, "?" + urlParams.toString());
+
+                fetchDays();
+            }
+
+            $('#selectMonth, #selectYear').on('change', updateURL);
+
             fetchDays();
-
-            // On form submit, append selected checkboxes to the form
-            $('#filterButton').on('click', function() {
-                $('#filterForm').submit();
-            });
         });
     </script>
 </body>

@@ -12,19 +12,20 @@ class SanLuongTramFilterController extends Controller
             ->select('SanLuong_Id', 'HopDong_Id', 'SanLuong_Tram', 'SanLuong_Ngay', 'SanLuong_Gia', 'SanLuong_TenHangMuc', 'ten_hinh_anh_chuan_bi', 'ten_hinh_anh_da_xong');
     
         $days = $request->input('days', []);
+        $selectedMonth = $request->input('month', date('m'));
+        $selectedYear = $request->input('year', date('Y'));
         $totalGia = 0;
 
         if (count($days) > 0) {
             $query->whereIn('SanLuong_Ngay', $days);
             $totalGia = DB::table('tbl_sanluong')
                 ->whereIn('SanLuong_Ngay', $days)
-                ->whereNotNull('ten_hinh_anh_da_xong')
                 ->sum('SanLuong_Gia');
         }
-        $query->orderBy('SanLuong_Id','desc');  
+        $query->whereNotNull('ten_hinh_anh_da_xong');  
         $data = $query->simplePaginate(100);
         // dd($data);
-        return view('thongke_tram_filter', compact('data', 'totalGia', 'days'));
+        return view('thongke_tram_filter', compact('data', 'totalGia', 'days', 'selectedMonth', 'selectedYear'));
     }
 public function getDayTramFilter(Request $request)
 {

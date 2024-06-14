@@ -38,6 +38,7 @@ Route::get('/thongke/tinh/{ma_tinh}', [SanLuongTramController::class, 'indexTram
 Route::get('/thongke/tinh/{ma_tinh}/all', [SanLuongTramController::class, 'thongKeTram']);
 Route::get('/thongke/tinh/{ma_tinh}/tongquat', [SanLuongTramController::class, 'thongKeTramTongQuat']);
 
-Route::get('/thongke/filter', [SanLuongTramFilterController::class, 'indexTramFilter'])->name('thongke_tram_filter');
-Route::post('/thongke/filter', [SanLuongTramFilterController::class, 'indexTramFilter']);
-Route::get('/thongke/filter/get-day', [SanLuongTramFilterController::class, 'getDayTramFilter']);
+Route::get('/thongke/filter', [SanLuongTramFilterController::class, 'indexTramFilter'])->name('tram.filter');
+Route::get('/thongke/filter/get-day', [SanLuongTramFilterController::class, 'getDayTramFilter'])->name('tram.filter.days');
+
+//TODO: getSanLuongThang_6 (1h update / lần)
