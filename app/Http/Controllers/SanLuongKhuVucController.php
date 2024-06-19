@@ -8,8 +8,11 @@ use Illuminate\Support\Facades\DB;
 class SanLuongKhuVucController extends Controller
 {
     //TODO: cac trang thong ke chi cho phep user permission 2, 3 xem
-    public function indexKhuVuc()
+    public function indexKhuVuc(Request $request)
     {
+        if (!$request->session()->has('username')) {
+            return redirect('login');
+        }
         return view('thongke_tongquat');
     }
     public function thongKeKhuVuc(Request $request)

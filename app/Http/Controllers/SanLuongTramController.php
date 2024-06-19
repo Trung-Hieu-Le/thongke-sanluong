@@ -9,6 +9,9 @@ class SanLuongTramController extends Controller
 {
     public function indexTram(Request $request)
     {
+        if (!$request->session()->has('username')) {
+            return redirect('login');
+        }
         $maTinhChose = $request->ma_tinh;
         return view('thongke_tram', compact('maTinhChose'));
     }

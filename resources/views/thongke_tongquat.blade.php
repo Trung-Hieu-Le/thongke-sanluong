@@ -1,11 +1,6 @@
-@include('layouts.header_thongke')
+@include('layouts.head_thongke')
 <body>
-    <header class="header">
-        <a href="/">
-            <img src="{{ asset('images/vtk_logo.jpg') }}" alt="Logo">
-        </a>
-        {{-- <h1>Thống kê sản lượng các Tỉnh</h1> --}}
-    </header>
+    @include('layouts.header_thongke')
     <div class="container mt-3">
         <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
@@ -20,9 +15,17 @@
                         <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
                     @endfor
                 </select>
-                </div>
-                <a href="/thongke/khuvuc/" class="simple-link h4 mb-0"> Xem chi tiết</a>
-                {{-- <a href="/thongke/filter/" class="simple-link">Lọc</a> --}}
+            </div>
+            {{-- <a href="/thongke/khuvuc/" class="simple-link h4 mb-0"> Xem chi tiết</a> --}}
+            <div class="dropdown">
+                <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                  Xem chi tiết
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                  <li><a class="dropdown-item" href="/thongke/khuvuc/">Thống kê khu vực</a></li>
+                  <li><a class="dropdown-item" href="/thongke/filter/">Lọc theo ngày</a></li>
+                </ul>
+            </div>
         </div>
         <hr>
         <div class="row">
@@ -45,6 +48,7 @@
     </div>
 
     <script>
+        console.log("Script thành công");
         let barChartThang, barChartQuy, barChartNam;
     
         async function fetchData(thoiGian, thang, nam) {
@@ -64,12 +68,12 @@
                         {
                             label: 'KPI',
                             data: dataKPI,
-                            backgroundColor: 'gray'
+                            backgroundColor: '#ececec'
                         },
                         {
-                            label: 'Total',
+                            label: 'Thực hiện',
                             data: dataTotal,
-                            backgroundColor: 'red'
+                            backgroundColor: '#FE504F'
                         }
                     ]
                 },
@@ -169,6 +173,5 @@
         setInterval(renderCharts, 3600000); // Update every hour
         renderCharts(); // Initial render
     </script>
-    
 </body>
 </html>

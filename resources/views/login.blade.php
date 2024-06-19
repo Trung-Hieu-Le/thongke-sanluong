@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8"/>
     {{--    <link rel="icon" href="%PUBLIC_URL%/favicon.ico"/>--}}
-    <link href="https://rdsic.edu.vn/webroot/favicon.ico" type="image/x-icon" rel="icon">
-    <link href="https://rdsic.edu.vn/webroot/favicon.ico" type="image/x-icon" rel="shortcut icon">
+    <link href="{{ asset('images/vtk_logo.jpg') }}" type="image/x-icon" rel="icon">
+    <link href="{{ asset('images/vtk_logo.jpg') }}" type="image/x-icon" rel="shortcut icon">
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta name="theme-color" content="#000000"/>
     <meta
@@ -27,10 +27,10 @@
         rel="stylesheet"
         href="{{Request::root().'/css/css_admin/vendor.min.css'}}"
     />
-    <link
+    {{-- <link
         rel="stylesheet"
-        href="{{Request::root().'/js/libs_admin/icon-set/style.css'}}"/>
-    <title>Quản trị rdone</title>
+        href="{{Request::root().'/js/libs_admin/icon-set/style.css'}}"/> --}}
+    <title>Thống kê sản lượng VTK</title>
     <script src="https://cdn.tiny.cloud/1/0cvgyq8htwfa5cldcb7inwo3d6meev709oz5fuwnlml6q7iz/tinymce/5/tinymce.min.js"
             referrerpolicy="origin"></script>
     <link rel="stylesheet" type="text/css" id="mce-u0" referrerpolicy="origin"
@@ -39,23 +39,9 @@
 <body>
 <!-- ========== MAIN CONTENT ========== -->
 <main id="content" role="main" class="main">
-    <div class="position-fixed top-0 right-0 left-0 bg-img-hero"
-         style="height: 32rem; background-image: url({{Request::root().'/images/abstractbg4.svg'}});">
-        <!-- SVG Bottom Shape -->
-        <figure class="position-absolute right-0 bottom-0 left-0">
-            <svg preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 1921 273">
-                <polygon fill="#fff" points="0,273 1921,273 1921,0 "></polygon>
-            </svg>
-        </figure>
-        <!-- End SVG Bottom Shape -->
-    </div>
 
     <!-- Content -->
     <div class="container py-5 py-sm-7">
-        <a class="d-flex justify-content-center mb-5" href="index.html">
-            <img class="z-index-2" src="https://rdsic.edu.vn/img/logo.png" alt="Image Description" style="width: 8rem;">
-        </a>
-
         <div class="row justify-content-center">
             <div class="col-md-7 col-lg-5">
                 <!-- Card -->
@@ -77,8 +63,8 @@
                             <div class="js-form-message form-group">
                                 <label class="input-label" for="signinSrEmail">Tên tài khoản</label>
 
-                                <input type="email" class="form-control form-control-lg" name="username" id="signinSrEmail"
-                                       tabindex="1" placeholder="email@address.com" aria-label="email@address.com"
+                                <input type="text" class="form-control form-control-lg" name="username" id="signinSrEmail"
+                                       tabindex="1" placeholder="Nhập tên tài khoản..." aria-label="email@address.com"
                                        required="" data-msg="Please enter a valid email address.">
                             </div>
                             <!-- End Form Group -->
@@ -87,14 +73,14 @@
                             <div class="js-form-message form-group">
                                 <label class="input-label" for="signupSrPassword" tabindex="0">
                         <span class="d-flex justify-content-between align-items-center">
-                          Password
-                          <a class="input-label-secondary" href="authentication-reset-password-basic.html">Forgot Password?</a>
+                          Mật khẩu
+                          {{-- <a class="input-label-secondary" href="authentication-reset-password-basic.html">Forgot Password?</a> --}}
                         </span>
                                 </label>
 
                                 <div class="input-group input-group-merge">
                                     <input type="password" class="js-toggle-password form-control form-control-lg"
-                                           name="password" id="signupSrPassword" placeholder="8+ characters required"
+                                           name="password" id="signupSrPassword" placeholder="Nhập mật khẩu..."
                                            aria-label="8+ characters required" required=""
                                           >
                                     <div id="changePassTarget" class="input-group-append">
@@ -107,17 +93,17 @@
                             <!-- End Form Group -->
 
                             <!-- Checkbox -->
-                            <div class="form-group">
+                            {{-- <div class="form-group">
                                 <div class="custom-control custom-checkbox">
                                     <input type="checkbox" class="custom-control-input" id="termsCheckbox"
                                            name="termsCheckbox">
                                     <label class="custom-control-label text-muted" for="termsCheckbox"> Remember
                                         me</label>
                                 </div>
-                            </div>
+                            </div> --}}
                             <!-- End Checkbox -->
 
-                            <button type="submit" class="btn btn-lg btn-block btn-primary">Sign in</button>
+                            <button type="submit" class="btn btn-lg btn-block btn-primary">Đăng nhập</button>
                         </form>
                         <!-- End Form -->
                     </div>

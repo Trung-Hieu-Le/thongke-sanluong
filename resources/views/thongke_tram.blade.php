@@ -1,11 +1,6 @@
-@include('layouts.header_thongke')
+@include('layouts.head_thongke')
 <body>
-    <header class="header">
-        <a href="/">
-            <img src="{{ asset('images/vtk_logo.jpg') }}" alt="Logo">
-        </a>
-        {{-- <h1>Thống kê sản lượng các Tỉnh</h1> --}}
-    </header>
+    @include('layouts.header_thongke')
     <div class="container mt-3">
         <div class="row">
             <div class="col-12 breadcrumb-wrapper mt-3">

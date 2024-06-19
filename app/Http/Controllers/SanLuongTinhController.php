@@ -7,8 +7,11 @@ use Illuminate\Support\Facades\DB;
 
 class SanLuongTinhController extends Controller
 {
-    public function indexTinh()
+    public function indexTinh(Request $request)
     {
+        if (!$request->session()->has('username')) {
+            return redirect('login');
+        }
         $khuVucList = DB::table('tbl_tinh')
             ->distinct()
             ->select('ten_khu_vuc')

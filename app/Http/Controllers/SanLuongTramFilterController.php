@@ -8,6 +8,10 @@ class SanLuongTramFilterController extends Controller
 {
     public function indexTramFilter(Request $request)
     {
+        if (!$request->session()->has('username')) {
+            return redirect('login');
+        }
+        
         $query = DB::table('tbl_sanluong')
             ->select('SanLuong_Id', 'HopDong_Id', 'SanLuong_Tram', 'SanLuong_Ngay', 'SanLuong_Gia', 'SanLuong_TenHangMuc', 'ten_hinh_anh_chuan_bi', 'ten_hinh_anh_da_xong');
     
@@ -18,11 +22,12 @@ class SanLuongTramFilterController extends Controller
 
         if (count($days) > 0) {
             $query->whereIn('SanLuong_Ngay', $days);
+            $query->whereNotNull('ten_hinh_anh_da_xong')
+                    ->whereNot('ten_hinh_anh_da_xong', '');  
             $totalGia = DB::table('tbl_sanluong')
                 ->whereIn('SanLuong_Ngay', $days)
                 ->sum('SanLuong_Gia');
         }
-        $query->whereNotNull('ten_hinh_anh_da_xong');  
         $data = $query->simplePaginate(100);
         // dd($data);
         return view('thongke_tram_filter', compact('data', 'totalGia', 'days', 'selectedMonth', 'selectedYear'));

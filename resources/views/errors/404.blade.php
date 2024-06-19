@@ -75,7 +75,7 @@
             <fieldset>
                 <legend><h3>Lỗi truy cập</h3></legend>
                 <p style="margin: 3px 0"><strong>Chúng tôi thành thật xin lỗi! Trang quý khách truy cập (URL) không tồn tại trên website</strong></p>
-                <p style="margin: 3px 0">Quý khách vui lòng <a href="javascript:history.back()">« quay lại</a> hoặc truy cập vào <a href="https://autocad123.vn" title="topviews.vn">autocad123.vn</a>, tìm kiếm nội dung cần thiết trên trang. Xin cám ơn!</p>
+                <p style="margin: 3px 0">Quý khách vui lòng <a href="javascript:history.back()">« quay lại</a> hoặc truy cập vào <a href="/">Trang chủ</a>. Xin cám ơn!</p>
             </fieldset>
         </td>
     </tr>

@@ -22,8 +22,9 @@ use App\Http\Controllers\SanLuongTramFilterController;
 // Route::get('/', function () {
 //     return view('welcome');
 // });
-Route::get('/login', [UserController::class, 'indexKhuVuc']);
-Route::post('/action-login', [UserController::class, 'indexKhuVuc']);
+Route::get('/login', [UserController::class, 'viewLogin']);
+Route::post('/action-login', [UserController::class, 'actionLogin']);
+Route::get('/logout', [UserController::class, 'actionLogout']);
 
 Route::get('/', [SanLuongKhuVucController::class, 'indexKhuVuc']);
 Route::get('/thongke', [SanLuongKhuVucController::class, 'indexKhuVuc']);
