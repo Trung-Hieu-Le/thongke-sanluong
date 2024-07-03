@@ -16,8 +16,8 @@
                     @endfor
                 </select>
             </div>
-            {{-- <a href="/thongke/khuvuc/" class="simple-link h4 mb-0"> Xem chi tiết</a> --}}
-            <div class="dropdown">
+            <a href="/thongke/khuvuc/" class="simple-link h4 mb-0">Thống kê theo khu vực</a>
+            {{-- <div class="dropdown">
                 <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
                   Xem chi tiết
                 </button>
@@ -25,9 +25,11 @@
                   <li><a class="dropdown-item" href="/thongke/khuvuc/">Thống kê khu vực</a></li>
                   <li><a class="dropdown-item" href="/thongke/filter/">Lọc theo ngày</a></li>
                 </ul>
-            </div>
+            </div> --}}
         </div>
         <hr>
+
+        @if (session('role') == 3)
         <div class="row">
             <div class="col-lg-4 col-md-12">
                 <h4>Thống kê theo Tháng <br>(đơn vị tính: tỉ đồng)</h4>
@@ -45,6 +47,11 @@
                 <div class="table-container mt-lg-3" id="namTable"></div>
             </div>
         </div>
+        @else
+        <div class="alert alert-danger">
+            Bạn không đủ thẩm quyền để xem thống kê.
+        </div>
+        @endif
     </div>
 
     <script>

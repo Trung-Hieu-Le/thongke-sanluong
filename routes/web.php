@@ -6,6 +6,7 @@ use App\Http\Controllers\SanLuongTramController;
 use App\Http\Controllers\SanLuongTinhController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SanLuongTramFilterController;
+use App\Http\Controllers\KpiQuyController;
 
 
 /*
@@ -40,6 +41,22 @@ Route::get('/thongke/tinh/{ma_tinh}/all', [SanLuongTramController::class, 'thong
 Route::get('/thongke/tinh/{ma_tinh}/tongquat', [SanLuongTramController::class, 'thongKeTramTongQuat']);
 
 Route::get('/thongke/filter', [SanLuongTramFilterController::class, 'indexTramFilter'])->name('tram.filter');
-Route::get('/thongke/filter/get-day', [SanLuongTramFilterController::class, 'getDayTramFilter'])->name('tram.filter.days');
+Route::get('/viewsanluong/{ma_tram}', [SanLuongTramController::class, 'viewSanLuongTram']);
+Route::get('/viewhinhanh/{ma_tram}', [SanLuongTramController::class, 'viewHinhAnhTram']);
+Route::get('/gethinhanh/{ma_tram}', [SanLuongTramController::class, 'getHinhAnhTram']);
+
+// Route::get('/thongke/filter/get-day', [SanLuongTramFilterController::class, 'getDayTramFilter'])->name('tram.filter.days');
+
+Route::get('/sanluong-khac/index', [SanLuongTramController::class, 'indexSanLuong'])->name('sanluongkhac.index');
+Route::get('/sanluong-khac/add', [SanLuongTramController::class, 'addSanLuong'])->name('sanluongkhac.add');
+Route::post('/sanluong-khac/handleAdd', [SanLuongTramController::class, 'handleAddSanLuong'])->name('sanluongkhac.handleAdd');
+Route::get('/sanluong-khac/edit/{id}', [SanLuongTramController::class, 'editSanLuong'])->name('sanluongkhac.edit');
+Route::post('/sanluong-khac/handleEdit', [SanLuongTramController::class, 'handleEditSanLuong'])->name('sanluongkhac.handleEdit');
+
+Route::get('/kpi-quy/index', [KpiQuyController::class, 'indexKpiQuy'])->name('kpiquy.index');
+Route::get('/kpi-quy/add', [KpiQuyController::class, 'addKpiQuy'])->name('kpiquy.add');
+Route::post('/kpi-quy/handleAdd', [KpiQuyController::class, 'handleAddKpiQuy'])->name('kpiquy.handleAdd');
+Route::get('/kpi-quy/edit', [KpiQuyController::class, 'editKpiQuy'])->name('kpiquy.edit');
+Route::post('/kpi-quy/handleEdit', [KpiQuyController::class, 'handleEditKpiQuy'])->name('kpiquy.handleEdit');
 
 //TODO: getSanLuongThang_6 (1h update / lần)

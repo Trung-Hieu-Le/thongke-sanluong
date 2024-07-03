@@ -9,7 +9,7 @@ class UserController extends Controller
     public function viewLogin(Request $request)
     {
         try {
-            return view('login');
+            return view('users.login');
         } catch (\Exception $e) {
             return view('errors.404');
         }
@@ -25,17 +25,18 @@ class UserController extends Controller
                 ->get()->toArray();
 
             if (count($user) == 1) {
+                $request->session()->put('userid', $user[0]->user_id);
                 $request->session()->put('username', $user[0]->user_name);
                 $request->session()->put('role', $user[0]->user_permission);
                 return redirect('/');
             } else {
                 $err = "Sai tài khoản hoặc mật khẩu";
-                return view('login', compact('err'));
+                return view('users.login', compact('err'));
             }
         }
         else {
             $err = "Vui lòng nhập đầy đủ thông tin";
-                return view('login', compact('err'));
+                return view('users.login', compact('err'));
         }
     }
     public function actionLogout(Request $request){

@@ -35,6 +35,7 @@
         </center>
     </div>
     
+    @if (session('role') == 3)
     <div class="container">
         <div class="row">
             <div class="col-lg-4 col-md-12">
@@ -98,7 +99,16 @@
                 </tbody>
             </table>     
         </div>
-    </div>         
+    </div>
+    @else
+    <div class="container">
+        <hr>
+        <div class="alert alert-danger">
+            Bạn không đủ thẩm quyền để xem thống kê.
+        </div>
+    </div>
+    @endif
+      
 
     <script>
         function createChart(ctx) {
@@ -146,98 +156,90 @@
             nam: createChart(document.getElementById('chart-nam').getContext('2d'))
         };
 
-        // Hàm cập nhật dữ liệu
-        var maTinhChose = "<?php echo $maTinhChose; ?>";
-        function updateChart(time_format, ngay_chon) {
-            console.log(time_format, ngay_chon);
-            $.ajax({
-                url: `/thongke/tinh/${maTinhChose}/all`,
-                method: 'GET',
-                data: { time_format: time_format, ngay: ngay_chon },
-                success: function(data) {
-                    var labels = [];
-                    var values = [];
+        // Hàm cập nhật dữ liệu biểu đồ
+var maTinhChose = "<?php echo $maTinhChose; ?>";
+function updateCharts(ngay_chon) {
+    $.ajax({
+        url: `/thongke/tinh/${maTinhChose}/all`,
+        method: 'GET',
+        data: { ma_tinh: maTinhChose, ngay: ngay_chon },
+        success: function(data) {
+            var labels = data.map(item => item.SanLuong_Tram);
+            var chartData = {
+                ngay: data.map(item => item.ngay),
+                tuan: data.map(item => item.tuan),
+                thang: data.map(item => item.thang),
+                quy: data.map(item => item.quy),
+                nam: data.map(item => item.nam)
+            };
 
-                    data.forEach(function(item) {
-                        labels.push(item.SanLuong_Tram);
-                        values.push(item.total);
-                    });
-
-                    charts[time_format].data.labels = labels;
-                    charts[time_format].data.datasets[0].data = values;
-                    charts[time_format].update();
-                }
+            // Cập nhật từng biểu đồ
+            Object.keys(charts).forEach(time_format => {
+                charts[time_format].data.labels = labels;
+                charts[time_format].data.datasets[0].data = chartData[time_format];
+                charts[time_format].update();
             });
         }
-        function updateTable() {
-            $.ajax({
-                url: `/thongke/tinh/${maTinhChose}/tongquat`,
-                method: 'GET',
-                success: function(data) {
-                    var tbody = $('#data-table tbody');
-                    tbody.empty();
+    });
+}
 
-                    data.forEach(function(item) {
-                        var row = `
-                            <tr>
-                                <td class="ma-tinh">${item.ma_tram}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.nam)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.quy_1)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.quy_2)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.quy_3)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.quy_4)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_1)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_2)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_3)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_4)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_5)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_6)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_7)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_8)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_9)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_10)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_11)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_12)}</td>
-                            </tr>
-                        `;
-                        tbody.append(row);
-                    });
-                }
+// Hàm cập nhật bảng dữ liệu
+function updateTable() {
+    $.ajax({
+        url: `/thongke/tinh/${maTinhChose}/tongquat`,
+        method: 'GET',
+        success: function(data) {
+            var tbody = $('#data-table tbody');
+            tbody.empty();
+
+            data.forEach(function(item) {
+                var row = `
+                    <tr>
+                        <td class="ma-tinh">${item.ma_tram}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.nam)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.quy_1)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.quy_2)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.quy_3)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.quy_4)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_1)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_2)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_3)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_4)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_5)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_6)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_7)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_8)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_9)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_10)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_11)}</td>
+                        <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_12)}</td>
+                    </tr>
+                `;
+                tbody.append(row);
             });
         }
+    });
+}
 
-        $('#ngay-chon').on('change', function() {
-            // var selectedTimeFrame = $('#thoi-gian-chon').val();
-            var selectedNgay = $('#ngay-chon').val();
-            // updateChart(selectedTimeFrame, selectedNgay);
-            updateChart('ngay', selectedNgay);
-            updateChart('tuan', selectedNgay);
-            updateChart('thang', selectedNgay);
-            updateChart('quy', selectedNgay);
-            updateChart('nam', selectedNgay);
-        });
+// Event listener cho ngày chọn
+$('#ngay-chon').on('change', function() {
+    var selectedNgay = $('#ngay-chon').val();
+    updateCharts(selectedNgay);
+});
 
-        $(document).ready(function() {
-            updateChart('ngay', null);
-            updateChart('tuan', null);
-            updateChart('thang', null);
-            updateChart('quy', null);
-            updateChart('nam', null);
-            updateTable();
-        });
+// Khởi tạo khi trang được tải
+$(document).ready(function() {
+    updateCharts(null);
+    updateTable();
+});
 
-        // Cập nhật biểu đồ và bảng theo thời gian
-        setInterval(function() {
-            // var selectedTimeFrame = $('#thoi-gian-chon').val();
-            var selectedNgay = $('#ngay-chon').val();
-            // updateChart(selectedTimeFrame, selectedNgay);
-            updateChart('ngay', selectedNgay);
-            updateChart('tuan', selectedNgay);
-            updateChart('thang', selectedNgay);
-            updateChart('quy', selectedNgay);
-            updateChart('nam', selectedNgay);
-            updateTable();
-        }, 3600000);
+// Cập nhật biểu đồ và bảng theo thời gian
+setInterval(function() {
+    var selectedNgay = $('#ngay-chon').val();
+    updateCharts(selectedNgay);
+    updateTable();
+}, 3600000);
+
     
     </script>
 </body>

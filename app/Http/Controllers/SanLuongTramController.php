@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 class SanLuongTramController extends Controller
 {
@@ -13,47 +14,35 @@ class SanLuongTramController extends Controller
             return redirect('login');
         }
         $maTinhChose = $request->ma_tinh;
-        return view('thongke_tram', compact('maTinhChose'));
+        return view('thong_ke.thongke_tram', compact('maTinhChose'));
     }
     public function thongKeTram(Request $request)
     {
         $maTinh = $request->ma_tinh;
-        $timeFormat = $request->input('time_format');
         $ngayChon = $request->input('ngay');
         if (is_null($ngayChon) || $ngayChon === '') {
             $ngayChon = date('Y-m-d');
         }
 
-        switch ($timeFormat) {
-            case 'ngay':
-                $whereClause = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = STR_TO_DATE('$ngayChon', '%Y-%m-%d')";
-                break;
-            case 'tuan':
-                $whereClause = "WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
-                break;
-            case 'thang':
-                $whereClause = "MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = MONTH(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
-                break;
-            case 'quy':
-                $whereClause = "QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = QUARTER(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
-                break;
-            case 'nam':
-                $whereClause = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
-                break;
-            default:
-                return response()->json(['error' => 'Thời gian không hợp lệ']);
-        }
-
-        $total = DB::table('tbl_sanluong')
-            ->select(DB::raw('SanLuong_Tram, SUM(SanLuong_Gia) as total'))
+        $results = DB::table('tbl_sanluong')
+            ->select(
+                'SanLuong_Tram',
+                DB::raw("
+                SUM(CASE WHEN DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = DATE('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as ngay,
+                SUM(CASE WHEN WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as tuan,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = MONTH('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as thang,
+                SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = QUARTER('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as quy,
+                SUM(CASE WHEN YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as nam
+            ")
+            )
             ->where('SanLuong_Tram', 'LIKE', "$maTinh%")
-            ->whereRaw($whereClause)
             ->groupBy('SanLuong_Tram')
             ->orderBy('SanLuong_Tram')
             ->get();
 
-        return response()->json($total);
+        return response()->json($results);
     }
+
     public function thongKeTramTongQuat(Request $request)
     {
         $maTinh = $request->ma_tinh;
@@ -115,5 +104,170 @@ class SanLuongTramController extends Controller
         }
 
         return response()->json($results);
+    }
+
+    public function viewSanLuongTram(Request $request)
+    {
+        if (!$request->session()->has('username')) {
+            return redirect('login');
+        }
+
+        $ma_tram = $request->ma_tram;
+        $daysString = $request->input('days', date('dmY'));
+        $days = [];
+
+        if (!empty($daysString)) {
+            $days = explode(',', $daysString);
+            $days = array_map(function ($day) {
+                return str_replace('-', '', $day);
+            }, $days);
+        }
+        // dd($days);
+
+        $query = DB::table('tbl_sanluong')
+            ->where('SanLuong_Tram', $ma_tram)
+            ->select('SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_Gia', DB::raw('1 as SoLuong'));
+
+        if (count($days) > 0) {
+            $query->whereIn('SanLuong_Ngay', $days);
+        }
+
+        $data = $query->get();
+
+        return view('san_luong.sanluong_tram_view', compact('data', 'ma_tram', 'days'));
+    }
+
+    public function viewHinhAnhTram(Request $request)
+    {
+        if (!$request->session()->has('username')) {
+            return redirect('login');
+        }
+
+        $ma_tram = $request->ma_tram;
+        $daysString = $request->input('days', date('dmY'));
+        $days = [];
+
+        if (!empty($daysString)) {
+            $days = explode(',', $daysString);
+            $days = array_map(function ($day) {
+                return str_replace('-', '', $day);
+            }, $days);
+        }
+
+        return view('san_luong.hinhanh_tram_view', compact('ma_tram', 'days'));
+    }
+
+    public function getHinhAnhTram(Request $request)
+    {
+        $ma_tram = $request->ma_tram;
+        $daysString = $request->input('days', date('dmY'));
+        $days = [];
+
+        if (!empty($daysString)) {
+            $days = explode(',', $daysString);
+            $days = array_map(function ($day) {
+                return str_replace('-', '', $day);
+            }, $days);
+        }
+
+        $query = DB::table('tbl_hinhanh')
+            ->where('ma_tram', $ma_tram);
+
+        if (count($days) > 0) {
+            $query->whereIn('thoi_gian_chup', $days);
+        }
+
+        $query->select('ten_hang_muc', 'ten_anh_chuan_bi', 'ten_anh_da_xong');
+
+        $userid = $request->session()->get('userid');
+        if (in_array($userid, [0, 1])) {
+            $query->where('user_id', $userid);
+        }
+
+        $rawData = $query->get();
+        $groupedData = [];
+
+        foreach ($rawData as $item) {
+            if (!isset($groupedData[$item->ten_hang_muc])) {
+                $groupedData[$item->ten_hang_muc] = [
+                    'ten_hang_muc' => $item->ten_hang_muc,
+                    'anh_chuan_bi' => [],
+                    'anh_da_xong' => [],
+                ];
+            }
+
+            if (!empty($item->ten_anh_chuan_bi)) {
+                $groupedData[$item->ten_hang_muc]['anh_chuan_bi'][] = $item->ten_anh_chuan_bi;
+            }
+
+            if (!empty($item->ten_anh_da_xong)) {
+                $groupedData[$item->ten_hang_muc]['anh_da_xong'][] = $item->ten_anh_da_xong;
+            }
+        }
+
+        return response()->json(array_values($groupedData));
+    }
+
+
+
+    // Thêm sản lượng theo ngày
+    public function indexSanLuong()
+    {
+        $data = DB::table('tbl_sanluong_khac')->get();
+        return view('san_luong.sanluong_view', compact('data'));
+    }
+    public function addSanLuong(Request $request)
+    {
+        if (!$request->session()->has('username')) {
+            return redirect('login');
+        }
+        $hopdongs = DB::table('tbl_hopdong')
+            ->select('HopDong_Id', 'HopDong_SoHopDong', 'HopDong_TenHopDong')
+            ->get()->toArray();
+        return view('san_luong.sanluong_add', compact('hopdongs'));
+    }
+
+    // Lưu dữ liệu vào cơ sở dữ liệu
+    public function handleAddSanLuong(Request $request)
+    {
+        if (!$request->session()->has('username')) {
+            return redirect('login');
+        }
+        $date = $request->SanLuong_Ngay
+            ? Carbon::createFromFormat('Y-m-d', $request->input('SanLuong_Ngay'))->format('dmY')
+            : date('dmY');
+        DB::table('tbl_sanluong_khac')->insert([
+            'SanLuong_Tram' => $request->SanLuong_Tram,
+            'SanLuong_Ngay' => $date,
+            'SanLuong_Gia' => $request->SanLuong_Gia,
+        ]);
+
+        return redirect()->route('sanluongkhac.add')->with('success', 'Thêm sản lượng thành công.');
+    }
+    public function editSanLuong(Request $request)
+    {
+        if (!$request->session()->has('username')) {
+            return redirect('login');
+        }
+        $sanLuong = DB::table('tbl_sanluong_khac')->where('SanLuong_Id', $request->id)->first();
+
+        if (!$sanLuong) {
+            return redirect()->route('sanluongkhac.index')->with('error', 'Không tìm thấy sản lượng');
+        }
+
+        return view('san_luong.sanluong_edit', compact('sanLuong'));
+    }
+    public function editHandleSanLuong(Request $request)
+    {
+        if (!$request->session()->has('username')) {
+            return redirect('login');
+        }
+        DB::table('tbl_sanluong_khac')->where('SanLuong_Id', $request->id)->update([
+            'SanLuong_Tram' => $request->SanLuong_Tram,
+            'SanLuong_Gia' => $request->SanLuong_Gia,
+            'SanLuong_Ngay' => $request->SanLuong_Ngay,
+        ]);
+
+        return redirect()->route('san_luong.sanluong_view')->with('success', 'Cập nhật sản lượng thành công');
     }
 }

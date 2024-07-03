@@ -17,56 +17,86 @@ class SanLuongTinhController extends Controller
             ->select('ten_khu_vuc')
             ->orderBy('ten_khu_vuc')
             ->get()->toArray();
-        return view('thongke_tinh', compact('khuVucList'));
+        return view('thong_ke.thongke_tinh', compact('khuVucList'));
     }
+
     public function thongKeTinh(Request $request)
-    {
-        $khuVuc = $request->input('khu_vuc');
-        $timeFormat = $request->input('time_format');
-        $ngayChon = $request->input('ngay');
-        if (is_null($ngayChon) || $ngayChon === '') {
-            $ngayChon = date('Y-m-d');
-        }
-        $maTinhs = DB::table('tbl_tinh')
-            ->where('ten_khu_vuc', $khuVuc)
-            ->pluck('ma_tinh');
+{
+    $khuVuc = $request->input('khu_vuc');
+    $ngayChon = $request->input('ngay');
 
-        $results = [];
-        foreach ($maTinhs as $maTinh) {
-            switch ($timeFormat) {
-                case 'ngay':
-                    $whereClause = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = STR_TO_DATE('$ngayChon', '%Y-%m-%d')";
-                    break;
-                case 'tuan':
-                    $whereClause = "WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
-                    break;
-                case 'thang':
-                    $whereClause = "MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = MONTH(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
-                    break;
-                case 'quy':
-                    $whereClause = "QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = QUARTER(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
-                    break;
-                case 'nam':
-                    $whereClause = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR(STR_TO_DATE('$ngayChon', '%Y-%m-%d'))";
-                    break;
-                default:
-                    return response()->json(['error' => 'Thời gian không hợp lệ']);
-            }
-
-            $total = DB::table('tbl_sanluong')
-                ->where('SanLuong_Tram', 'LIKE', "$maTinh%")
-                ->whereRaw($whereClause)
-                ->orderBy('SanLuong_Tram')
-                ->sum('SanLuong_Gia');
-
-            $results[] = [
-                'ma_tinh' => $maTinh,
-                'total' => round($total, 4)
-            ];
-        }
-
-        return response()->json($results);
+    if (is_null($ngayChon) || $ngayChon === '') {
+        $ngayChon = date('Y-m-d');
     }
+
+    $maTinhs = DB::table('tbl_tinh')
+        ->where('ten_khu_vuc', $khuVuc)
+        ->pluck('ma_tinh');
+
+    $results = [];
+    foreach ($maTinhs as $maTinh) {
+        $query = "
+            SELECT
+                SUM(CASE WHEN DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = DATE('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as ngay,
+                SUM(CASE WHEN WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as tuan,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = MONTH('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as thang,
+                SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = QUARTER('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as quy,
+                SUM(CASE WHEN YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as nam
+            FROM tbl_sanluong
+            WHERE SanLuong_Tram LIKE '$maTinh%'
+            UNION ALL
+            SELECT
+                SUM(CASE WHEN DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = DATE('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as ngay,
+                SUM(CASE WHEN WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as tuan,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = MONTH('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as thang,
+                SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = QUARTER('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as quy,
+                SUM(CASE WHEN YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as nam
+            FROM tbl_sanluong_khac
+            WHERE SanLuong_Tram LIKE '$maTinh%'
+            UNION ALL
+            SELECT
+                SUM(CASE WHEN DATE(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = DATE('$ngayChon') THEN ThaoLap_SanLuong ELSE 0 END) as ngay,
+                SUM(CASE WHEN WEEK(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = WEEK('$ngayChon') THEN ThaoLap_SanLuong ELSE 0 END) as tuan,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = MONTH('$ngayChon') THEN ThaoLap_SanLuong ELSE 0 END) as thang,
+                SUM(CASE WHEN QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = QUARTER('$ngayChon') THEN ThaoLap_SanLuong ELSE 0 END) as quy,
+                SUM(CASE WHEN YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = YEAR('$ngayChon') THEN ThaoLap_SanLuong ELSE 0 END) as nam
+            FROM tbl_sanluong_thaolap
+            WHERE ThaoLap_MaTram LIKE '$maTinh%'
+        ";
+
+        $totals = DB::select($query);
+
+        $combinedTotals = (object) [
+            'ngay' => 0,
+            'tuan' => 0,
+            'thang' => 0,
+            'quy' => 0,
+            'nam' => 0
+        ];
+
+        foreach ($totals as $total) {
+            $combinedTotals->ngay += $total->ngay;
+            $combinedTotals->tuan += $total->tuan;
+            $combinedTotals->thang += $total->thang;
+            $combinedTotals->quy += $total->quy;
+            $combinedTotals->nam += $total->nam;
+        }
+
+        $results[] = [
+            'ma_tinh' => $maTinh,
+            'totals' => [
+                'ngay' => round($combinedTotals->ngay, 4),
+                'tuan' => round($combinedTotals->tuan, 4),
+                'thang' => round($combinedTotals->thang, 4),
+                'quy' => round($combinedTotals->quy, 4),
+                'nam' => round($combinedTotals->nam, 4)
+            ]
+        ];
+    }
+
+    return response()->json($results);
+}
+
 
     public function thongKeTinhTongQuat(Request $request)
     {
@@ -134,3 +164,4 @@ class SanLuongTinhController extends Controller
         return response()->json($results);
     }
 }
+ 

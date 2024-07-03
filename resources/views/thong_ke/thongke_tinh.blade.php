@@ -36,6 +36,7 @@
         </center>
     </div>
     
+    @if (session('role') == 3)
     <div class="container">
         <div class="row">
             <div class="col-lg-4 col-md-12">
@@ -99,7 +100,15 @@
                 </tbody>
             </table>     
         </div>
-    </div>  
+    </div>
+    @else
+    <div class="container">
+        <hr>
+        <div class="alert alert-danger">
+            Bạn không đủ thẩm quyền để xem thống kê.
+        </div>
+    </div>
+    @endif  
 
     <script>
         function createChart(ctx) {
@@ -147,24 +156,26 @@
             nam: createChart(document.getElementById('chart-nam').getContext('2d'))
         };
 
-        function updateChart(time_format, khu_vuc, ngay_chon) {
-            console.log(time_format, ngay_chon);
+        function updateAllCharts(khu_vuc, ngay_chon) {
             $.ajax({
                 url: `/thongke/khuvuc/all`,
                 method: 'GET',
-                data: { time_format: time_format, khu_vuc: khu_vuc, ngay: ngay_chon },
+                data: { khu_vuc: khu_vuc, ngay: ngay_chon },
                 success: function(data) {
-                    var labels = [];
-                    var values = [];
+                    var labels = data.map(item => item.ma_tinh);
+                    var chartData = {
+                        ngay: data.map(item => item.totals.ngay),
+                        tuan: data.map(item => item.totals.tuan),
+                        thang: data.map(item => item.totals.thang),
+                        quy: data.map(item => item.totals.quy),
+                        nam: data.map(item => item.totals.nam)
+                    };
 
-                    data.forEach(function(item) {
-                        labels.push(item.ma_tinh);
-                        values.push(item.total);
+                    Object.keys(charts).forEach(time_format => {
+                        charts[time_format].data.labels = labels;
+                        charts[time_format].data.datasets[0].data = chartData[time_format];
+                        charts[time_format].update();
                     });
-
-                    charts[time_format].data.labels = labels;
-                    charts[time_format].data.datasets[0].data = values;
-                    charts[time_format].update();
                 }
             });
         }
@@ -207,54 +218,25 @@
             });
         }
 
-        $('#khu-vuc-chon').on('change', function() {
-            var selectedKhuVuc = $(this).val();
-            // var selectedTimeFrame = $('#thoi-gian-chon').val();
-            var selectedNgay = $('#ngay-chon').val();
-            updateChart('ngay', selectedKhuVuc, selectedNgay);
-            updateChart('tuan', selectedKhuVuc, selectedNgay);
-            updateChart('thang', selectedKhuVuc, selectedNgay);
-            updateChart('quy', selectedKhuVuc, selectedNgay);
-            updateChart('nam', selectedKhuVuc, selectedNgay);            
-            updateTable(selectedKhuVuc);
-        });
-
-        $('#ngay-chon').on('change', function() {
+        // Cập nhật tất cả các biểu đồ và bảng khi thay đổi khu vực hoặc ngày
+        $('#khu-vuc-chon, #ngay-chon').on('change', function() {
             var selectedKhuVuc = $('#khu-vuc-chon').val();
-            // var selectedTimeFrame = $('#thoi-gian-chon').val();
-            var selectedNgay = $(this).val();
-            updateChart('ngay', selectedKhuVuc, selectedNgay);
-            updateChart('tuan', selectedKhuVuc, selectedNgay);
-            updateChart('thang', selectedKhuVuc, selectedNgay);
-            updateChart('quy', selectedKhuVuc, selectedNgay);
-            updateChart('nam', selectedKhuVuc, selectedNgay);
-
-          
+            var selectedNgay = $('#ngay-chon').val();
+            updateAllCharts(selectedKhuVuc, selectedNgay);
+            updateTable(selectedKhuVuc);
         });
 
         $(document).ready(function() {
             var initialKhuVuc = $('#khu-vuc-chon').val();
-            // var initialTimeFrame = 'ngay'; 
-            $('#khu-vuc-chon').val(initialKhuVuc);
-            // $('#thoi-gian-chon').val(initialTimeFrame);
-            // updateChart(initialTimeFrame, initialKhuVuc, null);
-            updateChart('ngay', initialKhuVuc, null);
-            updateChart('tuan', initialKhuVuc, null);
-            updateChart('thang', initialKhuVuc, null);
-            updateChart('quy', initialKhuVuc, null);
-            updateChart('nam', initialKhuVuc, null);
+            var initialNgay = $('#ngay-chon').val();
+            updateAllCharts(initialKhuVuc, initialNgay);
             updateTable(initialKhuVuc);
         });
 
         setInterval(function() {
             var selectedKhuVuc = $('#khu-vuc-chon').val();
-            // var selectedTimeFrame = $('#thoi-gian-chon').val();
             var selectedNgay = $('#ngay-chon').val();
-            updateChart('ngay', selectedKhuVuc, selectedNgay);
-            updateChart('tuan', selectedKhuVuc, selectedNgay);
-            updateChart('thang', selectedKhuVuc, selectedNgay);
-            updateChart('quy', selectedKhuVuc, selectedNgay);
-            updateChart('nam', selectedKhuVuc, selectedNgay);            
+            updateAllCharts(selectedKhuVuc, selectedNgay);
             updateTable(selectedKhuVuc);
         }, 3600000);
 
