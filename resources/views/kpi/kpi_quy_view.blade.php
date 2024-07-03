@@ -11,14 +11,15 @@
             </nav>
         </div>
     </div>
-    {{-- TODO: phân quyền --}}
     <div class="container mt-3">
         <div class="main-content px-3">
             <div id="results">
-                @if (session('role') == 2 || session('role') == 3)
-                    <a href="{{route('kpiquy.add')}}"><button class="btn btn-primary">Thêm</button></a>
-                @endif
-                <table class="scrollable-table">
+                <div class="d-flex justify-content-start mb-2">
+                    @if (session('role') == 2 || session('role') == 3)
+                        <a href="{{route('kpiquy.add')}}"><button class="btn btn-primary">Thêm</button></a>
+                    @endif
+                </div>
+                <table class="scrollable-table mb-3">
                     <thead>
                         <tr>
                             <th>Số thứ tự</th>
@@ -46,7 +47,7 @@
                                 <a href="{{ url('/kpi-quy/edit?khuvuc=' . $row['ten_khu_vuc'] . '&nam=' . $row['year']) }}">
                                 <button class="btn btn-primary">Sửa</button>
                                 </a>
-                                <a href="{{ url('/kpi-quy/delete?khuvuc=' . $row['ten_khu_vuc'] . '&nam=' . $row['year']) }}">
+                                <a href="{{ url('/kpi-quy/delete?khuvuc=' . $row['ten_khu_vuc'] . '&nam=' . $row['year']) }}" onclick="return confirm('Bạn có muốn xóa những KPI này?');">
                                     <button class="btn btn-danger">Xóa</button>
                                 </a>
                             </td>
@@ -58,24 +59,8 @@
         </div>
     </div>
     <style>
-        .main-content {
-            width: 100%;
-            overflow-y: auto;
-        }
         #results {
             overflow-y: auto;
-        }
-        .scrollable-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .scrollable-table th, .scrollable-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-        .scrollable-table th {
-            background-color: #f2f2f2;
-            text-align: left;
         }
     </style>
 </body>

@@ -14,11 +14,13 @@
     <div class="container mt-3">
         <div class="main-content px-3">
             <div id="results">
-                @if (session('role') == 2 || session('role') == 3)
-                    <a href="{{ route('sanluongkhac.add') }}">
-                        <button class="btn btn-primary">Thêm</button>
-                    </a>
-                @endif
+                <div class="d-flex justify-content-start mb-2">
+                    @if (session('role') == 2 || session('role') == 3)
+                        <a href="{{ route('sanluongkhac.add') }}">
+                            <button class="btn btn-primary">Thêm</button>
+                        </a>
+                    @endif
+                </div>
                 <table class="scrollable-table">
                     <thead>
                         <tr>
@@ -30,18 +32,21 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @php $index = 1; @endphp
+                        @php 
+                            $index = 1;
+                            use Carbon\Carbon; 
+                        @endphp
                         @foreach ($data as $row)
                         <tr>
                             <td>{{ $index++ }}</td>
                             <td>{{ $row->SanLuong_Tram }}</td>
-                            <td>{{ $row->SanLuong_Ngay }}</td>
-                            <td>{{ $row->SanLuong_Gia }}</td>
+                            <td>{{ Carbon::createFromFormat('dmY', $row->SanLuong_Ngay)->format('d-m-Y') }}</td>
+                            <td>{{ number_format($row->SanLuong_Gia, 3) }}</td>
                             <td>
-                                <a href="{{ url('/sanluongkhac/edit?id=' . $row->SanLuong_Id) }}">
+                                <a href="{{ url('/sanluong-khac/edit/' . $row->SanLuong_Id) }}">
                                     <button class="btn btn-primary">Sửa</button>
                                 </a>
-                                <a href="{{ url('/sanluongkhac/delete/' . $row->SanLuong_Id) }}">
+                                <a href="{{ url('/sanluong-khac/delete/' . $row->SanLuong_Id) }}" onclick="return confirm('Bạn có muốn xóa Sản lượng này?');">
                                     <button class="btn btn-danger">Xóa</button>
                                 </a>
                             </td>
@@ -59,18 +64,6 @@
         }
         #results {
             overflow-y: auto;
-        }
-        .scrollable-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .scrollable-table th, .scrollable-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-        .scrollable-table th {
-            background-color: #f2f2f2;
-            text-align: left;
         }
     </style>
 </body>

@@ -18,10 +18,10 @@
         <!-- Nav tabs -->
         <ul class="nav nav-tabs">
             <li class="nav-item">
-                <a class="nav-link active" href="/viewsanluong/{{ $ma_tram }}">Sản lượng</a>
+                <a class="nav-link active" href="/viewsanluong/{{ $ma_tram }}?days={{ implode(',', $days) }}">Sản lượng</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/viewhinhanh/{{ $ma_tram }}">Hình ảnh</a>
+                <a class="nav-link" href="/viewhinhanh/{{ $ma_tram }}?days={{ implode(',', $days) }}">Hình ảnh</a>
             </li>
         </ul>
 
@@ -34,7 +34,7 @@
                 </div>
             </form>
             <div id="results">
-                <table class="scrollable-table">
+                <table class="scrollable-table mb-3">
                     <thead>
                         <tr>
                             <th>Số thứ tự</th>
@@ -46,15 +46,18 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @php $index = 1; @endphp
+                        @php 
+                            $index = 1;
+                            use Carbon\Carbon; 
+                            @endphp
                         @foreach ($data as $row)
                         <tr>
                             <td>{{ $index++ }}</td>
-                            <td>{{ $row->SanLuong_Ngay }}</td>
+                            <td>{{ Carbon::createFromFormat('dmY', $row->SanLuong_Ngay)->format('d-m-Y') }}</td>
                             <td>{{ $row->SanLuong_TenHangMuc }}</td>
-                            <td>{{ $row->SanLuong_Gia }}</td>
-                            <td>1</td> <!-- Default value for Số lượng -->
-                            <td>{{ $row->SanLuong_Gia }}</td> <!-- Đơn giá * Số lượng (which is 1) -->
+                            <td>{{ number_format($row->SanLuong_Gia, 3) }}</td>
+                            <td>{{ $row->SoLuong }}</td> <!-- Default value for Số lượng -->
+                            <td>{{ number_format($row->SanLuong_Gia * $row->SoLuong, 3) }}</td> <!-- Đơn giá * Số lượng (which is 1) -->
                         </tr>
                         @endforeach
                     </tbody>
@@ -80,18 +83,6 @@
     <style>
         #results {
             overflow-y: auto;
-        }
-        .scrollable-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .scrollable-table th, .scrollable-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-        .scrollable-table th {
-            background-color: #f2f2f2;
-            text-align: left;
         }
     </style>
 </body>

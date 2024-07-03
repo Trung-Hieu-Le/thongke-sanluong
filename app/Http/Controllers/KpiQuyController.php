@@ -87,19 +87,33 @@ class KpiQuyController extends Controller
     
         return view('kpi.kpi_quy_edit', compact('kpiData'));
     }
-    public function editHandleKpiQuy(Request $request){
+    public function handleEditKpiQuy(Request $request){
         if (!$request->session()->has('username')) {
             return redirect('login');
         }
+        // dd($request);
         for ($quarter = 1; $quarter <= 4; $quarter++) {
             DB::table('tbl_kpi_quy')
             ->where('ten_khu_vuc', $request->input('ten_khu_vuc'))
             ->where('year', $request->input('year'))
+            ->where('quarter', $quarter)
             ->update([
-                'quarter' => $quarter,
+                // 'quarter' => $quarter,
                 'kpi_quy' => $request->{'kpi_quy_' . $quarter},
             ]);
         }
         return redirect()->route('kpiquy.index')->with('success', 'KPI đã được cập nhật');
+    }
+    public function deleteKpiQuy(Request $request)
+    {
+        if (!session()->has('username')) {
+            return redirect('login');
+        }
+        DB::table('tbl_kpi_quy')
+        ->where('ten_khu_vuc', $request->input('khuvuc'))
+        ->where('year', $request->input('nam'))
+        ->delete();
+        
+        return redirect()->route('kpiquy.index')->with('success', 'Xóa KPI thành công');
     }
 }

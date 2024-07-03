@@ -52,11 +52,13 @@ Route::get('/sanluong-khac/add', [SanLuongTramController::class, 'addSanLuong'])
 Route::post('/sanluong-khac/handleAdd', [SanLuongTramController::class, 'handleAddSanLuong'])->name('sanluongkhac.handleAdd');
 Route::get('/sanluong-khac/edit/{id}', [SanLuongTramController::class, 'editSanLuong'])->name('sanluongkhac.edit');
 Route::post('/sanluong-khac/handleEdit', [SanLuongTramController::class, 'handleEditSanLuong'])->name('sanluongkhac.handleEdit');
+Route::get('/sanluong-khac/delete/{id}', [SanLuongTramController::class, 'deleteSanLuong'])->name('sanluongkhac.delete');
 
 Route::get('/kpi-quy/index', [KpiQuyController::class, 'indexKpiQuy'])->name('kpiquy.index');
 Route::get('/kpi-quy/add', [KpiQuyController::class, 'addKpiQuy'])->name('kpiquy.add');
 Route::post('/kpi-quy/handleAdd', [KpiQuyController::class, 'handleAddKpiQuy'])->name('kpiquy.handleAdd');
 Route::get('/kpi-quy/edit', [KpiQuyController::class, 'editKpiQuy'])->name('kpiquy.edit');
 Route::post('/kpi-quy/handleEdit', [KpiQuyController::class, 'handleEditKpiQuy'])->name('kpiquy.handleEdit');
+Route::get('/kpi-quy/delete', [KpiQuyController::class, 'deleteKpiQuy'])->name('kpiquy.delete');
 
 //TODO: getSanLuongThang_6 (1h update / lần)

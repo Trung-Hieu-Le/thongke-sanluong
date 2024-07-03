@@ -97,71 +97,96 @@ class SanLuongTinhController extends Controller
     return response()->json($results);
 }
 
-
+    //TODO: bảng thống kê theo năm chọn
     public function thongKeTinhTongQuat(Request $request)
-    {
-        $khuVuc = $request->input('khu_vuc');
+{
+    $khuVuc = $request->input('khu_vuc');
+    $currentYear = date('Y');
 
-        $maTinhs = DB::table('tbl_tinh')
-            ->where('ten_khu_vuc', $khuVuc)
-            ->pluck('ma_tinh');
+    $maTinhs = DB::table('tbl_tinh')
+        ->where('ten_khu_vuc', $khuVuc)
+        ->pluck('ma_tinh');
 
-        $results = [];
-        $currentYear = date('Y');
-        foreach ($maTinhs as $maTinh) {
+    $results = [];
 
-            // Truy vấn SQL để lấy tất cả dữ liệu cần thiết trong một lần
-            $data = DB::table('tbl_sanluong')
-                ->select(
-                    DB::raw('SUM(SanLuong_Gia) as total_nam'),
-                    DB::raw('SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 1 THEN SanLuong_Gia ELSE 0 END) as total_quy_1'),
-                    DB::raw('SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 2 THEN SanLuong_Gia ELSE 0 END) as total_quy_2'),
-                    DB::raw('SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 3 THEN SanLuong_Gia ELSE 0 END) as total_quy_3'),
-                    DB::raw('SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 4 THEN SanLuong_Gia ELSE 0 END) as total_quy_4'),
-                    DB::raw('SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 1 THEN SanLuong_Gia ELSE 0 END) as total_thang_1'),
-                    DB::raw('SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 2 THEN SanLuong_Gia ELSE 0 END) as total_thang_2'),
-                    DB::raw('SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 3 THEN SanLuong_Gia ELSE 0 END) as total_thang_3'),
-                    DB::raw('SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 4 THEN SanLuong_Gia ELSE 0 END) as total_thang_4'),
-                    DB::raw('SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 5 THEN SanLuong_Gia ELSE 0 END) as total_thang_5'),
-                    DB::raw('SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 6 THEN SanLuong_Gia ELSE 0 END) as total_thang_6'),
-                    DB::raw('SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 7 THEN SanLuong_Gia ELSE 0 END) as total_thang_7'),
-                    DB::raw('SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 8 THEN SanLuong_Gia ELSE 0 END) as total_thang_8'),
-                    DB::raw('SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 9 THEN SanLuong_Gia ELSE 0 END) as total_thang_9'),
-                    DB::raw('SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 10 THEN SanLuong_Gia ELSE 0 END) as total_thang_10'),
-                    DB::raw('SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 11 THEN SanLuong_Gia ELSE 0 END) as total_thang_11'),
-                    DB::raw('SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = 12 THEN SanLuong_Gia ELSE 0 END) as total_thang_12')
-                )
-                ->where('SanLuong_Tram', 'LIKE', "$maTinh%")
-                ->whereRaw('YEAR(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) = ?', [$currentYear])
-                ->get();
+    foreach ($maTinhs as $maTinh) {
+        // Truy vấn SQL để lấy tất cả dữ liệu cần thiết trong một lần từ 3 bảng
+        $query = "
+            SELECT
+                SUM(SanLuong_Gia) as total_nam,
+                SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 1 THEN SanLuong_Gia ELSE 0 END) as total_quy_1,
+                SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 2 THEN SanLuong_Gia ELSE 0 END) as total_quy_2,
+                SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 3 THEN SanLuong_Gia ELSE 0 END) as total_quy_3,
+                SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 4 THEN SanLuong_Gia ELSE 0 END) as total_quy_4,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 1 THEN SanLuong_Gia ELSE 0 END) as total_thang_1,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 2 THEN SanLuong_Gia ELSE 0 END) as total_thang_2,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 3 THEN SanLuong_Gia ELSE 0 END) as total_thang_3,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 4 THEN SanLuong_Gia ELSE 0 END) as total_thang_4,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 5 THEN SanLuong_Gia ELSE 0 END) as total_thang_5,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 6 THEN SanLuong_Gia ELSE 0 END) as total_thang_6,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 7 THEN SanLuong_Gia ELSE 0 END) as total_thang_7,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 8 THEN SanLuong_Gia ELSE 0 END) as total_thang_8,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 9 THEN SanLuong_Gia ELSE 0 END) as total_thang_9,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 10 THEN SanLuong_Gia ELSE 0 END) as total_thang_10,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 11 THEN SanLuong_Gia ELSE 0 END) as total_thang_11,
+                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 12 THEN SanLuong_Gia ELSE 0 END) as total_thang_12
+            FROM (
+                SELECT
+                    SanLuong_Gia,
+                    SanLuong_Ngay
+                FROM tbl_sanluong
+                WHERE SanLuong_Tram LIKE ? AND YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = ?
+                UNION ALL
+                SELECT
+                    SanLuong_Gia,
+                    SanLuong_Ngay
+                FROM tbl_sanluong_khac
+                WHERE SanLuong_Tram LIKE ? AND YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = ?
+                UNION ALL
+                SELECT
+                    ThaoLap_SanLuong as SanLuong_Gia,
+                    ThaoLap_Ngay as SanLuong_Ngay
+                FROM tbl_sanluong_thaolap
+                WHERE ThaoLap_MaTram LIKE ? AND YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = ?
+            ) as subquery
+        ";
 
-            foreach ($data as $row) {
-                $results[] = [
-                    'ma_tinh' => $maTinh,
-                    'tong_san_luong' => [
-                        'nam' => round($row->total_nam, 4),
-                        'quy_1' => round($row->total_quy_1, 4),
-                        'quy_2' => round($row->total_quy_2, 4),
-                        'quy_3' => round($row->total_quy_3, 4),
-                        'quy_4' => round($row->total_quy_4, 4),
-                        'thang_1' => round($row->total_thang_1, 4),
-                        'thang_2' => round($row->total_thang_2, 4),
-                        'thang_3' => round($row->total_thang_3, 4),
-                        'thang_4' => round($row->total_thang_4, 4),
-                        'thang_5' => round($row->total_thang_5, 4),
-                        'thang_6' => round($row->total_thang_6, 4),
-                        'thang_7' => round($row->total_thang_7, 4),
-                        'thang_8' => round($row->total_thang_8, 4),
-                        'thang_9' => round($row->total_thang_9, 4),
-                        'thang_10' => round($row->total_thang_10, 4),
-                        'thang_11' => round($row->total_thang_11, 4),
-                        'thang_12' => round($row->total_thang_12, 4),
-                    ],
-                ];
-            }
+        $bindings = [
+            "$maTinh%", $currentYear,
+            "$maTinh%", $currentYear,
+            "$maTinh%", $currentYear
+        ];
+
+        $data = DB::select($query, $bindings);
+
+        foreach ($data as $row) {
+            $results[] = [
+                'ma_tinh' => $maTinh,
+                'tong_san_luong' => [
+                    'nam' => round($row->total_nam, 4),
+                    'quy_1' => round($row->total_quy_1, 4),
+                    'quy_2' => round($row->total_quy_2, 4),
+                    'quy_3' => round($row->total_quy_3, 4),
+                    'quy_4' => round($row->total_quy_4, 4),
+                    'thang_1' => round($row->total_thang_1, 4),
+                    'thang_2' => round($row->total_thang_2, 4),
+                    'thang_3' => round($row->total_thang_3, 4),
+                    'thang_4' => round($row->total_thang_4, 4),
+                    'thang_5' => round($row->total_thang_5, 4),
+                    'thang_6' => round($row->total_thang_6, 4),
+                    'thang_7' => round($row->total_thang_7, 4),
+                    'thang_8' => round($row->total_thang_8, 4),
+                    'thang_9' => round($row->total_thang_9, 4),
+                    'thang_10' => round($row->total_thang_10, 4),
+                    'thang_11' => round($row->total_thang_11, 4),
+                    'thang_12' => round($row->total_thang_12, 4),
+                ],
+            ];
         }
-
-        return response()->json($results);
     }
+
+    return response()->json($results);
+}
+
 }
  

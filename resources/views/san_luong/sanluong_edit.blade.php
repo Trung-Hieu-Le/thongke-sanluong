@@ -22,9 +22,8 @@
         @endif
 
         <div class="p-3 border">
-            <form action="{{ route('sanluongkhac.update', ['id' => $sanLuong->SanLuong_Id]) }}" method="POST">
+            <form action="{{ route('sanluongkhac.handleEdit', ['id' => $sanLuong->SanLuong_Id]) }}" method="POST">
                 @csrf
-                @method('PUT')
                 <div class="row">
                     <div class="col-lg-7 col-md-12">
                         <div class="form-group m-2">

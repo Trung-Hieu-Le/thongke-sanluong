@@ -7,24 +7,26 @@ use Illuminate\Support\Facades\DB;
 
 class SanLuongTramFilterController extends Controller
 {
+    //TODO: cộng 3 bảng
     public function indexTramFilter(Request $request)
     {
         if (!$request->session()->has('username')) {
             return redirect('login');
         }
 
-        // $selectedMonth = $request->input('month', date('m'));
-        // $selectedYear = $request->input('year', date('Y'));
-        $daysString = $request->input('days', date('dmY'));
+        // Lấy thông tin ngày
+        $daysString = $request->input('days', date('d-m-Y'));
         $days = [];
         if (!empty($daysString)) {
             $days = explode(',', $daysString);
-            $days = array_map(function($day) {
+            $days = array_map(function ($day) {
                 return str_replace('-', '', $day);
             }, $days);
         }
+
         $search = $request->input('search', '');
 
+        // Truy vấn dữ liệu chi tiết
         $query = DB::table('tbl_sanluong')
             ->select(
                 DB::raw('LEFT(tbl_sanluong.SanLuong_Tram, 3) as ma_tinh'),
@@ -44,15 +46,50 @@ class SanLuongTramFilterController extends Controller
         }
 
         $query->whereNotNull('tbl_sanluong.ten_hinh_anh_da_xong')
-              ->where('tbl_sanluong.ten_hinh_anh_da_xong', '<>', '');
+            ->where('tbl_sanluong.ten_hinh_anh_da_xong', '<>', '');
 
-        //TODO: sửa phần totalGia(KV1 bao nhiêu trạm, tổng..., tổng của các khu vực)
-        //TODO: lấy sl của cả 3 bảng
-        $totalGia = $query->sum('tbl_sanluong.SanLuong_Gia');
+        // Truy vấn để tính tổng giá trị
+        // $totalQuery = DB::table('tbl_sanluong')
+        //     ->select(DB::raw('SUM(tbl_sanluong.SanLuong_Gia) as total_gia'))
+        //     ->leftJoin('tbl_tinh', DB::raw('LEFT(tbl_sanluong.SanLuong_Tram, 3)'), '=', 'tbl_tinh.ma_tinh');
+
+        // if (count($days) > 0) {
+        //     $totalQuery->whereIn('tbl_sanluong.SanLuong_Ngay', $days);
+        // }
+        // if (!empty($search)) {
+        //     $totalQuery->where('tbl_sanluong.SanLuong_Tram', 'like', "%$search%");
+        // }
+
+        // $totalQuery->whereNotNull('tbl_sanluong.ten_hinh_anh_da_xong')
+        //     ->where('tbl_sanluong.ten_hinh_anh_da_xong', '<>', '');
+
+        // $totalGia = $totalQuery->value('total_gia');
+
+        // Truy vấn để tính tổng giá trị và số trạm theo khu vực
+        $khuVucQuery = DB::table('tbl_sanluong')
+            ->select(
+                'tbl_tinh.ten_khu_vuc',
+                DB::raw('COUNT(DISTINCT tbl_sanluong.SanLuong_Tram) as so_tram'),
+                DB::raw('SUM(tbl_sanluong.SanLuong_Gia) as tong_san_luong')
+            )
+            ->leftJoin('tbl_tinh', DB::raw('LEFT(tbl_sanluong.SanLuong_Tram, 3)'), '=', 'tbl_tinh.ma_tinh')
+            ->groupBy('tbl_tinh.ten_khu_vuc');
+        if (count($days) > 0) {
+            $khuVucQuery->whereIn('tbl_sanluong.SanLuong_Ngay', $days);
+        }
+        if (!empty($search)) {
+            $khuVucQuery->where('tbl_sanluong.SanLuong_Tram', 'like', "%$search%");
+        }
+        $khuVucQuery->whereNotNull('tbl_sanluong.ten_hinh_anh_da_xong')
+            ->where('tbl_sanluong.ten_hinh_anh_da_xong', '<>', '');
+        $khuVucData = $khuVucQuery->get();
+        // dd($khuVucData);
 
         $data = $query->simplePaginate(100);
-        return view('thong_ke.thongke_tram_filter', compact('data', 'totalGia', 'days', 'search'));
+
+        return view('thong_ke.thongke_tram_filter', compact('data', 'khuVucData', 'days', 'search'));
     }
+
     // public function getDayTramFilter(Request $request)
     // {
     //     $month = $request->input('thang', date('n'));

@@ -16,7 +16,7 @@
             <form id="filterForm" method="GET" action="{{ route('tram.filter') }}" class="form-inline">
                 @csrf
                 <div class="">
-                    <div class="form-group row">
+                    {{-- <div class="form-group row">
                         <div class="form-group col-5">
                             <input type="text" class="form-control date" name="days" placeholder="Chọn các ngày lọc" value="{{ implode(',', $days) }}">
                         </div>
@@ -26,13 +26,18 @@
                         <div class="form-group col-2">
                             <button class="btn btn-primary" type="submit">Lọc</button>
                         </div>
+                    </div> --}}
+                    <div class="form-group">
+                        <input type="text" class="form-control date" name="days" placeholder="Chọn các ngày lọc" value="{{ implode(',', $days) }}">
+                        <input type="text" class="form-control" name="search" placeholder="Tìm mã trạm" value="{{ $search }}">
+                        <button class="btn btn-primary mb-1" type="submit">Lọc</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
     <div class="container mt-3">
-        <div class="main-content px-3">
+        <div class="main-content px-3 mb-3">
             <div id="results">
                 <table class="scrollable-table">
                     <thead>
@@ -52,7 +57,7 @@
                             <td>{{ $index++ }}</td>
                             <td>{{ $row->SanLuong_Tram }}</td>
                             <td>{{ $row->ten_khu_vuc }}</td>
-                            <td>{{ $row->SanLuong_Gia }}</td>
+                            <td>{{ number_format($row->SanLuong_Gia, 3) }}</td>
                             <td>{{ $row->ma_tinh }}</td>
                             <td><a class="simple-link" href="{{ url('/viewsanluong/'.$row->SanLuong_Tram.'?days='.implode(',', $days)) }}">Xem</a></td>
                         @endforeach
@@ -63,7 +68,40 @@
                 </div>
             </div>
             <div id="totalResults">
-                Tổng giá trị: {{ number_format($totalGia, 3, ',', '.') }}
+                {{-- Tổng giá trị: {{ number_format($totalGia, 3, ',', '.') }} --}}
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Tên Khu Vực</th>
+                            <th>Số Trạm</th>
+                            <th>Tổng Sản Lượng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php
+                            $totalStations = 0;
+                            $totalProduction = 0;
+                        @endphp
+                        @foreach($khuVucData as $item)
+                            <tr>
+                                <td>{{ $item->ten_khu_vuc ?? 'Khác' }}</td>
+                                <td>{{ $item->so_tram }}</td>
+                                <td>{{ number_format($item->tong_san_luong, 3) }}</td>
+                            </tr>
+                            @php
+                                $totalStations += $item->so_tram;
+                                $totalProduction += $item->tong_san_luong;
+                            @endphp
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td class="text-danger">Tổng</td>
+                            <td class="text-danger">{{ $totalStations }}</td>
+                            <td class="text-danger">{{ number_format($totalProduction, 3) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
     </div>
@@ -85,28 +123,17 @@
             display: flex;
             flex-direction: column;
             overflow-y: auto;
-            height: 70vh;
         }
         #results {
             flex: 1;
             overflow-y: auto;
+            height: 40vh;
+
         }
         #totalResults {
             padding: 10px;
             border-top: 1px solid #ddd;
             background-color: #f9f9f9;
-        }
-        .scrollable-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .scrollable-table th, .scrollable-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-        .scrollable-table th {
-            background-color: #f2f2f2;
-            text-align: left;
         }
     </style>
 </body>
