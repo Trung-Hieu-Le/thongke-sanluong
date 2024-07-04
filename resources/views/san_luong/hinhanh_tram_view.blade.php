@@ -45,7 +45,7 @@
                         @if (count($item['anh_chuan_bi']) === 0 && count($item['anh_da_xong']) === 0)
                             <div class="item">
                                 <div class="card">
-                                    <img src="no-image.jpg" class="card-img-top" alt="No image available">
+                                    <img src="{{asset('/images/default_img.svg')}}" class="card-img-top" alt="No image available">
                                     <div class="card-body">
                                         <p class="card-text">No image available</p>
                                         <p class="card-text">No image available</p>
@@ -56,7 +56,9 @@
                             @foreach ($item['anh_chuan_bi'] as $image)
                                 <div class="item">
                                     <div class="card">
-                                        <img src="http://125.212.238.231:8083/PEC/uploads/{{ $ma_tram }}/{{ $image }}" class="card-img-top" alt="{{ $image }}">
+                                        <img src="http://125.212.238.231:8083/PEC/uploads/{{ $ma_tram }}/{{ $image }}" 
+                                        onerror="this.onerror=null;this.src='{{ asset('/images/default_img.svg') }}';"
+                                        class="card-img-top" alt="{{ $image }}">
                                         <div class="card-body">
                                             <p class="card-text">{{ $image }}</p>
                                             <p class="card-text">Chuẩn bị</p>
@@ -67,7 +69,9 @@
                             @foreach ($item['anh_da_xong'] as $image)
                                 <div class="item">
                                     <div class="card">
-                                        <img src="http://125.212.238.231:8083/PEC/uploads/{{ $ma_tram }}/{{ $image }}" class="card-img-top" alt="{{ $image }}">
+                                        <img src="http://125.212.238.231:8083/PEC/uploads/{{ $ma_tram }}/{{ $image }}" 
+                                        onerror="this.onerror=null;this.src='{{ asset('/images/default_img.svg') }}';"
+                                        class="card-img-top" alt="{{ $image }}">
                                         <div class="card-body">
                                             <p class="card-text">{{ $image }}</p>
                                             <p class="card-text">Đã xong</p>
@@ -128,7 +132,7 @@
         .owl-carousel .item img {
             display: block;
             width: 100%;
-            height: 150px; /* Set the height */
+            height: 250px; /* Set the height */
             object-fit: cover; /* Ensure the image fits within the specified height */
         }
         .card {

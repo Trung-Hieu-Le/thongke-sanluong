@@ -28,9 +28,14 @@
         <div class="main-content px-3 mt-3">
             <form id="filterForm" method="GET" action="{{ url('/viewsanluong/'.$ma_tram) }}" class="form-inline mb-3">
                 @csrf
-                <div class="form-group">
-                        <input type="text" class="form-control date" name="days" placeholder="Chọn các ngày lọc" value="{{ implode(',', $days) }}">
-                        <button class="btn btn-primary mb-1" type="submit">Lọc</button>
+                <div class="form-group row">
+                        <div class="col-12 col-md-6">
+                            <input type="text" class="form-control date" name="days" placeholder="Chọn các ngày lọc" value="{{ implode(',', $days) }}">
+                            <button class="btn btn-primary mb-1" type="submit">Lọc</button>
+                        </div>
+                        <div class="col-12 col-md-6 mt-2">
+                            <span>Tổng thành tiền trạm {{$ma_tram}}: <strong>{{ number_format($totalThanhTien, 3) }}</strong></span>
+                        </div>
                 </div>
             </form>
             <div id="results">

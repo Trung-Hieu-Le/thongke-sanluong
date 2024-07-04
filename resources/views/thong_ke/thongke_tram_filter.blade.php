@@ -45,7 +45,7 @@
                             <th>Số thứ tự</th>
                             <th>Tên trạm</th>
                             <th>Khu vực</th>
-                            <th>SanLuong_Gia</th>
+                            <th>Thành tiền</th>
                             <th>Tỉnh</th>
                             <th>Hành động</th>
                         </tr>

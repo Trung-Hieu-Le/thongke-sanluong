@@ -134,7 +134,7 @@ class SanLuongTramController extends Controller
 }
 
 
-    //TODO: chuyển qua lại giữa các trang sẽ chuyển cả days
+    //TODO: Sai phần tính tổng. Hiện đang lấy cả hạng mục ảnh đang chuẩn bị 
     public function viewSanLuongTram(Request $request)
     {
         if (!$request->session()->has('username')) {
@@ -152,10 +152,10 @@ class SanLuongTramController extends Controller
             }, $days);
         }
         // dd($days);
-
         $query = DB::table('tbl_sanluong')
-            ->where('SanLuong_Tram', $ma_tram)
-            ->select('SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_Gia', DB::raw('1 as SoLuong'));
+        ->where('SanLuong_Tram', $ma_tram)
+        ->select('SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_Gia',
+        DB::raw('CASE WHEN ten_hinh_anh_da_xong IS NULL OR ten_hinh_anh_da_xong = "" THEN 0 ELSE 1 END as SoLuong'));
 
         if (count($days) > 0) {
             $query->whereIn('SanLuong_Ngay', $days);
@@ -163,7 +163,12 @@ class SanLuongTramController extends Controller
 
         $data = $query->simplePaginate(100);
 
-        return view('san_luong.sanluong_tram_view', compact('data', 'ma_tram', 'days'));
+        $dataCollection = collect($data->items());
+        $totalThanhTien = $dataCollection->sum(function($row) {
+            return $row->SanLuong_Gia * $row->SoLuong;
+        });
+
+        return view('san_luong.sanluong_tram_view', compact('data', 'ma_tram', 'days', 'totalThanhTien'));
     }
 
     public function viewHinhAnhTram(Request $request)
