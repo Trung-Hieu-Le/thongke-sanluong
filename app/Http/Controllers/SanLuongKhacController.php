@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
@@ -14,7 +15,7 @@ class SanLuongKhacController extends Controller
             return redirect('login');
         }
 
-        $daysString = $request->input('days', date('d-m-Y'));
+        $daysString = $request->input('days', '');
         $days = [];
         if (!empty($daysString)) {
             $days = explode(',', $daysString);
@@ -29,7 +30,7 @@ class SanLuongKhacController extends Controller
             $query->whereIn('SanLuong_Ngay', $days);
         }
         if ($search) {
-            $query->where('SanLuong_Tram', 'like', '%' . $search . '%');
+            $query->where('SanLuong_TenHangMuc', 'like', '%' . $search . '%');
         }
         $data = $query->simplePaginate(100);
 
@@ -60,14 +61,16 @@ class SanLuongKhacController extends Controller
             return redirect('login');
         }
         $date = $request->SanLuong_Ngay
-            ? Carbon::createFromFormat('Y-m-d', $request->input('SanLuong_Ngay'))->format('dmY')
+            ? Carbon::createFromFormat('Y-m-d', $request->SanLuong_Ngay)->format('dmY')
             : date('dmY');
+        // dd($request);
         DB::table('tbl_sanluong_khac')->insert([
-            'SanLuong_Tram' => $request->SanLuong_Tram,
+            // 'SanLuong_Tram' => $request->SanLuong_Tram,
             'SanLuong_Ngay' => $date,
             'SanLuong_Gia' => $request->SanLuong_Gia,
-            'HopDong_Id' => $request->HopDong_Id,
-            'SanLuong_TenHangMuc' => $request->ten_hang_muc
+            // 'HopDong_Id' => $request->HopDong_Id,
+            'SanLuong_TenHangMuc' => $request->SanLuong_TenHangMuc,
+            'SanLuong_KhuVuc' => $request->khu_vuc
         ]);
 
         return redirect()->route('sanluongkhac.add')->with('success', 'Thêm sản lượng thành công.');
@@ -81,7 +84,7 @@ class SanLuongKhacController extends Controller
         $sanLuong = DB::table('tbl_sanluong_khac')->where('SanLuong_Id', $request->id)->first();
         $hopdongs = DB::table('tbl_hopdong')->get();
         $khuvucs = DB::table('tbl_sanluongkhac_noidung')->select('khu_vuc')->distinct()->get();
-        $noidungs = DB::table('tbl_sanluongkhac_noidung')->where('khu_vuc', $sanLuong->khu_vuc)->get();
+        $noidungs = DB::table('tbl_sanluongkhac_noidung')->where('khu_vuc', $sanLuong->SanLuong_KhuVuc)->get();
         if (!$sanLuong) {
             return redirect()->route('sanluongkhac.index')->with('error', 'Không tìm thấy sản lượng');
         }
@@ -98,15 +101,21 @@ class SanLuongKhacController extends Controller
             return redirect('login');
         }
         $date = $request->SanLuong_Ngay
-            ? Carbon::createFromFormat('Y-m-d', $request->input('SanLuong_Ngay'))->format('dmY')
+            ? Carbon::createFromFormat('Y-m-d', $request->SanLuong_Ngay)->format('dmY')
             : date('dmY');
-        DB::table('tbl_sanluong_khac')->where('SanLuong_Id', $request->id)->update([
-            'SanLuong_Tram' => $request->SanLuong_Tram,
-            'SanLuong_Gia' => $request->SanLuong_Gia,
-            'SanLuong_Ngay' => $date,
-            'HopDong_Id' => $request->HopDong_Id,
-            'SanLuong_TenHangMuc' => $request->ten_hang_muc
-        ]);
+            // dd($request);
+        try {
+            DB::table('tbl_sanluong_khac')->where('SanLuong_Id', $request->id)->update([
+                // 'SanLuong_Tram' => $request->SanLuong_Tram,
+                'SanLuong_Ngay' => $date,
+                'SanLuong_Gia' => $request->SanLuong_Gia,
+                // 'HopDong_Id' => $request->HopDong_Id,
+                'SanLuong_TenHangMuc' => $request->SanLuong_TenHangMuc,
+                'SanLuong_KhuVuc' => $request->khu_vuc
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->route('sanluongkhac.index')->with('fail', 'Cập nhật sản lượng thất bại');
+        }
 
         return redirect()->route('sanluongkhac.index')->with('success', 'Cập nhật sản lượng thành công');
     }

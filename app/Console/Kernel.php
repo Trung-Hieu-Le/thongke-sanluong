@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
         $schedule->command('app:loc-san-luong')->hourly();
+        $schedule->command('app:app:tim-hinh-anh-trung')->hourly();
     }
 
     /**

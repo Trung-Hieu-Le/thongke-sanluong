@@ -23,11 +23,11 @@
         @endif
 
         <div class="p-3 border">
-            <form action="{{ route('sanluongkhac.update', ['id' => $sanLuong->SanLuong_Id]) }}" method="POST">
+            <form action="{{ route('sanluongkhac.handleEdit', ['id' => $sanLuong->SanLuong_Id]) }}" method="POST">
                 @csrf
                 <div class="row">
-                    <div class="col-lg-7 col-md-12">
-                        <div class="form-group m-2">
+                    <div class="col">
+                        {{-- <div class="form-group m-2">
                             <label for="HopDong_Id">Hợp Đồng:</label>
                             <select class="form-control" id="HopDong_Id" name="HopDong_Id" required>
                                 @foreach($hopdongs as $hopdong)
@@ -36,12 +36,12 @@
                                     </option>
                                 @endforeach
                             </select>
-                        </div>
+                        </div> --}}
                         <div class="form-group m-2">
                             <label for="khu_vuc">Khu vực:</label>
                             <select class="form-control" id="khu_vuc" name="khu_vuc" required>
                                 @foreach($khuvucs as $khuvuc)
-                                    <option value="{{ $khuvuc->khu_vuc }}" {{ $sanLuong->khu_vuc == $khuvuc->khu_vuc ? 'selected' : '' }}>
+                                    <option value="{{ $khuvuc->khu_vuc }}" {{ $sanLuong->SanLuong_KhuVuc == $khuvuc->khu_vuc ? 'selected' : '' }}>
                                         {{ $khuvuc->khu_vuc }}
                                     </option>
                                 @endforeach
@@ -57,12 +57,14 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="form-group m-2">
+                        {{-- <div class="form-group m-2">
                             <label for="SanLuong_Tram">Sản Lượng Trạm:</label>
                             <input type="text" class="form-control" id="SanLuong_Tram" name="SanLuong_Tram" value="{{ $sanLuong->SanLuong_Tram }}" required>
-                        </div>
+                        </div> --}}
+                    </div>
+                    <div class="col">
                         <div class="form-group m-2">
-                            <label for="SanLuong_Gia">Sản Lượng Giá:</label>
+                            <label for="SanLuong_Gia">Sản Lượng Ngày:</label>
                             <input type="text" class="form-control" id="SanLuong_Gia" name="SanLuong_Gia" value="{{ $sanLuong->SanLuong_Gia }}" pattern="^\d+(\.\d{1,4})?$" title="Vui lòng nhập số (đến chữ số thập phân thứ tư)" required>
                         </div>
                         <div class="form-group m-2">

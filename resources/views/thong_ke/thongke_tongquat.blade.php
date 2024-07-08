@@ -53,7 +53,7 @@
         </div>
         @endif
     </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script>
         console.log("Script thành công");
         let barChartThang, barChartQuy, barChartNam;
@@ -67,6 +67,12 @@
             if (ctx.chart) {
                 ctx.chart.destroy();
             }
+            const backgroundColors = dataTotal.map((total, index) => {
+                const percentage = dataKPI[index] ? (total / dataKPI[index] * 100).toFixed(2) : 'N/A';
+                if (percentage <= 33) return '#FF0000'; // Red
+                if (percentage <= 60) return '#FFFF00'; // Yellow
+                return '#008000'; // Green
+            });
             const newChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -80,18 +86,39 @@
                         {
                             label: 'Thực hiện',
                             data: dataTotal,
-                            backgroundColor: '#FE504F'
+                            backgroundColor: backgroundColors
                         }
                     ]
                 },
                 options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const index = context.dataIndex;
+                                const percentage = dataKPI[index] ? ((dataTotal[index] / dataKPI[index]) * 100).toFixed(2) : 'N/A';
+                                return `${context.dataset.label}: ${context.raw} (${percentage}%)`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'end',
+                        formatter: (value, context) => {
+                            const index = context.dataIndex;
+                            const percentage = dataKPI[index] ? ((value / dataKPI[index]) * 100).toFixed(2) : 'N/A';
+                            return `${value}\n(${percentage}%)`;
                         }
                     }
                 }
+            },
+            plugins: [ChartDataLabels]
             });
             ctx.chart = newChart;
     

@@ -35,11 +35,11 @@ class TinhSanLuongController extends Controller
         ->simplePaginate($perPage, ['*'], 'sanluong_page');
 
     // Fetching paginated data from tbl_sanluong_khac
-    $sanluongKhacData = DB::table('tbl_sanluong_khac')
-        ->select('HopDong_Id', 'SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 'SanLuong_Gia', DB::raw("'Hạng mục khác' as SanLuong_TenHangMuc"), DB::raw("1 as SoLuong"))
-        ->where('SanLuong_Tram', $ma_tram)
-        ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d%m%Y')"), $days)
-        ->simplePaginate($perPage, ['*'], 'sanluong_khac_page');
+    // $sanluongKhacData = DB::table('tbl_sanluong_khac')
+    //     ->select('HopDong_Id', 'SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 'SanLuong_Gia', DB::raw("'Hạng mục khác' as SanLuong_TenHangMuc"), DB::raw("1 as SoLuong"))
+    //     ->where('SanLuong_Tram', $ma_tram)
+    //     ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d%m%Y')"), $days)
+    //     ->simplePaginate($perPage, ['*'], 'sanluong_khac_page');
 
     // Fetching and transforming paginated data from tbl_sanluong_thaolap
     $sanluongThaolapData = DB::table('tbl_sanluong_thaolap')
@@ -74,7 +74,7 @@ class TinhSanLuongController extends Controller
     // Merging data from all tables
     $allData = new Collection;
     $allData = $allData->merge($sanluongData->items());
-    $allData = $allData->merge($sanluongKhacData->items());
+    // $allData = $allData->merge($sanluongKhacData->items());
     $allData = $allData->merge($sanluongThaolapData->items());
 
     // Create a paginator for the merged data

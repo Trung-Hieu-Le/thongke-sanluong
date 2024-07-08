@@ -9,7 +9,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class TinhSanLuongFilterController extends Controller
 {
-    //TODO: lỗi khi thành tiền = 0; phân trang
+    //TODO: lỗi khi thành tiền = 0 hoặc mã trạm viết thường; phân trang
     public function indexTramFilter(Request $request)
 {
     if (!$request->session()->has('username')) {
@@ -63,24 +63,6 @@ class TinhSanLuongFilterController extends Controller
             UNION ALL
             
             SELECT 
-                LEFT(SanLuong_Tram, 3) as ma_tinh,
-                SanLuong_Tram,
-                tbl_hopdong.HopDong_SoHopDong,
-                SUM(SanLuong_Gia) as SanLuong_Gia,
-                tbl_tinh.ten_khu_vuc
-            FROM tbl_sanluong_khac
-            LEFT JOIN tbl_tinh ON LEFT(tbl_sanluong_khac.SanLuong_Tram, 3) = tbl_tinh.ma_tinh
-            LEFT JOIN tbl_hopdong ON tbl_sanluong_khac.HopDong_Id = tbl_hopdong.HopDong_Id
-            WHERE 1
-            $dayCondition
-            $searchCondition
-            $searchConditionHopDong
-            $searchConditionKhuVuc
-            GROUP BY SanLuong_Tram, tbl_tinh.ten_khu_vuc, tbl_hopdong.HopDong_SoHopDong
-            
-            UNION ALL
-            
-            SELECT 
                 LEFT(ThaoLap_MaTram, 3) as ma_tinh,
                 ThaoLap_MaTram as SanLuong_Tram,
                 tbl_hopdong.HopDong_SoHopDong,
@@ -123,22 +105,6 @@ class TinhSanLuongFilterController extends Controller
             LEFT JOIN tbl_hopdong ON tbl_sanluong.HopDong_Id = tbl_hopdong.HopDong_Id
             WHERE tbl_sanluong.ten_hinh_anh_da_xong IS NOT NULL
             AND tbl_sanluong.ten_hinh_anh_da_xong <> ''
-            $dayCondition
-            $searchCondition
-            $searchConditionHopDong
-            $searchConditionKhuVuc
-            GROUP BY tbl_tinh.ten_khu_vuc
-            
-            UNION ALL
-            
-            SELECT 
-                tbl_tinh.ten_khu_vuc,
-                COUNT(DISTINCT SanLuong_Tram) as so_tram,
-                SUM(SanLuong_Gia) as tong_san_luong
-            FROM tbl_sanluong_khac
-            LEFT JOIN tbl_tinh ON LEFT(tbl_sanluong_khac.SanLuong_Tram, 3) = tbl_tinh.ma_tinh
-            LEFT JOIN tbl_hopdong ON tbl_sanluong_khac.HopDong_Id = tbl_hopdong.HopDong_Id
-            WHERE 1
             $dayCondition
             $searchCondition
             $searchConditionHopDong

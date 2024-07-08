@@ -16,30 +16,34 @@
     <div class="container mt-3">
         <div class="main-content px-3">
             <div id="results">
-                <div class="d-flex justify-content-start mb-2">
-                    @if (session('role') == 2 || session('role') == 3)
-                        <a href="{{ route('sanluongkhac.add') }}">
-                            <button class="btn btn-primary">Thêm</button>
-                        </a>
-                    @endif
+                <div class="d-flex mb-2">
                     <div>
-                        <form id="filterForm" method="GET" action="{{ route('tram.filter') }}" class="form-inline">
+                        <form id="filterForm" method="GET" action="{{ route('sanluongkhac.index') }}" class="form-inline">
                             @csrf
                             <div class="">
                                 <div class="form-group">
                                     <input type="text" class="form-control date" name="days" placeholder="Chọn các ngày lọc" value="{{ implode(',', $days) }}">
-                                    <input type="text" class="form-control" name="search" placeholder="Tìm mã trạm" value="{{ $search }}">
+                                    <input type="text" class="form-control" name="search" placeholder="Tìm hạng mục" value="{{ $search }}">
                                     <button class="btn btn-primary mb-1" type="submit">Lọc</button>
                                 </div>
                             </div>
                         </form>
                     </div>
+                    <div class="justify-content-end ms-2">
+                        @if (session('role') == 2 || session('role') == 3)
+                            <a href="{{ route('sanluongkhac.add') }}">
+                                <button class="btn btn-success">Thêm</button>
+                            </a>
+                        @endif
+                    </div>
                 </div>
+                
                 <table class="scrollable-table">
                     <thead>
                         <tr>
                             <th>Số thứ tự</th>
-                            <th>Trạm</th>
+                            <th>Khu vực</th>
+                            <th>Hạng mục</th>
                             <th>Ngày</th>
                             <th>Giá</th>
                             <th>Hành động</th>
@@ -53,7 +57,9 @@
                         @foreach ($data as $row)
                         <tr>
                             <td>{{ $index++ }}</td>
-                            <td>{{ $row->SanLuong_Tram }}</td>
+                            {{-- <td>{{ $row->SanLuong_Tram }}</td> --}}
+                            <td>{{ $row->SanLuong_KhuVuc }}</td>
+                            <td>{{ $row->SanLuong_TenHangMuc }}</td>
                             <td>{{ Carbon::createFromFormat('dmY', $row->SanLuong_Ngay)->format('d-m-Y') }}</td>
                             <td>{{ number_format($row->SanLuong_Gia, 3) }}</td>
                             <td>
