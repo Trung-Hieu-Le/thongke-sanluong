@@ -1,3 +1,4 @@
+{{-- resources/views/sanluongkhac/create.blade.php --}}
 @include('layouts.head_thongke')
 <body>
     @include('layouts.header_thongke')
@@ -26,14 +27,29 @@
             <div class="row">
                 <!-- Cột bên trái -->
                 <div class="col-lg-7 col-md-12">
-                    {{-- <div class="form-group m-2">
+                    <div class="form-group m-2">
                         <label for="HopDong_Id">Hợp Đồng:</label>
                         <select class="form-control" id="HopDong_Id" name="HopDong_Id" required>
                             @foreach($hopdongs as $hopdong)
-                                <option value="{{ $hopdong->HopDong_Id }}">{{ $hopdong->HopDong_SoHopDong }} - {{ $hopdong->HopDong_TenHopDong }}</option>
+                                <option value="{{ $hopdong->HopDong_Id }}">{{ $hopdong->HopDong_SoHopDong }}</option>
                             @endforeach
                         </select>
-                    </div> --}}
+                    </div>
+                    <div class="form-group m-2">
+                        <label for="khu_vuc">Khu vực:</label>
+                        <select class="form-control" id="khu_vuc" name="khu_vuc" required>
+                            <option value="">Chọn khu vực</option>
+                            @foreach($khuvucs as $khuvuc)
+                                <option value="{{ $khuvuc->khu_vuc }}">{{ $khuvuc->khu_vuc }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group m-2">
+                        <label for="SanLuong_TenHangMuc">Nội dung:</label>
+                        <select class="form-control" id="SanLuong_TenHangMuc" name="SanLuong_TenHangMuc" required>
+                            <option value="">Chọn nội dung</option>
+                        </select>
+                    </div>
                     <div class="form-group m-2">
                         <label for="SanLuong_Tram">Sản Lượng Trạm:</label>
                         <input type="text" class="form-control" id="SanLuong_Tram" name="SanLuong_Tram" required>
@@ -52,5 +68,23 @@
         </form>
         </div>
     </div>
+    
+    <script>
+        document.getElementById('khu_vuc').addEventListener('change', function() {
+            var khuVuc = this.value;
+            fetch(`/sanluong-khac/noidung/${khuVuc}`)
+                .then(response => response.json())
+                .then(data => {
+                    var noidungSelect = document.getElementById('SanLuong_TenHangMuc');
+                    noidungSelect.innerHTML = '<option value="">Chọn nội dung</option>';
+                    data.forEach(function(noidung) {
+                        var option = document.createElement('option');
+                        option.value = noidung.noi_dung;
+                        option.text = noidung.noi_dung;
+                        noidungSelect.appendChild(option);
+                    });
+                });
+        });
+    </script>
 </body>
 </html>

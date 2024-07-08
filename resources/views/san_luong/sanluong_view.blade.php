@@ -1,4 +1,6 @@
 @include('layouts.head_thongke')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
 <body>
     @include('layouts.header_thongke')
     <div class="container row">
@@ -20,6 +22,18 @@
                             <button class="btn btn-primary">Thêm</button>
                         </a>
                     @endif
+                    <div>
+                        <form id="filterForm" method="GET" action="{{ route('tram.filter') }}" class="form-inline">
+                            @csrf
+                            <div class="">
+                                <div class="form-group">
+                                    <input type="text" class="form-control date" name="days" placeholder="Chọn các ngày lọc" value="{{ implode(',', $days) }}">
+                                    <input type="text" class="form-control" name="search" placeholder="Tìm mã trạm" value="{{ $search }}">
+                                    <button class="btn btn-primary mb-1" type="submit">Lọc</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                 </div>
                 <table class="scrollable-table">
                     <thead>
@@ -57,6 +71,19 @@
             </div>
         </div>
     </div>
+    <script>
+        $(document).ready(function(){
+            const selectedDays = @json($days).map(day => new Date(day.slice(4, 8) + '-' + day.slice(2, 4) + '-' + day.slice(0, 2)));
+            
+            $('.date').datepicker({
+                multidate: true,
+                format: 'dd-mm-yyyy'
+            }).datepicker('setDates', selectedDays).on('changeDate', function(e) {
+                const selectedDates = $(this).datepicker('getFormattedDate');
+                $('input[name="days"]').val(selectedDates);
+            });
+        });
+    </script>
     <style>
         .main-content {
             width: 100%;

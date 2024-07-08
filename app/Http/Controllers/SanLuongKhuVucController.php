@@ -93,6 +93,7 @@ class SanLuongKhuVucController extends Controller
             $total = DB::table(DB::raw("(
                 SELECT SanLuong_Tram, STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') as SanLuong_Ngay, SanLuong_Gia FROM tbl_sanluong
                 WHERE $whereClauseSanLuong
+                AND ten_hinh_anh_da_xong NOT LIKE ''
                 UNION ALL
                 SELECT SanLuong_Tram, STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') as SanLuong_Ngay, SanLuong_Gia FROM tbl_sanluong_khac
                 WHERE $whereClauseSanLuong

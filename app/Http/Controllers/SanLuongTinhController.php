@@ -44,6 +44,7 @@ class SanLuongTinhController extends Controller
                 SUM(CASE WHEN YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as nam
             FROM tbl_sanluong
             WHERE SanLuong_Tram LIKE '$maTinh%'
+            AND ten_hinh_anh_da_xong NOT LIKE ''
             UNION ALL
             SELECT
                 SUM(CASE WHEN DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = DATE('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as ngay,
@@ -136,6 +137,7 @@ class SanLuongTinhController extends Controller
                     SanLuong_Ngay
                 FROM tbl_sanluong
                 WHERE SanLuong_Tram LIKE ? AND YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = ?
+                AND ten_hinh_anh_da_xong NOT LIKE ''
                 UNION ALL
                 SELECT
                     SanLuong_Gia,

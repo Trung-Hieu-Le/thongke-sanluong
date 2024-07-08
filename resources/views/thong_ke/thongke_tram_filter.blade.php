@@ -29,7 +29,9 @@
                     </div> --}}
                     <div class="form-group">
                         <input type="text" class="form-control date" name="days" placeholder="Chọn các ngày lọc" value="{{ implode(',', $days) }}">
-                        <input type="text" class="form-control" name="search" placeholder="Tìm mã trạm" value="{{ $search }}">
+                        <input type="text" class="form-control" name="searchMaTram" placeholder="Tìm mã trạm" value="{{ $searchMaTram }}">
+                        <input type="text" class="form-control" name="searchHopDong" placeholder="Tìm hợp đồng" value="{{ $searchHopDong }}">
+                        <input type="text" class="form-control" name="searchKhuVuc" placeholder="Tìm khu vực" value="{{ $searchKhuVuc }}">
                         <button class="btn btn-primary mb-1" type="submit">Lọc</button>
                     </div>
                 </div>
@@ -44,6 +46,7 @@
                         <tr>
                             <th>Số thứ tự</th>
                             <th>Tên trạm</th>
+                            <th>Hợp đồng</th>
                             <th>Khu vực</th>
                             <th>Thành tiền</th>
                             <th>Tỉnh</th>
@@ -52,10 +55,13 @@
                     </thead>
                     <tbody>
                         @php $index = 1; @endphp
-                        @foreach ($data as $row)
+                        @foreach ($pagedData as $row)
                         <tr>
                             <td>{{ $index++ }}</td>
                             <td>{{ $row->SanLuong_Tram }}</td>
+                            <td>
+                                {{ $row->HopDong_SoHopDong ?? 'Không có' }}
+                            </td>
                             <td>{{ $row->ten_khu_vuc }}</td>
                             <td>{{ number_format($row->SanLuong_Gia, 3) }}</td>
                             <td>{{ $row->ma_tinh }}</td>
@@ -63,8 +69,8 @@
                         @endforeach
                     </tbody>
                 </table>
-                <div class="mt-3">
-                    {{ $data->appends(['days' => implode(',', $days)])->links() }}
+                <div class="my-3">
+                    {{ $pagedData->appends(['days' => implode(',', $days), 'searchMaTram' => $searchMaTram, 'searchHopDong' => $searchHopDong, 'searchKhuVuc' => $searchKhuVuc])->links() }}
                 </div>
             </div>
             <div id="totalResults">

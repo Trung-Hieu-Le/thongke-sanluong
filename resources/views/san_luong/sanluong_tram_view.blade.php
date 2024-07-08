@@ -53,18 +53,19 @@
                     <tbody>
                         @php 
                             $index = 1;
-                            use Carbon\Carbon; 
                             @endphp
-                        @foreach ($data as $row)
+                        @foreach ($pagedData as $row)
                         <tr>
                             <td>{{ $index++ }}</td>
-                            <td>{{ Carbon::createFromFormat('dmY', $row->SanLuong_Ngay)->format('d-m-Y') }}</td>
+                            {{-- <td>{{ Carbon::createFromFormat('dmY', $row->SanLuong_Ngay)->format('d-m-Y') }}</td> --}}
+                            <td>{{ $row->SanLuong_Ngay }}</td>
                             <td>{{ $row->SanLuong_TenHangMuc }}</td>
                             <td>{{ number_format($row->SanLuong_Gia, 3) }}</td>
                             <td>{{ $row->SoLuong }}</td> <!-- Default value for Số lượng -->
                             <td>{{ number_format($row->SanLuong_Gia * $row->SoLuong, 3) }}</td> <!-- Đơn giá * Số lượng (which is 1) -->
                         </tr>
                         @endforeach
+                        
                     </tbody>
                 </table>
             </div>

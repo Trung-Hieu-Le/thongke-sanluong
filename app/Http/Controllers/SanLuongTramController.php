@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 
 class SanLuongTramController extends Controller
 {
+    //TODO: thêm HopDong_Id
     public function indexTram(Request $request)
     {
         if (!$request->session()->has('username')) {
@@ -16,6 +17,7 @@ class SanLuongTramController extends Controller
         $maTinhChose = $request->ma_tinh;
         return view('thong_ke.thongke_tram', compact('maTinhChose'));
     }
+    //TODO: 3 bảng
     public function thongKeTram(Request $request)
     {
         $maTinh = $request->ma_tinh;
@@ -76,6 +78,7 @@ class SanLuongTramController extends Controller
                 SanLuong_Ngay
             FROM tbl_sanluong
             WHERE SanLuong_Tram LIKE ? AND YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = ?
+            AND ten_hinh_anh_da_xong NOT LIKE ''
             UNION ALL
             SELECT
                 SanLuong_Tram,
@@ -136,40 +139,105 @@ class SanLuongTramController extends Controller
 
     //TODO: Sai phần tính tổng. Hiện đang lấy cả hạng mục ảnh đang chuẩn bị 
     public function viewSanLuongTram(Request $request)
-    {
-        if (!$request->session()->has('username')) {
-            return redirect('login');
-        }
-
-        $ma_tram = $request->ma_tram;
-        $daysString = $request->input('days', date('dmY'));
-        $days = [];
-
-        if (!empty($daysString)) {
-            $days = explode(',', $daysString);
-            $days = array_map(function ($day) {
-                return str_replace('-', '', $day);
-            }, $days);
-        }
-        // dd($days);
-        $query = DB::table('tbl_sanluong')
-        ->where('SanLuong_Tram', $ma_tram)
-        ->select('SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_Gia',
-        DB::raw('CASE WHEN ten_hinh_anh_da_xong IS NULL OR ten_hinh_anh_da_xong = "" THEN 0 ELSE 1 END as SoLuong'));
-
-        if (count($days) > 0) {
-            $query->whereIn('SanLuong_Ngay', $days);
-        }
-
-        $data = $query->simplePaginate(100);
-
-        $dataCollection = collect($data->items());
-        $totalThanhTien = $dataCollection->sum(function($row) {
-            return $row->SanLuong_Gia * $row->SoLuong;
-        });
-
-        return view('san_luong.sanluong_tram_view', compact('data', 'ma_tram', 'days', 'totalThanhTien'));
+{
+    if (!$request->session()->has('username')) {
+        return redirect('login');
     }
+
+    $ma_tram = $request->ma_tram;
+    $daysString = $request->input('days', date('dmY'));
+    $days = [];
+
+    if (!empty($daysString)) {
+        $days = explode(',', $daysString);
+        $days = array_map(function ($day) {
+            return str_replace('-', '', $day);
+        }, $days);
+    }
+
+    // Xây dựng chuỗi ngày cho câu truy vấn
+    $daysList = "'" . implode("','", $days) . "'";
+
+    // Xây dựng câu truy vấn SQL để lấy dữ liệu từ ba bảng
+    $query = DB::table(DB::raw("
+        (SELECT DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d-%m-%Y') as SanLuong_Ngay, 
+                SanLuong_TenHangMuc, SanLuong_Gia, 
+                CASE WHEN ten_hinh_anh_da_xong NOT LIKE '' THEN 1 ELSE 0 END as SoLuong
+         FROM tbl_sanluong 
+         WHERE SanLuong_Tram = :ma_tram1 
+           AND (:days1 IS NULL OR SanLuong_Ngay IN ($daysList))
+         UNION ALL
+         SELECT DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d-%m-%Y') as SanLuong_Ngay, 
+                'Hạng mục khác' as SanLuong_TenHangMuc, SanLuong_Gia, 
+                1 as SoLuong
+         FROM tbl_sanluong_khac 
+         WHERE SanLuong_Tram = :ma_tram2 
+           AND (:days2 IS NULL OR SanLuong_Ngay IN ($daysList))
+         UNION ALL
+         SELECT DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d-%m-%Y') as SanLuong_Ngay,
+                CASE 
+                    WHEN HopDong_Id = 3 THEN 'Anten'
+                    ELSE 'Hạng mục tháo lắp khác' 
+                END as SanLuong_TenHangMuc,
+                ThaoLap_Anten as SanLuong_Gia,
+                1 as SoLuong
+         FROM tbl_sanluong_thaolap 
+         WHERE ThaoLap_MaTram = :ma_tram3 
+           AND (:days3 IS NULL OR DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y') IN ($daysList))
+         UNION ALL
+         SELECT DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d-%m-%Y') as SanLuong_Ngay,
+                CASE 
+                    WHEN HopDong_Id = 3 THEN 'RRU'
+                    ELSE 'Hạng mục tháo lắp khác' 
+                END as SanLuong_TenHangMuc,
+                ThaoLap_RRU as SanLuong_Gia,
+                1 as SoLuong
+         FROM tbl_sanluong_thaolap 
+         WHERE ThaoLap_MaTram = :ma_tram4 
+           AND (:days4 IS NULL OR DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y') IN ($daysList))
+         UNION ALL
+         SELECT DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d-%m-%Y') as SanLuong_Ngay,
+                CASE 
+                    WHEN HopDong_Id = 3 THEN 'Tủ thiết bị'
+                    ELSE 'Hạng mục tháo lắp khác' 
+                END as SanLuong_TenHangMuc,
+                ThaoLap_TuThietBi as SanLuong_Gia,
+                1 as SoLuong
+         FROM tbl_sanluong_thaolap 
+         WHERE ThaoLap_MaTram = :ma_tram5 
+           AND (:days5 IS NULL OR DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y') IN ($daysList))
+         UNION ALL
+         SELECT DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d-%m-%Y') as SanLuong_Ngay,
+                CASE 
+                    WHEN HopDong_Id = 3 THEN 'Cáp nguồn'
+                    ELSE 'Hạng mục tháo lắp khác' 
+                END as SanLuong_TenHangMuc,
+                ThaoLap_CapNguon as SanLuong_Gia,
+                CASE WHEN HopDong_Id = 3 THEN 1 ELSE 0 END as SoLuong
+         FROM tbl_sanluong_thaolap 
+         WHERE ThaoLap_MaTram = :ma_tram6 
+           AND (:days6 IS NULL OR DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y') IN ($daysList))
+        ) as combined
+    "))
+    ->select('SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_Gia', 'SoLuong')
+    ->setBindings([
+        'ma_tram1' => $ma_tram, 'days1' => count($days) > 0 ? $daysList : null,
+        'ma_tram2' => $ma_tram, 'days2' => count($days) > 0 ? $daysList : null,
+        'ma_tram3' => $ma_tram, 'days3' => count($days) > 0 ? $daysList : null,
+        'ma_tram4' => $ma_tram, 'days4' => count($days) > 0 ? $daysList : null,
+        'ma_tram5' => $ma_tram, 'days5' => count($days) > 0 ? $daysList : null,
+        'ma_tram6' => $ma_tram, 'days6' => count($days) > 0 ? $daysList : null,
+    ]);
+
+    $data = $query->simplePaginate(100);
+
+    $dataCollection = collect($data->items());
+    $totalThanhTien = $dataCollection->sum(function($row) {
+        return $row->SanLuong_Gia * $row->SoLuong;
+    });
+    return view('san_luong.sanluong_tram_view', compact('data', 'ma_tram', 'days', 'totalThanhTien'));
+}
+
 
     public function viewHinhAnhTram(Request $request)
     {
@@ -275,7 +343,7 @@ class SanLuongTramController extends Controller
 
 
 
-    // Thêm sản lượng theo ngày
+    // TODO: thêm HopDong_Id; sửa theo yc zalo
     public function indexSanLuong()
     {
         $data = DB::table('tbl_sanluong_khac')->simplePaginate(100);

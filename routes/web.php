@@ -1,12 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SanLuongKhuVucController;
-use App\Http\Controllers\SanLuongTramController;
-use App\Http\Controllers\SanLuongTinhController;
+// use App\Http\Controllers\SanLuongKhuVucController;
+// use App\Http\Controllers\SanLuongTramController;
+// use App\Http\Controllers\SanLuongTinhController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\SanLuongTramFilterController;
+use App\Http\Controllers\TinhSanLuongFilterController;
 use App\Http\Controllers\KpiQuyController;
+use App\Http\Controllers\ThongKeController;
+use App\Http\Controllers\SanLuongKhacController;
+use App\Http\Controllers\TinhSanLuongController;
 
 
 /*
@@ -27,32 +30,33 @@ Route::get('/login', [UserController::class, 'viewLogin']);
 Route::post('/action-login', [UserController::class, 'actionLogin']);
 Route::get('/logout', [UserController::class, 'actionLogout']);
 
-Route::get('/', [SanLuongKhuVucController::class, 'indexKhuVuc']);
-Route::get('/thongke', [SanLuongKhuVucController::class, 'indexKhuVuc']);
-Route::get('/thongke/all', [SanLuongKhuVucController::class, 'thongKeKhuVuc']);
-Route::get('/thongke/tongquat', [SanLuongKhuVucController::class, 'thongKeKhuVucTongQuat']);
+Route::get('/', [ThongKeController::class, 'indexKhuVuc']);
+Route::get('/thongke', [ThongKeController::class, 'indexKhuVuc']);
+Route::get('/thongke/all', [ThongKeController::class, 'thongKeKhuVuc']);
+Route::get('/thongke/tongquat', [ThongKeController::class, 'thongKeKhuVucTongQuat']);
 
-Route::get('/thongke/khuvuc', [SanLuongTinhController::class, 'indexTinh']);
-Route::get('/thongke/khuvuc/all', [SanLuongTinhController::class, 'thongKeTinh']);
-Route::get('/thongke/khuvuc/tongquat', [SanLuongTinhController::class, 'thongKeTinhTongQuat']);
+Route::get('/thongke/khuvuc', [ThongKeController::class, 'indexTinh']);
+Route::get('/thongke/khuvuc/all', [ThongKeController::class, 'thongKeTinh']);
+Route::get('/thongke/khuvuc/tongquat', [ThongKeController::class, 'thongKeTinhTongQuat']);
 
-Route::get('/thongke/tinh/{ma_tinh}', [SanLuongTramController::class, 'indexTram']);
-Route::get('/thongke/tinh/{ma_tinh}/all', [SanLuongTramController::class, 'thongKeTram']);
-Route::get('/thongke/tinh/{ma_tinh}/tongquat', [SanLuongTramController::class, 'thongKeTramTongQuat']);
+Route::get('/thongke/tinh/{ma_tinh}', [ThongKeController::class, 'indexTram']);
+Route::get('/thongke/tinh/{ma_tinh}/all', [ThongKeController::class, 'thongKeTram']);
+Route::get('/thongke/tinh/{ma_tinh}/tongquat', [ThongKeController::class, 'thongKeTramTongQuat']);
 
-Route::get('/thongke/filter', [SanLuongTramFilterController::class, 'indexTramFilter'])->name('tram.filter');
-Route::get('/viewsanluong/{ma_tram}', [SanLuongTramController::class, 'viewSanLuongTram']);
-Route::get('/viewhinhanh/{ma_tram}', [SanLuongTramController::class, 'viewHinhAnhTram']);
-Route::get('/gethinhanh/{ma_tram}', [SanLuongTramController::class, 'getHinhAnhTram']);
+Route::get('/thongke/filter', [TinhSanLuongFilterController::class, 'indexTramFilter'])->name('tram.filter');
+Route::get('/viewsanluong/{ma_tram}', [TinhSanLuongController::class, 'viewSanLuongTram']);
+Route::get('/viewhinhanh/{ma_tram}', [TinhSanLuongController::class, 'viewHinhAnhTram']);
+Route::get('/gethinhanh/{ma_tram}', [TinhSanLuongController::class, 'getHinhAnhTram']);
 
 // Route::get('/thongke/filter/get-day', [SanLuongTramFilterController::class, 'getDayTramFilter'])->name('tram.filter.days');
 
-Route::get('/sanluong-khac/index', [SanLuongTramController::class, 'indexSanLuong'])->name('sanluongkhac.index');
-Route::get('/sanluong-khac/add', [SanLuongTramController::class, 'addSanLuong'])->name('sanluongkhac.add');
-Route::post('/sanluong-khac/handleAdd', [SanLuongTramController::class, 'handleAddSanLuong'])->name('sanluongkhac.handleAdd');
-Route::get('/sanluong-khac/edit/{id}', [SanLuongTramController::class, 'editSanLuong'])->name('sanluongkhac.edit');
-Route::post('/sanluong-khac/handleEdit', [SanLuongTramController::class, 'handleEditSanLuong'])->name('sanluongkhac.handleEdit');
-Route::get('/sanluong-khac/delete/{id}', [SanLuongTramController::class, 'deleteSanLuong'])->name('sanluongkhac.delete');
+Route::get('/sanluong-khac/index', [SanLuongKhacController::class, 'indexSanLuong'])->name('sanluongkhac.index');
+Route::get('/sanluong-khac/add', [SanLuongKhacController::class, 'addSanLuong'])->name('sanluongkhac.add');
+Route::post('/sanluong-khac/handleAdd', [SanLuongKhacController::class, 'handleAddSanLuong'])->name('sanluongkhac.handleAdd');
+Route::get('/sanluong-khac/noidung/{khuVuc}', [SanLuongKhacController::class, 'getNoiDungByKhuVuc']);
+Route::get('/sanluong-khac/edit/{id}', [SanLuongKhacController::class, 'editSanLuong'])->name('sanluongkhac.edit');
+Route::post('/sanluong-khac/handleEdit', [SanLuongKhacController::class, 'handleEditSanLuong'])->name('sanluongkhac.handleEdit');
+Route::get('/sanluong-khac/delete/{id}', [SanLuongKhacController::class, 'deleteSanLuong'])->name('sanluongkhac.delete');
 
 Route::get('/kpi-quy/index', [KpiQuyController::class, 'indexKpiQuy'])->name('kpiquy.index');
 Route::get('/kpi-quy/add', [KpiQuyController::class, 'addKpiQuy'])->name('kpiquy.add');
