@@ -48,7 +48,7 @@
                             </select>
                         </div>
                         <div class="form-group m-2">
-                            <label for="SanLuong_TenHangMuc">Nội dung:</label>
+                            <label for="SanLuong_TenHangMuc">Lĩnh vực:</label>
                             <select class="form-control" id="SanLuong_TenHangMuc" name="SanLuong_TenHangMuc" required>
                                 @foreach($noidungs as $noidung)
                                     <option value="{{ $noidung->noi_dung }}" {{ $sanLuong->SanLuong_TenHangMuc == $noidung->noi_dung ? 'selected' : '' }}>
@@ -81,7 +81,8 @@
     <script>
         document.getElementById('khu_vuc').addEventListener('change', function() {
             var khuVuc = this.value;
-            fetch(`/sanluongkhac/noidung/${khuVuc}`)
+            console.log(khuVuc);
+            fetch(`/sanluong-khac/noidung/${khuVuc}`)
                 .then(response => response.json())
                 .then(data => {
                     var noidungSelect = document.getElementById('SanLuong_TenHangMuc');

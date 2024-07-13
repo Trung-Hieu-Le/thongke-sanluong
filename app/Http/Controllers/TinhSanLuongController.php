@@ -7,6 +7,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 class TinhSanLuongController extends Controller
 {
+    //TODO: check lỗi
     public function viewSanLuongTram(Request $request)
 {
     if (!$request->session()->has('username')) {
@@ -29,52 +30,58 @@ class TinhSanLuongController extends Controller
 
     // Fetching paginated data from tbl_sanluong
     $sanluongData = DB::table('tbl_sanluong')
-        ->select('HopDong_Id', 'SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 'SanLuong_Gia', 'SanLuong_TenHangMuc', DB::raw("CASE WHEN ten_hinh_anh_da_xong <> '' THEN 1 ELSE 0 END as SoLuong"))
+        ->select('HopDong_Id', 'SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
+        DB::raw("CASE WHEN SanLuong_Gia IS NULL OR SanLuong_Gia = '' THEN 0 ELSE SanLuong_Gia END as SanLuong_Gia"), 'SanLuong_TenHangMuc', 
+        DB::raw("CASE WHEN ten_hinh_anh_da_xong <> '' THEN 1 ELSE 0 END as SoLuong"),
+        DB::raw("CASE WHEN ten_hinh_anh_da_xong <> '' THEN 'Đã thi công' ELSE 'Đã khảo sát' END as TrangThai"))
         ->where('SanLuong_Tram', $ma_tram)
         ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d%m%Y')"), $days)
         ->simplePaginate($perPage, ['*'], 'sanluong_page');
 
-    // Fetching paginated data from tbl_sanluong_khac
-    // $sanluongKhacData = DB::table('tbl_sanluong_khac')
-    //     ->select('HopDong_Id', 'SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 'SanLuong_Gia', DB::raw("'Hạng mục khác' as SanLuong_TenHangMuc"), DB::raw("1 as SoLuong"))
-    //     ->where('SanLuong_Tram', $ma_tram)
-    //     ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d%m%Y')"), $days)
-    //     ->simplePaginate($perPage, ['*'], 'sanluong_khac_page');
-
     // Fetching and transforming paginated data from tbl_sanluong_thaolap
     $sanluongThaolapData = DB::table('tbl_sanluong_thaolap')
         ->select('tbl_sanluong_thaolap.HopDong_Id', 'ThaoLap_MaTram as SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
-                    DB::raw("CASE
-                        WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Anten' THEN 'Anten'
-                        WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'RRU' THEN 'RRU'
-                        WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Tủ thiết bị' THEN 'Tủ thiết bị'
-                        WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Cáp nguồn' THEN 'Cáp nguồn'
-                        ELSE 'Hạng mục tháo lắp khác' 
-                    END as SanLuong_TenHangMuc"), 
-                    DB::raw("CASE 
-                        WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Anten' THEN ThaoLap_Anten
-                        WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'RRU' THEN ThaoLap_RRU
-                        WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Tủ thiết bị' THEN ThaoLap_TuThietBi
-                        WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Cáp nguồn' THEN ThaoLap_CapNguon
-                    ELSE 0 END as SoLuong"), 
-                    DB::raw("CASE
-                        WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Anten' THEN CongViec_DonGia 
-                        WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'RRU' THEN CongViec_DonGia
-                        WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Tủ thiết bị' THEN CongViec_DonGia
-                        WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Cáp nguồn' THEN CongViec_DonGia 
-                    ELSE 0 END as SanLuong_Gia"))
-        ->leftJoin('tbl_hopdong_congviec', function ($join) {
-            $join->on('tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_hopdong_congviec.HopDong_Id')
-                ->whereIn('tbl_hopdong_congviec.CongViec_Ten', ['Anten', 'RRU', 'Tủ thiết bị', 'Cáp nguồn']);
-        })
+            DB::raw("'Anten' as SanLuong_TenHangMuc"), 
+            DB::raw("CASE WHEN ThaoLap_Anten IS NULL OR ThaoLap_Anten = '' THEN 0 ELSE ThaoLap_Anten END as SoLuong"), 
+            DB::raw("CASE WHEN DonGia_Anten IS NULL OR DonGia_Anten = '' THEN 0 ELSE DonGia_Anten END as SanLuong_Gia"), 
+            DB::raw("'Đã thi công' as TrangThai"))
         ->where('tbl_sanluong_thaolap.ThaoLap_MaTram', $ma_tram)
         ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong_thaolap.ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y')"), $days)
+        ->unionAll(
+            DB::table('tbl_sanluong_thaolap')
+            ->select('tbl_sanluong_thaolap.HopDong_Id', 'ThaoLap_MaTram as SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
+                DB::raw("'RRU' as SanLuong_TenHangMuc"), 
+                DB::raw("CASE WHEN ThaoLap_RRU IS NULL OR ThaoLap_RRU = '' THEN 0 ELSE ThaoLap_RRU END as SoLuong"), 
+                DB::raw("CASE WHEN DonGia_RRU IS NULL OR DonGia_RRU = '' THEN 0 ELSE DonGia_RRU END as SanLuong_Gia"), 
+                DB::raw("'Đã thi công' as TrangThai"))
+            ->where('tbl_sanluong_thaolap.ThaoLap_MaTram', $ma_tram)
+            ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong_thaolap.ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y')"), $days)
+        )
+        ->unionAll(
+            DB::table('tbl_sanluong_thaolap')
+            ->select('tbl_sanluong_thaolap.HopDong_Id', 'ThaoLap_MaTram as SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
+                DB::raw("'Tủ thiết bị' as SanLuong_TenHangMuc"), 
+                DB::raw("CASE WHEN ThaoLap_TuThietBi IS NULL OR ThaoLap_TuThietBi = '' THEN 0 ELSE ThaoLap_TuThietBi END as SoLuong"), 
+                DB::raw("CASE WHEN DonGia_TuThietBi IS NULL OR DonGia_TuThietBi = '' THEN 0 ELSE DonGia_TuThietBi END as SanLuong_Gia"), 
+                DB::raw("'Đã thi công' as TrangThai"))
+            ->where('tbl_sanluong_thaolap.ThaoLap_MaTram', $ma_tram)
+            ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong_thaolap.ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y')"), $days)
+        )
+        ->unionAll(
+            DB::table('tbl_sanluong_thaolap')
+            ->select('tbl_sanluong_thaolap.HopDong_Id', 'ThaoLap_MaTram as SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
+                DB::raw("'Cáp nguồn' as SanLuong_TenHangMuc"), 
+                DB::raw("CASE WHEN ThaoLap_CapNguon IS NULL OR ThaoLap_CapNguon = '' THEN 0 ELSE ThaoLap_CapNguon END as SoLuong"), 
+                DB::raw("CASE WHEN DonGia_CapNguon IS NULL OR DonGia_CapNguon = '' THEN 0 ELSE DonGia_CapNguon END as SanLuong_Gia"), 
+                DB::raw("'Đã thi công' as TrangThai"))
+            ->where('tbl_sanluong_thaolap.ThaoLap_MaTram', $ma_tram)
+            ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong_thaolap.ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y')"), $days)
+        )
         ->simplePaginate($perPage, ['*'], 'sanluong_thaolap_page');
 
     // Merging data from all tables
     $allData = new Collection;
     $allData = $allData->merge($sanluongData->items());
-    // $allData = $allData->merge($sanluongKhacData->items());
     $allData = $allData->merge($sanluongThaolapData->items());
 
     // Create a paginator for the merged data
@@ -94,6 +101,8 @@ class TinhSanLuongController extends Controller
 
     return view('san_luong.sanluong_tram_view', compact('pagedData', 'ma_tram', 'days', 'totalThanhTien'));
 }
+
+    
 
 
 

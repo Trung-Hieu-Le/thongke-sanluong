@@ -23,8 +23,25 @@
                 </button>
                 <div class="collapse navbar-collapse justify-content-end text-end" id="navbarSupportedContent">
                     <ul class="navbar-nav fill h-100" style="font-size: 15px;">
-                        <li class="nav-item ms-1 me-4">
-                            <a class="nav-link fw-semibold " href="/" style="color:#040404 ;z-index: 2;">THỐNG KÊ</a>
+                        <li class="nav-item dropdown ms-1 me-4">
+                            <a class="nav-link fw-semibold " href="#" style="color:#040404 ;z-index: 2;" data-bs-toggle="dropdown">THỐNG KÊ</a>
+                            <ul class="dropdown-menu p-0 text-end text-lg-start border-0 shadow-sm">
+                                <li class="dropdown-navbar">
+                                    <a class="dropdown-item fs-5" href="/">
+                                        Thống kê theo khu vực
+                                    </a>
+                                </li>
+                                <li class="dropdown-navbar">
+                                    <a class="dropdown-item fs-5" href="/thongke/linhvuc">
+                                        Thống kê theo lĩnh vực
+                                    </a>
+                                </li>
+                                <li class="dropdown-navbar">
+                                    <a class="dropdown-item fs-5" href="/thongke/khuvuc">
+                                        Thống kê các tỉnh
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         <li class="nav-item ms-1 me-4">
                             <a class="nav-link fw-semibold " href="{{ route('tram.filter')}}" style="color:#040404 ;z-index: 2;">TÍNH SẢN LƯỢNG</a>
@@ -41,7 +58,7 @@
                                 aria-expanded="true">
                                 TÀI KHOẢN
                             </a>
-                            <ul class="dropdown-menu p-0 text-end text-lg-start border-0">
+                            <ul class="dropdown-menu p-0 text-end text-lg-start border-0 shadow-sm">
                                 {{-- <li class="dropdown-navbar">
                                     <a class="dropdown-item fs-5" href="{{ route('xdsoft.khoahoc')}}">
                                         Hồ sơ

@@ -24,6 +24,9 @@ class SanLuongKhacController extends Controller
             }, $days);
         }
         $search = $request->input('search', '');
+        $users= DB::table('tbl_user')
+            ->select('user_id', 'user_name')
+            ->get()->keyBy('user_id');
 
         $query = DB::table('tbl_sanluong_khac');
         if (count($days) > 0) {
@@ -34,7 +37,7 @@ class SanLuongKhacController extends Controller
         }
         $data = $query->simplePaginate(100);
 
-        return view('san_luong.sanluong_view', compact('data', 'days', 'search'));
+        return view('san_luong.sanluong_view', compact('data', 'days', 'search','users'));
     }
 
     public function addSanLuong(Request $request)
@@ -57,20 +60,24 @@ class SanLuongKhacController extends Controller
     // Lưu dữ liệu vào cơ sở dữ liệu
     public function handleAddSanLuong(Request $request)
     {
-        if (!$request->session()->has('username')) {
+        if (!$request->session()->has('username') || !$request->session()->has('userid')) {
             return redirect('login');
         }
         $date = $request->SanLuong_Ngay
             ? Carbon::createFromFormat('Y-m-d', $request->SanLuong_Ngay)->format('dmY')
             : date('dmY');
         // dd($request);
+        $userid = session('userid');
         DB::table('tbl_sanluong_khac')->insert([
             // 'SanLuong_Tram' => $request->SanLuong_Tram,
             'SanLuong_Ngay' => $date,
             'SanLuong_Gia' => $request->SanLuong_Gia,
             // 'HopDong_Id' => $request->HopDong_Id,
             'SanLuong_TenHangMuc' => $request->SanLuong_TenHangMuc,
-            'SanLuong_KhuVuc' => $request->khu_vuc
+            'SanLuong_KhuVuc' => $request->khu_vuc,
+            'user_id' => $userid,
+            'thoi_gian_them' => now('GMT+7'),
+            'thoi_gian_sua' => now('GMT+7')
         ]);
 
         return redirect()->route('sanluongkhac.add')->with('success', 'Thêm sản lượng thành công.');
@@ -97,13 +104,14 @@ class SanLuongKhacController extends Controller
 
     public function handleEditSanLuong(Request $request)
     {
-        if (!$request->session()->has('username')) {
+        if (!$request->session()->has('username') || !$request->session()->has('userid')) {
             return redirect('login');
         }
         $date = $request->SanLuong_Ngay
             ? Carbon::createFromFormat('Y-m-d', $request->SanLuong_Ngay)->format('dmY')
             : date('dmY');
             // dd($request);
+        // $userid = session('userid');
         try {
             DB::table('tbl_sanluong_khac')->where('SanLuong_Id', $request->id)->update([
                 // 'SanLuong_Tram' => $request->SanLuong_Tram,
@@ -111,7 +119,9 @@ class SanLuongKhacController extends Controller
                 'SanLuong_Gia' => $request->SanLuong_Gia,
                 // 'HopDong_Id' => $request->HopDong_Id,
                 'SanLuong_TenHangMuc' => $request->SanLuong_TenHangMuc,
-                'SanLuong_KhuVuc' => $request->khu_vuc
+                'SanLuong_KhuVuc' => $request->khu_vuc,
+                // 'user_id' => $userid,
+                'thoi_gian_sua' => now('GMT+7')
             ]);
         } catch (\Exception $e) {
             return redirect()->route('sanluongkhac.index')->with('fail', 'Cập nhật sản lượng thất bại');

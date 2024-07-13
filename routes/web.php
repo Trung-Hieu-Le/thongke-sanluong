@@ -33,7 +33,9 @@ Route::get('/logout', [UserController::class, 'actionLogout']);
 Route::get('/', [ThongKeController::class, 'indexKhuVuc']);
 Route::get('/thongke', [ThongKeController::class, 'indexKhuVuc']);
 Route::get('/thongke/all', [ThongKeController::class, 'thongKeKhuVuc']);
-Route::get('/thongke/tongquat', [ThongKeController::class, 'thongKeKhuVucTongQuat']);
+// Route::get('/thongke/tongquat', [ThongKeController::class, 'thongKeKhuVucTongQuat']);
+Route::get('/thongke/linhvuc', [ThongKeController::class, 'indexLinhVuc']);
+Route::get('/thongke/linhvuc/all', [ThongKeController::class, 'thongKeLinhVuc']);
 
 Route::get('/thongke/khuvuc', [ThongKeController::class, 'indexTinh']);
 Route::get('/thongke/khuvuc/all', [ThongKeController::class, 'thongKeTinh']);
@@ -47,6 +49,8 @@ Route::get('/thongke/filter', [TinhSanLuongFilterController::class, 'indexTramFi
 Route::get('/viewsanluong/{ma_tram}', [TinhSanLuongController::class, 'viewSanLuongTram']);
 Route::get('/viewhinhanh/{ma_tram}', [TinhSanLuongController::class, 'viewHinhAnhTram']);
 Route::get('/gethinhanh/{ma_tram}', [TinhSanLuongController::class, 'getHinhAnhTram']);
+
+Route::get('chi-tiet-chart', [ThongKeController::class, 'indexChiTietChart']);
 
 // Route::get('/thongke/filter/get-day', [SanLuongTramFilterController::class, 'getDayTramFilter'])->name('tram.filter.days');
 

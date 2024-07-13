@@ -66,17 +66,10 @@ class TinhSanLuongFilterController extends Controller
                 LEFT(ThaoLap_MaTram, 3) as ma_tinh,
                 ThaoLap_MaTram as SanLuong_Tram,
                 tbl_hopdong.HopDong_SoHopDong,
-                SUM(CASE 
-                    WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Anten' THEN ThaoLap_Anten * CongViec_DonGia
-                    WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'RRU' THEN ThaoLap_RRU * CongViec_DonGia
-                    WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Tủ thiết bị' THEN ThaoLap_TuThietBi * CongViec_DonGia
-                    WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Cáp nguồn' THEN ThaoLap_CapNguon * CongViec_DonGia
-                    ELSE 0 
-                END) as SanLuong_Gia,
+                SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as SanLuong_Gia,
                 tbl_tinh.ten_khu_vuc
             FROM tbl_sanluong_thaolap
             LEFT JOIN tbl_tinh ON LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3) = tbl_tinh.ma_tinh
-            LEFT JOIN tbl_hopdong_congviec ON tbl_sanluong_thaolap.HopDong_Id = tbl_hopdong_congviec.HopDong_Id
             LEFT JOIN tbl_hopdong ON tbl_sanluong_thaolap.HopDong_Id = tbl_hopdong.HopDong_Id
             WHERE 1
             $thaoLapDayCondition
@@ -116,18 +109,11 @@ class TinhSanLuongFilterController extends Controller
             SELECT 
                 tbl_tinh.ten_khu_vuc,
                 COUNT(DISTINCT ThaoLap_MaTram) as so_tram,
-                SUM(CASE 
-                    WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Anten' THEN ThaoLap_Anten * CongViec_DonGia
-                    WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'RRU' THEN ThaoLap_RRU * CongViec_DonGia
-                    WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Tủ thiết bị' THEN ThaoLap_TuThietBi * CongViec_DonGia
-                    WHEN tbl_sanluong_thaolap.HopDong_Id = 3 AND CongViec_Ten = 'Cáp nguồn' THEN ThaoLap_CapNguon * CongViec_DonGia
-                    ELSE 0 
-                END) as tong_san_luong
+                SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as tong_san_luong
             FROM tbl_sanluong_thaolap
             LEFT JOIN tbl_tinh ON LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3) = tbl_tinh.ma_tinh
             LEFT JOIN tbl_hopdong_congviec ON tbl_sanluong_thaolap.HopDong_Id = tbl_hopdong_congviec.HopDong_Id
             LEFT JOIN tbl_hopdong ON tbl_sanluong_thaolap.HopDong_Id = tbl_hopdong.HopDong_Id
-
             WHERE 1
             $thaoLapDayCondition
             $searchCondition2
@@ -138,6 +124,7 @@ class TinhSanLuongFilterController extends Controller
     "))
     ->select('ten_khu_vuc', DB::raw('SUM(so_tram) as so_tram'), DB::raw('SUM(tong_san_luong) as tong_san_luong'))
     ->groupBy('ten_khu_vuc');
+
     $hopdongs = DB::table('tbl_hopdong')
         ->select('HopDong_Id', 'HopDong_SoHopDong', 'HopDong_TenHopDong')
         ->get()->keyBy('HopDong_Id')->toArray();

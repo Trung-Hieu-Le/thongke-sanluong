@@ -1,22 +1,24 @@
 @include('layouts.head_thongke')
 <body>
     @include('layouts.header_thongke')
-    <div class="container mt-3">
-        <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-                <h2 class="text-center mb-0">Thống kê tổng quát &nbsp;</h2>
-                <select id="selectMonth" class="form-control mr-2">
-                    @for ($i = 1; $i <= 12; $i++)
-                        <option value="{{ $i }}" {{ $i == date('n') ? 'selected' : '' }}>Tháng {{ $i }}</option>
-                    @endfor
-                </select>
-                <select id="selectYear" class="form-control mr-2">
-                    @for ($year = 2020; $year <= date('Y'); $year++)
-                        <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
-                    @endfor
-                </select>
+    <div class=" mt-3">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <h2 class="text-center mb-0">Thống kê tổng quát &nbsp;</h2>
+                    <select id="selectMonth" class="form-control mr-2">
+                        @for ($i = 1; $i <= 12; $i++)
+                            <option value="{{ $i }}" {{ $i == date('n') ? 'selected' : '' }}>Tháng {{ $i }}</option>
+                        @endfor
+                    </select>
+                    <select id="selectYear" class="form-control mr-2">
+                        @for ($year = 2020; $year <= date('Y'); $year++)
+                            <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>Năm {{ $year }}</option>
+                        @endfor
+                    </select>
+                </div>
+                {{-- <a href="/thongke/khuvuc/" class="simple-link h4 mb-0">Thống kê theo khu vực</a> --}}
             </div>
-            <a href="/thongke/khuvuc/" class="simple-link h4 mb-0">Thống kê theo khu vực</a>
             {{-- <div class="dropdown">
                 <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
                   Xem chi tiết
@@ -26,29 +28,45 @@
                   <li><a class="dropdown-item" href="/thongke/filter/">Lọc theo ngày</a></li>
                 </ul>
             </div> --}}
+            <hr>
         </div>
-        <hr>
 
         @if (session('role') == 3)
-        <div class="row">
-            <div class="col-lg-4 col-md-12">
-                <h4>Thống kê theo Tháng <br>(đơn vị tính: tỉ đồng)</h4>
-                <canvas id="barChartThang"></canvas>
-                <div class="table-container mt-lg-3" id="thangTable"></div>
+        <div class="container">
+            <div class="legend-container d-flex justify-content-center mt-3">
+                <div class="legend-item">
+                    Chú thích: &nbsp;<span style="background-color: #EE3642;"></span> Dưới 33%
+                </div>
+                <div class="legend-item mx-2">
+                    <span style="background-color: #EB5B00;"></span> 33-60%
+                </div>
+                <div class="legend-item">
+                    <span style="background-color: #46D725;"></span> Trên 60%
+                </div>
             </div>
-            <div class="col-lg-4 col-md-12">
-                <h4>Thống kê theo Quý <br>(đơn vị tính: tỉ đồng)</h4>
-                <canvas id="barChartQuy"></canvas>
-                <div class="table-container mt-lg-3" id="quyTable"></div>
-            </div>
-            <div class="col-lg-4 col-md-12">
-                <h4>Thống kê theo Năm <br>(đơn vị tính: tỉ đồng)</h4>
-                <canvas id="barChartNam"></canvas>
-                <div class="table-container mt-lg-3" id="namTable"></div>
+            <div class="row">
+                <div class="col-lg-4 col-md-12">
+                    <h5>Thống kê theo Tháng <br>(đơn vị tính: tỉ đồng)</h5>
+                    <i class="fa fa-search-plus" aria-hidden="true" onclick="viewDetail('thang')"></i>
+                    <canvas id="barChartThang"></canvas>
+                    <div class="table-container mt-lg-3" id="thangTable"></div>
+                </div>
+                <div class="col-lg-4 col-md-12">
+                    <h5>Thống kê theo Quý <br>(đơn vị tính: tỉ đồng)</h5>
+                    <i class="fa fa-search-plus" aria-hidden="true" onclick="viewDetail('quy')"></i>
+                    <canvas id="barChartQuy"></canvas>
+                    <div class="table-container mt-lg-3" id="quyTable"></div>
+                </div>
+                <div class="col-lg-4 col-md-12">
+                    <h5>Thống kê theo Năm <br>(đơn vị tính: tỉ đồng)</h5>
+                    <i class="fa fa-search-plus" aria-hidden="true" onclick="viewDetail('nam')"></i>
+                    <canvas id="barChartNam"></canvas>
+                    <div class="table-container mt-lg-3" id="namTable"></div>
+                </div>
             </div>
         </div>
         @else
-        <div class="alert alert-danger">
+        <div class="alert alert-danger container">
             Bạn không đủ thẩm quyền để xem thống kê.
         </div>
         @endif
@@ -69,9 +87,12 @@
             }
             const backgroundColors = dataTotal.map((total, index) => {
                 const percentage = dataKPI[index] ? (total / dataKPI[index] * 100).toFixed(2) : 'N/A';
-                if (percentage <= 33) return '#FF0000'; // Red
-                if (percentage <= 60) return '#FFFF00'; // Yellow
-                return '#008000'; // Green
+                // if (percentage <= 33) return '#EE3642'; // Red
+                // if (percentage <= 60) return '#EB5B00'; // Orange
+                // return '#46D725'; // Green
+                if (percentage > 60) return '#46D725';
+                if (percentage > 33) return '#EB5B00';
+                return '#EE3642';
             });
             const newChart = new Chart(ctx, {
                 type: 'bar',
@@ -99,22 +120,34 @@
                 },
                 plugins: {
                     tooltip: {
-                        callbacks: {
-                            label: function(context) {
+                    callbacks: {
+                        label: function(context) {
+                            if (context.dataset.label === 'Thực hiện') {
                                 const index = context.dataIndex;
                                 const percentage = dataKPI[index] ? ((dataTotal[index] / dataKPI[index]) * 100).toFixed(2) : 'N/A';
                                 return `${context.dataset.label}: ${context.raw} (${percentage}%)`;
+                            } else {
+                                return `${context.dataset.label}: ${context.raw}`;
                             }
                         }
-                    },
+                    }
+                },
                     datalabels: {
                         anchor: 'end',
                         align: 'end',
                         formatter: (value, context) => {
+                        if (context.dataset.label === 'Thực hiện') {
                             const index = context.dataIndex;
                             const percentage = dataKPI[index] ? ((value / dataKPI[index]) * 100).toFixed(2) : 'N/A';
-                            return `${value}\n(${percentage}%)`;
+                            return `${value}\n${percentage}%`;
+                        } else {
+                            return value;
                         }
+                    },
+                    color: '#000',
+                    font: {
+                        size: 10
+                    },
                     }
                 }
             },
@@ -169,19 +202,15 @@
         async function renderCharts() {
             const thang = document.getElementById('selectMonth').value;
             const nam = document.getElementById('selectYear').value;
-    
             const dataThang = await fetchData('thang', thang, nam);
             const dataQuy = await fetchData('quy', thang, nam);
             const dataNam = await fetchData('nam', thang, nam);
-    
             const labelsThang = dataThang.map(item => item.ten_khu_vuc);
             const kpiThang = dataThang.map(item => item.kpi);
             const totalThang = dataThang.map(item => item.total);
-    
             const labelsQuy = dataQuy.map(item => item.ten_khu_vuc);
             const kpiQuy = dataQuy.map(item => item.kpi);
             const totalQuy = dataQuy.map(item => item.total);
-    
             const labelsNam = dataNam.map(item => item.ten_khu_vuc);
             const kpiNam = dataNam.map(item => item.kpi);
             const totalNam = dataNam.map(item => item.total);
@@ -195,10 +224,14 @@
             if (barChartNam) {
                 barChartNam.destroy();
             }
-    
             barChartThang = createBarChart(document.getElementById('barChartThang').getContext('2d'), labelsThang, kpiThang, totalThang, 'thangTable');
             barChartQuy = createBarChart(document.getElementById('barChartQuy').getContext('2d'), labelsQuy, kpiQuy, totalQuy, 'quyTable');
             barChartNam = createBarChart(document.getElementById('barChartNam').getContext('2d'), labelsNam, kpiNam, totalNam, 'namTable');
+        }
+        function viewDetail(thoiGian) {
+            const month = document.getElementById('selectMonth').value;
+            const year = document.getElementById('selectYear').value;
+            window.location.href = `/chi-tiet-chart?type=tongquat&time-format=${thoiGian}&thang=${month}&nam=${year}`;
         }
     
         document.getElementById('selectMonth').addEventListener('change', renderCharts);
@@ -207,5 +240,25 @@
         setInterval(renderCharts, 3600000); // Update every hour
         renderCharts(); // Initial render
     </script>
+    <style>
+        .legend-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+        .legend-item span {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+        /* .legend-item + .legend-item {
+            margin-left: 1rem;
+        } */
+    </style>
 </body>
 </html>

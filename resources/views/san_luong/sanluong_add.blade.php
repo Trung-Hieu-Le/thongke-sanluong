@@ -45,9 +45,9 @@
                         </select>
                     </div>
                     <div class="form-group m-2">
-                        <label for="SanLuong_TenHangMuc">Nội dung:</label>
+                        <label for="SanLuong_TenHangMuc">Lĩnh vực:</label>
                         <select class="form-control" id="SanLuong_TenHangMuc" name="SanLuong_TenHangMuc" required>
-                            <option value="">Chọn nội dung</option>
+                            <option value="">Chọn lĩnh vực</option>
                         </select>
                     </div>
                     {{-- <div class="form-group m-2">

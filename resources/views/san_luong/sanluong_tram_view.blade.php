@@ -47,6 +47,7 @@
                             <th>Hạng mục</th>
                             <th>Đơn giá</th>
                             <th>Số lượng</th>
+                            <th>Trạng thái</th>
                             <th>Thành tiền</th>
                         </tr>
                     </thead>
@@ -61,7 +62,8 @@
                             <td>{{ $row->SanLuong_Ngay }}</td>
                             <td>{{ $row->SanLuong_TenHangMuc }}</td>
                             <td>{{ number_format($row->SanLuong_Gia, 3) }}</td>
-                            <td>{{ $row->SoLuong }}</td> <!-- Default value for Số lượng -->
+                            <td>{{ $row->SoLuong }}</td>
+                            <td>{{ $row->TrangThai }}</td>
                             <td>{{ number_format($row->SanLuong_Gia * $row->SoLuong, 3) }}</td> <!-- Đơn giá * Số lượng (which is 1) -->
                         </tr>
                         @endforeach

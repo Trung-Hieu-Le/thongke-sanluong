@@ -46,6 +46,8 @@
                             <th>Hạng mục</th>
                             <th>Ngày</th>
                             <th>Giá</th>
+                            <th>Nhân viên</th>
+                            {{-- <th>Ngày thêm</th> --}}
                             <th>Hành động</th>
                         </tr>
                     </thead>
@@ -62,6 +64,14 @@
                             <td>{{ $row->SanLuong_TenHangMuc }}</td>
                             <td>{{ Carbon::createFromFormat('dmY', $row->SanLuong_Ngay)->format('d-m-Y') }}</td>
                             <td>{{ number_format($row->SanLuong_Gia, 3) }}</td>
+                            <td>    
+                                @if (isset($users[$row->user_id]))
+                                    {{ $users[$row->user_id]->user_name }}
+                                @else
+                                    Không xác định
+                                @endif
+                            </td>
+                            {{-- <td>{{ $row->thoi_gian_them }}</td> --}}
                             <td>
                                 <a href="{{ url('/sanluong-khac/edit/' . $row->SanLuong_Id) }}">
                                     <button class="btn btn-primary">Sửa</button>
