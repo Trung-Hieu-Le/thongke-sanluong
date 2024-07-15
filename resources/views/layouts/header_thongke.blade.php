@@ -28,17 +28,17 @@
                             <ul class="dropdown-menu p-0 text-end text-lg-start border-0 shadow-sm">
                                 <li class="dropdown-navbar">
                                     <a class="dropdown-item fs-5" href="/">
+                                        Thống kê tổng quát
+                                    </a>
+                                </li>
+                                <li class="dropdown-navbar">
+                                    <a class="dropdown-item fs-5" href="/thongke/khuvuc">
                                         Thống kê theo khu vực
                                     </a>
                                 </li>
                                 <li class="dropdown-navbar">
                                     <a class="dropdown-item fs-5" href="/thongke/linhvuc">
                                         Thống kê theo lĩnh vực
-                                    </a>
-                                </li>
-                                <li class="dropdown-navbar">
-                                    <a class="dropdown-item fs-5" href="/thongke/khuvuc">
-                                        Thống kê các tỉnh
                                     </a>
                                 </li>
                             </ul>

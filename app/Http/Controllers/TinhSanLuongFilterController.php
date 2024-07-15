@@ -9,7 +9,6 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class TinhSanLuongFilterController extends Controller
 {
-    //TODO: lỗi khi thành tiền = 0 hoặc mã trạm viết thường; phân trang
     public function indexTramFilter(Request $request)
 {
     if (!$request->session()->has('username')) {

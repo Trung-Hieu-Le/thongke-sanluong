@@ -41,134 +41,136 @@ class ThongKeController extends Controller
         }
         return view('thong_ke.thongke_linhvuc');
     }
-    //TODO: sửa sản lượng tháo lắp tính toán
+
     public function thongKeKhuVuc(Request $request)
-{
-    // Lấy tham số từ request
-    $timeFormat = $request->input('time_format');
-    $currentYear = $request->input('nam', date('Y'));
-    $currentMonth = $request->input('thang', date('n'));
-    $currentQuarter = ceil($currentMonth / 3);
+    {
+        // Lấy tham số từ request
+        $timeFormat = $request->input('time_format');
+        $currentYear = $request->input('nam', date('Y'));
+        $currentMonth = $request->input('thang', date('n'));
+        $currentQuarter = ceil($currentMonth / 3);
 
-    //TODO: lấy từ tbl_sanluong_khac nữa
-    $khuVucs = DB::table('tbl_tinh')
-        ->distinct()
-        ->orderBy('ten_khu_vuc')
-        ->pluck('ten_khu_vuc');
+        $khuVucs = DB::table('tbl_tinh')
+            ->distinct()
+            ->orderBy('ten_khu_vuc')
+            ->pluck('ten_khu_vuc');
 
-    $results = [];
+        $results = [];
 
-    foreach ($khuVucs as $khuVuc) {
-        $maTinhs = DB::table('tbl_tinh')
-            ->where('ten_khu_vuc', $khuVuc)
-            ->pluck('ma_tinh')
-            ->toArray();
+        foreach ($khuVucs as $khuVuc) {
+            $maTinhs = DB::table('tbl_tinh')
+                ->where('ten_khu_vuc', $khuVuc)
+                ->pluck('ma_tinh')
+                ->toArray();
 
-        $kpi_quy = DB::table('tbl_kpi_quy')
-            ->where('ten_khu_vuc', $khuVuc)
-            ->where('year', $currentYear)
-            ->pluck('kpi_quy', 'quarter')
-            ->toArray();
+            $kpi_quy = DB::table('tbl_kpi_quy')
+                ->where('ten_khu_vuc', $khuVuc)
+                ->where('year', $currentYear)
+                ->where('noi_dung', 'Tổng sản lượng')
+                ->select('kpi_quy_1', 'kpi_quy_2', 'kpi_quy_3', 'kpi_quy_4')
+                ->first();
 
-        $kpi_nam = array_sum($kpi_quy);
+            $kpi_nam = $kpi_quy->kpi_quy_1 + $kpi_quy->kpi_quy_2 + $kpi_quy->kpi_quy_3 + $kpi_quy->kpi_quy_4;
 
-        $kpi_thang = [];
-        foreach ($kpi_quy as $quy => $gia_tri) {
+            $kpi_thang = [];
             for ($i = 1; $i <= 3; $i++) {
-                $kpi_thang[($quy - 1) * 3 + $i] = $gia_tri / 3;
+                $kpi_thang[$i] = $kpi_quy->kpi_quy_1 / 3;
+                $kpi_thang[$i + 3] = $kpi_quy->kpi_quy_2 / 3;
+                $kpi_thang[$i + 6] = $kpi_quy->kpi_quy_3 / 3;
+                $kpi_thang[$i + 9] = $kpi_quy->kpi_quy_4 / 3;
             }
-        }
+            // dd($kpi_thang);
 
-        $whereClauseSanLuong = "";
-        $whereClauseThaoLap = "";
-        switch ($timeFormat) {
-            case 'ngay':
-                $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = CURRENT_DATE()";
-                $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') = CURRENT_DATE()";
-                $kpi = null; // KPI ngày không xác định trong ví dụ
-                break;
-            case 'tuan':
-                $whereClauseSanLuong = "WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK(CURRENT_DATE())";
-                $whereClauseThaoLap = "WEEK(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = WEEK(CURRENT_DATE())";
-                $kpi = null; // KPI tuần không xác định trong ví dụ
-                break;
-            case 'thang':
-                $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentMonth";
-                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentMonth";
-                $kpi = isset($kpi_thang[$currentMonth]) ? $kpi_thang[$currentMonth] : null;
-                break;
-            case 'quy':
-                $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentQuarter";
-                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentQuarter";
-                $kpi = isset($kpi_quy[$currentQuarter]) ? $kpi_quy[$currentQuarter] : null;
-                break;
-            case 'nam':
-                $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear";
-                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear";
-                $kpi = $kpi_nam;
-                break;
-            default:
-                return response()->json(['error' => 'Thời gian không hợp lệ']);
-        }
+            $whereClauseSanLuong = "";
+            $whereClauseThaoLap = "";
+            switch ($timeFormat) {
+                case 'ngay':
+                    $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = CURRENT_DATE()";
+                    $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') = CURRENT_DATE()";
+                    $kpi = null; // KPI ngày không xác định trong ví dụ
+                    break;
+                case 'tuan':
+                    $whereClauseSanLuong = "WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK(CURRENT_DATE())";
+                    $whereClauseThaoLap = "WEEK(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = WEEK(CURRENT_DATE())";
+                    $kpi = null; // KPI tuần không xác định trong ví dụ
+                    break;
+                case 'thang':
+                    $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentMonth";
+                    $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentMonth";
+                    $kpi = isset($kpi_thang[$currentMonth]) ? $kpi_thang[$currentMonth] : null;
+                    break;
+                case 'quy':
+                    $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentQuarter";
+                    $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentQuarter";
+                    $kpi = $kpi_quy ? $kpi_quy->{'kpi_quy_' . $currentQuarter} : null;
+                    break;
+                case 'nam':
+                    $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear";
+                    $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear";
+                    $kpi = $kpi_nam;
+                    break;
+                default:
+                    return response()->json(['error' => 'Thời gian không hợp lệ']);
+            }
 
-        // Lấy dữ liệu từ bảng tbl_sanluong
-        $sanluongData = DB::table('tbl_sanluong')
-            ->select('SanLuong_Tram', 'SanLuong_Ngay', 'SanLuong_Gia')
-            ->whereRaw($whereClauseSanLuong)
-            ->where('ten_hinh_anh_da_xong', '!=', '')
-            ->where(function ($query) use ($maTinhs) {
-                foreach ($maTinhs as $maTinh) {
-                    $query->orWhere('SanLuong_Tram', 'LIKE', "$maTinh%");
-                }
-            })
-            ->get();
+            // Lấy dữ liệu từ bảng tbl_sanluong
+            $sanluongData = DB::table('tbl_sanluong')
+                ->select('SanLuong_Tram', 'SanLuong_Ngay', 'SanLuong_Gia')
+                ->whereRaw($whereClauseSanLuong)
+                ->where('ten_hinh_anh_da_xong', '!=', '')
+                ->where(function ($query) use ($maTinhs) {
+                    foreach ($maTinhs as $maTinh) {
+                        $query->orWhere('SanLuong_Tram', 'LIKE', "$maTinh%");
+                    }
+                })
+                ->get();
 
-        // Lấy dữ liệu từ bảng tbl_sanluong_khac
-        $sanluongKhacData = DB::table('tbl_sanluong_khac')
-            ->select('SanLuong_Tram', 'SanLuong_Ngay', 'SanLuong_Gia')
-            ->whereRaw($whereClauseSanLuong)
-            ->where('SanLuong_KhuVuc', $khuVuc)
-            ->get();
+            // Lấy dữ liệu từ bảng tbl_sanluong_khac
+            $sanluongKhacData = DB::table('tbl_sanluong_khac')
+                ->select('SanLuong_Tram', 'SanLuong_Ngay', 'SanLuong_Gia')
+                ->whereRaw($whereClauseSanLuong)
+                ->where('SanLuong_KhuVuc', $khuVuc)
+                ->get();
 
-        // Lấy dữ liệu từ bảng tbl_sanluong_thaolap
-        $sanluongThaolapData = DB::table('tbl_sanluong_thaolap')
-            ->select(
-                'ThaoLap_MaTram as SanLuong_Tram',
-                DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') as SanLuong_Ngay"),
-                DB::raw("
+            // Lấy dữ liệu từ bảng tbl_sanluong_thaolap
+            $sanluongThaolapData = DB::table('tbl_sanluong_thaolap')
+                ->select(
+                    'ThaoLap_MaTram as SanLuong_Tram',
+                    DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') as SanLuong_Ngay"),
+                    DB::raw("
                     ThaoLap_Anten * DonGia_Anten +
                     ThaoLap_RRU * DonGia_RRU +
                     ThaoLap_TuThietBi * DonGia_TuThietBi +
                     ThaoLap_CapNguon * DonGia_CapNguon as SanLuong_Gia
                 ")
-            )
-            ->whereRaw($whereClauseThaoLap)
-            // ->where('tbl_sanluong_thaolap.HopDong_Id', 3)
-            ->where(function ($query) use ($maTinhs) {
-                foreach ($maTinhs as $maTinh) {
-                    $query->orWhere('ThaoLap_MaTram', 'LIKE', "$maTinh%");
-                }
-            })
-            ->get();
+                )
+                ->whereRaw($whereClauseThaoLap)
+                // ->where('tbl_sanluong_thaolap.HopDong_Id', 3)
+                ->where(function ($query) use ($maTinhs) {
+                    foreach ($maTinhs as $maTinh) {
+                        $query->orWhere('ThaoLap_MaTram', 'LIKE', "$maTinh%");
+                    }
+                })
+                ->get();
             // dd($sanluongThaolapData);
 
-        $combinedData = $sanluongData->merge($sanluongKhacData)->merge($sanluongThaolapData);
-        $combinedData = $combinedData->map(function($item) {
-            $item->SanLuong_Gia = floatval($item->SanLuong_Gia);
-            return $item;
-        });
-        $total = $combinedData->sum('SanLuong_Gia');
+            $combinedData = $sanluongData->merge($sanluongKhacData)->merge($sanluongThaolapData);
+            $combinedData = $combinedData->map(function ($item) {
+                $item->SanLuong_Gia = floatval($item->SanLuong_Gia);
+                return $item;
+            });
+            $total = $combinedData->sum('SanLuong_Gia');
 
-        // Thêm kết quả vào mảng
-        $results[] = [
-            'ten_khu_vuc' => $khuVuc,
-            'total' => round($total / 1e9, 2),
-            'kpi' => $kpi !== null ? round($kpi, 2) : 0
-        ];
+            // Thêm kết quả vào mảng
+            $results[] = [
+                'ten_khu_vuc' => $khuVuc,
+                'total' => round($total / 1e9, 1),
+                'kpi' => $kpi !== null ? round($kpi, 1) : 0
+            ];
+        }
+
+        return response()->json($results);
     }
-
-    return response()->json($results);
-}
     public function thongKeTinh(Request $request)
     {
         $khuVuc = $request->input('khu_vuc');
@@ -321,14 +323,14 @@ class ThongKeController extends Controller
         return response()->json($results);
     }
     public function thongKeTram(Request $request)
-{
-    $maTinh = $request->ma_tinh;
-    $ngayChon = $request->input('ngay');
-    if (is_null($ngayChon) || $ngayChon === '') {
-        $ngayChon = date('Y-m-d');
-    }
+    {
+        $maTinh = $request->ma_tinh;
+        $ngayChon = $request->input('ngay');
+        if (is_null($ngayChon) || $ngayChon === '') {
+            $ngayChon = date('Y-m-d');
+        }
 
-    $query = "
+        $query = "
         SELECT
             SanLuong_Tram,
             SUM(CASE WHEN DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = DATE(?) THEN SanLuong_Gia ELSE 0 END) as ngay,
@@ -354,17 +356,17 @@ class ThongKeController extends Controller
         ORDER BY SanLuong_Tram
     ";
 
-    $bindings = [
-        $ngayChon, $ngayChon, $ngayChon, $ngayChon, $ngayChon,
-        "$maTinh%", 
-        $ngayChon, $ngayChon, $ngayChon, $ngayChon, $ngayChon,
-        "$maTinh%"
-    ];
+        $bindings = [
+            $ngayChon, $ngayChon, $ngayChon, $ngayChon, $ngayChon,
+            "$maTinh%",
+            $ngayChon, $ngayChon, $ngayChon, $ngayChon, $ngayChon,
+            "$maTinh%"
+        ];
 
-    $results = DB::select($query, $bindings);
+        $results = DB::select($query, $bindings);
 
-    return response()->json($results);
-}
+        return response()->json($results);
+    }
 
 
 
@@ -452,59 +454,62 @@ class ThongKeController extends Controller
 
         return response()->json($results);
     }
-    public function indexChiTietChart(Request $request){
+    public function indexChiTietChart(Request $request)
+    {
         if (!$request->session()->has('username')) {
             return redirect('/login');
         }
         return view('thong_ke.chitiet_bieudo');
     }
 
-    //TODO: Số liệu? không khớp với thống kê tổng quát
+    //TODO: Số liệu? không khớp với thống kê tổng quát (có thể từ tbl_sanluong_thaolap không có kv)
     public function thongKeLinhVuc(Request $request)
-{
-    $timeFormat = $request->input('time_format');
-    $currentYear = $request->input('nam', date('Y'));
-    $currentMonth = $request->input('thang', date('n'));
-    $currentQuarter = ceil($currentMonth / 3);
+    {
+        $timeFormat = $request->input('time_format');
+        $currentYear = $request->input('nam', date('Y'));
+        $currentMonth = $request->input('thang', date('n'));
+        $currentQuarter = ceil($currentMonth / 3);
 
-    $whereClauseSanLuong = "";
-    $whereClauseThaoLap = "";
-    switch ($timeFormat) {
-        case 'ngay':
-            $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = CURRENT_DATE()";
-            $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') = CURRENT_DATE()";
-            break;
-        case 'tuan':
-            $whereClauseSanLuong = "WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK(CURRENT_DATE())";
-            $whereClauseThaoLap = "WEEK(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = WEEK(CURRENT_DATE())";
-            break;
-        case 'thang':
-            $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentMonth";
-            $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentMonth";
-            break;
-        case 'quy':
-            $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentQuarter";
-            $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentQuarter";
-            break;
-        case 'nam':
-            $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear";
-            $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear";
-            break;
-        default:
-            return response()->json(['error' => 'Thời gian không hợp lệ']);
-    }
+        $whereClauseSanLuong = "";
+        $whereClauseThaoLap = "";
+        switch ($timeFormat) {
+            case 'ngay':
+                $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = CURRENT_DATE()";
+                $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') = CURRENT_DATE()";
+                break;
+            case 'tuan':
+                $whereClauseSanLuong = "WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK(CURRENT_DATE())";
+                $whereClauseThaoLap = "WEEK(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = WEEK(CURRENT_DATE())";
+                break;
+            case 'thang':
+                $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentMonth";
+                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentMonth";
+                break;
+            case 'quy':
+                $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentQuarter";
+                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentQuarter";
+                break;
+            case 'nam':
+                $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear";
+                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear";
+                break;
+            default:
+                return response()->json(['error' => 'Thời gian không hợp lệ']);
+        }
 
-    // Lấy dữ liệu từ bảng tbl_sanluong
-    $sanluongData = DB::table('tbl_sanluong')
-        ->select(DB::raw("IFNULL(CAST(SanLuong_Gia AS UNSIGNED), 0) as SanLuong_Gia"))
-        ->whereRaw($whereClauseSanLuong)
-        ->where('ten_hinh_anh_da_xong', '<>', '')
-        ->get();
+        // Lấy dữ liệu từ bảng tbl_sanluong
+        $sanluongData = DB::table('tbl_sanluong')
+            ->join('tbl_tinh', 'tbl_sanluong.SanLuong_Tram', 'LIKE', DB::raw("CONCAT(tbl_tinh.ma_tinh, '%')"))
+            ->select(DB::raw("IFNULL(CAST(SanLuong_Gia AS UNSIGNED), 0) as SanLuong_Gia"))
+            ->whereRaw($whereClauseSanLuong)
+            ->where('ten_hinh_anh_da_xong', '<>', '')
+            ->get();
 
-    // Lấy dữ liệu từ bảng tbl_sanluong_thaolap
-    $sanluongThaolapData = DB::table('tbl_sanluong_thaolap')
-        ->select(
-            DB::raw("
+        // Lấy dữ liệu từ bảng tbl_sanluong_thaolap
+        $sanluongThaolapData = DB::table('tbl_sanluong_thaolap')
+            ->join('tbl_tinh', 'tbl_sanluong_thaolap.ThaoLap_MaTram', 'LIKE', DB::raw("CONCAT(tbl_tinh.ma_tinh, '%')"))
+            ->select(
+                DB::raw("
                 IFNULL(
                     ThaoLap_Anten * DonGia_Anten +
                     ThaoLap_RRU * DonGia_RRU +
@@ -512,40 +517,78 @@ class ThongKeController extends Controller
                     ThaoLap_CapNguon * DonGia_CapNguon, 0
                 ) as SanLuong_Gia
             ")
-        )
-        ->whereRaw($whereClauseThaoLap)
-        // ->where('tbl_sanluong_thaolap.HopDong_Id', 3)
-        ->get();
+            )
+            ->whereRaw($whereClauseThaoLap)
+            // ->where('tbl_sanluong_thaolap.HopDong_Id', 3)
+            ->get();
 
-    // Tổng hợp dữ liệu EC từ tbl_sanluong và tbl_sanluong_thaolap
-    $totalEC = $sanluongData->sum('SanLuong_Gia') + $sanluongThaolapData->sum('SanLuong_Gia');
+        // Tổng hợp dữ liệu EC từ tbl_sanluong và tbl_sanluong_thaolap
+        $totalEC = $sanluongData->sum('SanLuong_Gia') + $sanluongThaolapData->sum('SanLuong_Gia');
 
-    // Lấy dữ liệu từ bảng tbl_sanluong_khac
-    $sanluongKhacData = DB::table('tbl_sanluong_khac')
-        ->select('SanLuong_TenHangMuc', DB::raw('SUM(SanLuong_Gia) as total'))
-        ->whereRaw($whereClauseSanLuong)
-        ->groupBy('SanLuong_TenHangMuc')
-        ->get();
+        // Lấy dữ liệu từ bảng tbl_sanluong_khac
+        $sanluongKhacData = DB::table('tbl_sanluong_khac')
+            // ->join('tbl_tinh', 'tbl_sanluong_khac.SanLuong_Tram', 'LIKE', DB::raw("CONCAT(tbl_tinh.ma_tinh, '%')"))
+            ->select('SanLuong_TenHangMuc', DB::raw('SUM(SanLuong_Gia) as total'))
+            ->whereRaw($whereClauseSanLuong)
+            ->groupBy('SanLuong_TenHangMuc')
+            ->get();
 
-    // Tạo mảng kết quả
-    $results = [];
+        $kpiData = DB::table('tbl_kpi_quy')
+            ->select('noi_dung', 'kpi_quy_1', 'kpi_quy_2', 'kpi_quy_3', 'kpi_quy_4')
+            ->where('year', $currentYear)
+            ->get();
 
-    // Thêm EC vào mảng kết quả
-    $results[] = [
-        'ten_linh_vuc' => 'EC',
-        'total' => round($totalEC / 1e9, 2)
-        
-    ];
+        // Initialize results array
+        $results = [];
 
-    // Thêm các lĩnh vực khác vào mảng kết quả
-    foreach ($sanluongKhacData as $row) {
-        $results[] = [
-            'ten_linh_vuc' => $row->SanLuong_TenHangMuc,
-            'total' => round($row->total / 1e9, 2)
+        // Add EC to results
+        $results['EC'] = [
+            'ten_linh_vuc' => 'EC',
+            'total' => round($totalEC / 1e9, 1),
+            'kpi' => 0
         ];
+
+        // Add other fields to results
+        foreach ($sanluongKhacData as $row) {
+            $results[$row->SanLuong_TenHangMuc] = [
+                'ten_linh_vuc' => $row->SanLuong_TenHangMuc,
+                'total' => round($row->total / 1e9, 1),
+                'kpi' => 0
+            ];
+        }
+
+        // Calculate KPI
+        foreach ($kpiData as $kpi) {
+            $kpiValue = 0;
+            switch ($timeFormat) {
+                case 'thang':
+                    $kpiValue = round(($kpi->{'kpi_quy_' . $currentQuarter} / 3), 1);
+                    break;
+                case 'quy':
+                    $kpiValue = round($kpi->{'kpi_quy_' . $currentQuarter}, 1);
+                    break;
+                case 'nam':
+                    $kpiValue = round($kpi->kpi_quy_1 + $kpi->kpi_quy_2 + $kpi->kpi_quy_3 + $kpi->kpi_quy_4, 1);
+                    break;
+            }
+
+            if ($kpi->noi_dung === 'EC') {
+                $results['EC']['kpi'] += $kpiValue;
+            } else {
+                if (isset($results[$kpi->noi_dung])) {
+                    $results[$kpi->noi_dung]['kpi'] += $kpiValue;
+                }
+            }
+        }
+
+        // Round the final KPI values
+        foreach ($results as &$result) {
+            $result['kpi'] = round($result['kpi'], 1);
+        }
+
+        // Format the results array to return only values
+        $finalResults = array_values($results);
+
+        return response()->json($finalResults);
     }
-
-    return response()->json($results);
-}
-
 }

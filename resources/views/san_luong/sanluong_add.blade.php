@@ -79,7 +79,7 @@
                 .then(response => response.json())
                 .then(data => {
                     var noidungSelect = document.getElementById('SanLuong_TenHangMuc');
-                    noidungSelect.innerHTML = '<option value="">Chọn nội dung</option>';
+                    noidungSelect.innerHTML = '<option value="">Chọn lĩnh vực</option>';
                     data.forEach(function(noidung) {
                         var option = document.createElement('option');
                         option.value = noidung.noi_dung;

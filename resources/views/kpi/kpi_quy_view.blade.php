@@ -19,11 +19,13 @@
                         <a href="{{route('kpiquy.add')}}"><button class="btn btn-primary">Thêm</button></a>
                     @endif
                 </div>
+                @if (session('role') == 2 || session('role') == 3)
                 <table class="scrollable-table mb-3">
                     <thead>
                         <tr>
                             <th>Số thứ tự</th>
                             <th>Khu vực</th>
+                            <th>Lĩnh vực</th>
                             <th>Năm</th>
                             <th>Quý 1</th>
                             <th>Quý 2</th>
@@ -34,20 +36,21 @@
                     </thead>
                     <tbody>
                         @php $index = 1; @endphp
-                        @foreach ($data as $row)
+                        @foreach ($kpi as $row)
                         <tr>
                             <td>{{ $index++ }}</td>
-                            <td>{{ $row['ten_khu_vuc'] }}</td>
-                            <td>{{ $row['year'] }}</td>
-                            <td>{{ $row['quarters'][0] ?? '-' }}</td>
-                            <td>{{ $row['quarters'][1] ?? '-' }}</td>
-                            <td>{{ $row['quarters'][2] ?? '-' }}</td>
-                            <td>{{ $row['quarters'][3] ?? '-' }}</td>
+                            <td>{{ $row->ten_khu_vuc }}</td>
+                            <td>{{ $row->noi_dung }}</td>
+                            <td>{{ $row->year }}</td>
+                            <td>{{ $row->kpi_quy_1 ?? '-' }}</td>
+                            <td>{{ $row->kpi_quy_2 ?? '-' }}</td>
+                            <td>{{ $row->kpi_quy_3 ?? '-' }}</td>
+                            <td>{{ $row->kpi_quy_4 ?? '-' }}</td>
                             <td>
-                                <a href="{{ url('/kpi-quy/edit?khuvuc=' . $row['ten_khu_vuc'] . '&nam=' . $row['year']) }}">
+                                <a href="{{ url('/kpi-quy/edit/' . $row->id) }}">
                                 <button class="btn btn-primary">Sửa</button>
                                 </a>
-                                <a href="{{ url('/kpi-quy/delete?khuvuc=' . $row['ten_khu_vuc'] . '&nam=' . $row['year']) }}" onclick="return confirm('Bạn có muốn xóa những KPI này?');">
+                                <a href="{{ url('/kpi-quy/delete/' . $row->id) }}" onclick="return confirm('Bạn có muốn xóa KPI này?');">
                                     <button class="btn btn-danger">Xóa</button>
                                 </a>
                             </td>
@@ -55,6 +58,11 @@
                         @endforeach
                     </tbody>
                 </table>
+                @else
+                <div class="alert alert-danger container">
+                    Bạn không đủ thẩm quyền để xem thống kê.
+                </div>
+                @endif
             </div>
         </div>
     </div>

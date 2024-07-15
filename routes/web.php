@@ -65,8 +65,8 @@ Route::get('/sanluong-khac/delete/{id}', [SanLuongKhacController::class, 'delete
 Route::get('/kpi-quy/index', [KpiQuyController::class, 'indexKpiQuy'])->name('kpiquy.index');
 Route::get('/kpi-quy/add', [KpiQuyController::class, 'addKpiQuy'])->name('kpiquy.add');
 Route::post('/kpi-quy/handleAdd', [KpiQuyController::class, 'handleAddKpiQuy'])->name('kpiquy.handleAdd');
-Route::get('/kpi-quy/edit', [KpiQuyController::class, 'editKpiQuy'])->name('kpiquy.edit');
+Route::get('/kpi-quy/edit/{id}', [KpiQuyController::class, 'editKpiQuy'])->name('kpiquy.edit');
 Route::post('/kpi-quy/handleEdit', [KpiQuyController::class, 'handleEditKpiQuy'])->name('kpiquy.handleEdit');
-Route::get('/kpi-quy/delete', [KpiQuyController::class, 'deleteKpiQuy'])->name('kpiquy.delete');
+Route::get('/kpi-quy/delete/{id}', [KpiQuyController::class, 'deleteKpiQuy'])->name('kpiquy.delete');
 
 //TODO: getSanLuongThang_6 (1h update / lần)

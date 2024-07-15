@@ -37,7 +37,10 @@
                         @endif
                     </div>
                 </div>
-                
+                @php 
+                    use Carbon\Carbon; 
+                @endphp
+                @if (session('role') == 2 || session('role') == 3)
                 <table class="scrollable-table">
                     <thead>
                         <tr>
@@ -54,7 +57,6 @@
                     <tbody>
                         @php 
                             $index = 1;
-                            use Carbon\Carbon; 
                         @endphp
                         @foreach ($data as $row)
                         <tr>
@@ -62,7 +64,8 @@
                             {{-- <td>{{ $row->SanLuong_Tram }}</td> --}}
                             <td>{{ $row->SanLuong_KhuVuc }}</td>
                             <td>{{ $row->SanLuong_TenHangMuc }}</td>
-                            <td>{{ Carbon::createFromFormat('dmY', $row->SanLuong_Ngay)->format('d-m-Y') }}</td>
+                            {{-- <td>{{ $row->SanLuong_Ngay }}</td> --}}
+                            <td>{{ Carbon::createFromFormat('dmY', $row->SanLuong_Ngay)->format('d/m/Y') }}</td>
                             <td>{{ number_format($row->SanLuong_Gia, 3) }}</td>
                             <td>    
                                 @if (isset($users[$row->user_id]))
@@ -84,6 +87,11 @@
                         @endforeach
                     </tbody>
                 </table>
+                @else
+                <div class="alert alert-danger container">
+                    Bạn không đủ thẩm quyền để xem thống kê.
+                </div>
+                @endif
             </div>
         </div>
     </div>

@@ -25,11 +25,25 @@
             <form action="{{ route('kpiquy.handleAdd') }}" method="POST">
                 @csrf
                 <div class="row">
-                    <div class="form-group my-2 col-lg-6 col-md-12">
+                    <div class="form-group my-2 col-lg-5 col-md-12">
                         <label for="ten_khu_vuc">Tên khu vực:</label>
-                        <input type="text" class="form-control" id="ten_khu_vuc" name="ten_khu_vuc" required>
+                        {{-- <input type="text" class="form-control" id="ten_khu_vuc" name="ten_khu_vuc" required> --}}
+                        <select class="form-control" id="khu_vuc" name="khu_vuc" required>
+                            <option value="">Chọn khu vực</option>
+                            @foreach($khuVucList as $khuvuc)
+                                <option value="{{ $khuvuc->khu_vuc }}">{{ $khuvuc->khu_vuc }}</option>
+                            @endforeach
+                        </select>
                     </div>
-                    <div class="form-group my-2 col-lg-6 col-md-12">
+                    <div class="form-group my-2 col-lg-5 col-md-12">
+                        <label for="noi_dung">Lĩnh vực:</label>
+                        <select class="form-control" id="noi_dung" name="noi_dung" required>
+                            <option value="">Chọn lĩnh vực</option>
+                            <option value="Tổng sản lượng">Tổng sản lượng</option>
+                            <option value="EC">EC</option>
+                        </select>
+                    </div>
+                    <div class="form-group my-2 col-lg-2 col-md-12">
                         <label for="year">Năm:</label>
                         <select class="form-control" id="year" name="year" required>
                             @for ($i = date('Y'); $i >=2020; $i--)
@@ -65,5 +79,23 @@
             </form>
         </div>
     </div>
+    <script>
+        document.getElementById('khu_vuc').addEventListener('change', function() {
+        var khuVuc = this.value;
+        fetch(`/sanluong-khac/noidung/${khuVuc}`)
+            .then(response => response.json())
+            .then(data => {
+                var noiDungSelect = document.getElementById('noi_dung');
+                noiDungSelect.innerHTML = '<option value="Tổng sản lượng">Tổng sản lượng</option><option value="EC">EC</option>';
+                data.forEach(function(noidung) {
+                    var option = document.createElement('option');
+                    option.value = noidung.noi_dung;
+                    option.text = noidung.noi_dung;
+                    noiDungSelect.appendChild(option);
+                });
+            });
+    });
+
+    </script>
 </body>
 </html>
