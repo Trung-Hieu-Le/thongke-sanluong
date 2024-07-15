@@ -108,6 +108,16 @@
                 if (percentage > 33) return '#EB5B00';
                 return '#EE3642';
             });
+            const legendMargin = {
+                id: 'legendMargin',
+                beforeInit(chart, legend, options) {
+                    const fitValue=chart.legend.fit;
+                    chart.legend.fit = function fit() {
+                        fitValue.bind(chart.legend)();
+                        return this.height +=15;
+                    }
+                }
+            }
             const newChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -127,19 +137,9 @@
                 },
                 options: {
                 responsive: true,
-                layout: {
-                    padding: {
-                        top: 15
-                    }
-                },
                 scales: {
                     y: {
                         beginAtZero: true
-                    },
-                    x: {
-                        ticks: {
-                            padding: 5
-                        }
                     }
                 },
                 plugins: {
@@ -175,7 +175,7 @@
                     }
                 }
             },
-            plugins: [ChartDataLabels]
+            plugins: [ChartDataLabels, legendMargin]
             });
             ctx.chart = newChart;
     
