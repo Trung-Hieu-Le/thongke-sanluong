@@ -35,13 +35,16 @@
         <div class="container">
             <div class="d-flex justify-content-end align-items-center legend-container my-2" style="font-size: 15px;">
                 <div class="legend-item me-2">
-                    Chú thích: &nbsp;<span style="background-color: #EE3642; display: inline-block; width: 18px; height: 18px;"></span> Dưới 33%
+                    Chú thích: &nbsp;<span style="background-color: #EE4266; display: inline-block; width: 18px; height: 18px;"></span> <=40%
                 </div>
                 <div class="legend-item me-2">
-                    <span style="background-color: #EB5B00; display: inline-block; width: 18px; height: 18px;"></span> 33-60%
+                    <span style="background-color: #FFD23F; display: inline-block; width: 18px; height: 18px;"></span> <=70%
+                </div>
+                <div class="legend-item me-2">
+                    <span style="background-color: #337357; display: inline-block; width: 18px; height: 18px;"></span> <=100%
                 </div>
                 <div class="legend-item">
-                    <span style="background-color: #46D725; display: inline-block; width: 18px; height: 18px;"></span> Trên 60%
+                    <span style="background-color: #5E1675; display: inline-block; width: 18px; height: 18px;"></span> >100%
                 </div>
             </div>
             <div class="row">
@@ -84,18 +87,16 @@
             return response.json();
         }
     
-        function createBarChart(ctx, labels, dataKPI, dataTotal, tableId) {
+        function createBarChart(ctx, labels, dataKPI, dataTotal) {
             if (ctx.chart) {
                 ctx.chart.destroy();
             }
             const backgroundColors = dataTotal.map((total, index) => {
                 const percentage = dataKPI[index] ? (total / dataKPI[index] * 100).toFixed(1) : 'N/A';
-                // if (percentage <= 33) return '#EE3642'; // Red
-                // if (percentage <= 60) return '#EB5B00'; // Orange
-                // return '#46D725'; // Green
-                if (percentage > 60) return '#46D725';
-                if (percentage > 33) return '#EB5B00';
-                return '#EE3642';
+                if (percentage > 100) return '#5E1675'; // Purple
+                if (percentage > 70) return '#337357'; // Green
+                if (percentage > 40) return '#FFD23F'; // Yellow
+                return '#EE4266'; // Red
             });
             const legendMargin = {
                 id: 'legendMargin',
@@ -115,7 +116,7 @@
                         {
                             label: 'KPI',
                             data: dataKPI,
-                            backgroundColor: '#ececec'
+                            backgroundColor: '#1B5EBE'
                         },
                         {
                             label: 'Thực hiện',
@@ -125,70 +126,73 @@
                     ]
                 },
                 options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            if (context.dataset.label === 'Thực hiện') {
-                                const index = context.dataIndex;
-                                const percentage = dataKPI[index] ? ((dataTotal[index] / dataKPI[index]) * 100).toFixed(1) : 'N/A';
-                                return `${context.dataset.label}: ${context.raw} (${percentage}%)`;
-                            } else {
-                                return `${context.dataset.label}: ${context.raw}`;
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataset.label === 'Thực hiện') {
+                                        const index = context.dataIndex;
+                                        const percentage = dataKPI[index] ? ((dataTotal[index] / dataKPI[index]) * 100).toFixed(1) : 'N/A';
+                                        return `${context.dataset.label}: ${context.raw.toFixed(1)} (${percentage}%)`;
+                                    } else {
+                                        return `${context.dataset.label}: ${context.raw.toFixed(1)}`;
+                                    }
+                                }
                             }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'end',
+                            formatter: (value, context) => {
+                                if (context.dataset.label === 'Thực hiện') {
+                                    const index = context.dataIndex;
+                                    const percentage = dataKPI[index] ? ((value / dataKPI[index]) * 100).toFixed(1) : 'N/A';
+                                    return `${value.toFixed(1)} \n${percentage}%`;
+                                } else {
+                                    return value.toFixed(1);
+                                }
+                            },
+                            color: '#000',
+                            font: {
+                                size: 10
+                            },
                         }
                     }
                 },
-                    datalabels: {
-                        anchor: 'end',
-                        align: 'end',
-                        formatter: (value, context) => {
-                        if (context.dataset.label === 'Thực hiện') {
-                            const index = context.dataIndex;
-                            const percentage = dataKPI[index] ? ((value / dataKPI[index]) * 100).toFixed(1) : 'N/A';
-                            return `${value} \n${percentage}%`;
-                        } else {
-                            return value;
-                        }
-                    },
-                    color: '#000',
-                    font: {
-                        size: 10
-                    },
-                    }
-                }
-            },
-            plugins: [ChartDataLabels, legendMargin]
+                plugins: [ChartDataLabels, legendMargin]
             });
             ctx.chart = newChart;
+        }
     
-            const tableRows = dataTotal.map((total, index) => {
-                const kpi = dataKPI[index];
-                const percentage = kpi ? ((total / kpi) * 100).toFixed(1) : 'N/A';
+        function updateTable(data, tableId) {
+            const tableRows = data.map((item) => {
+                const percentage = item.kpi ? ((item.total / item.kpi) * 100).toFixed(1) : 'N/A';
                 return `
                     <tr>
                         <td>${percentage}%</td>
-                        <td>${labels[index]}</td>
-                        <td>${kpi.toFixed(1)}</td>
-                        <td>${total.toFixed(1)}</td>
+                        <td>${item.khu_vuc}</td>
+                        <td>${item.ten_linh_vuc}</td>
+                        <td>${item.kpi.toFixed(1)}</td>
+                        <td>${item.total.toFixed(1)}</td>
                     </tr>
                 `;
             }).join('');
     
-            const totalKPI = dataKPI.reduce((acc, curr) => acc + curr, 0);
-            const totalTotal = dataTotal.reduce((acc, curr) => acc + curr, 0);
+            const totalKPI = data.reduce((acc, curr) => acc + curr.kpi, 0);
+            const totalTotal = data.reduce((acc, curr) => acc + curr.total, 0);
             const totalPercentage = totalKPI ? ((totalTotal / totalKPI) * 100).toFixed(1) : 'N/A';
     
             const totalRow = `
                 <tr>
                     <td><strong>${totalPercentage}%</strong></td>
                     <td><strong>Tổng cộng</strong></td>
+                    <td> </td>
                     <td><strong>${totalKPI.toFixed(1)}</strong></td>
                     <td><strong>${totalTotal.toFixed(1)}</strong></td>
                 </tr>
@@ -199,7 +203,8 @@
                     <thead>
                         <tr>
                             <th>Tỷ lệ</th>
-                            <th>Đơn vị</th>
+                            <th>Khu vực</th>
+                            <th>Lĩnh vực</th>
                             <th>KPI</th>
                             <th>Thực hiện</th>
                         </tr>
@@ -218,15 +223,18 @@
             const dataThang = await fetchData('thang', thang, nam);
             const dataQuy = await fetchData('quy', thang, nam);
             const dataNam = await fetchData('nam', thang, nam);
-            const labelsThang = dataThang.map(item => item.ten_linh_vuc);
-            const kpiThang = dataThang.map(item => item.kpi);
-            const totalThang = dataThang.map(item => item.total);
-            const labelsQuy = dataQuy.map(item => item.ten_linh_vuc);
-            const kpiQuy = dataQuy.map(item => item.kpi);
-            const totalQuy = dataQuy.map(item => item.total);
-            const labelsNam = dataNam.map(item => item.ten_linh_vuc);
-            const kpiNam = dataNam.map(item => item.kpi);
-            const totalNam = dataNam.map(item => item.total);
+    
+            const labelsThang = Array.from(new Set(dataThang.map(item => item.ten_linh_vuc)));
+            const kpiThang = labelsThang.map(label => dataThang.filter(item => item.ten_linh_vuc === label).reduce((acc, curr) => acc + curr.kpi, 0));
+            const totalThang = labelsThang.map(label => dataThang.filter(item => item.ten_linh_vuc === label).reduce((acc, curr) => acc + curr.total, 0));
+    
+            const labelsQuy = Array.from(new Set(dataQuy.map(item => item.ten_linh_vuc)));
+            const kpiQuy = labelsQuy.map(label => dataQuy.filter(item => item.ten_linh_vuc === label).reduce((acc, curr) => acc + curr.kpi, 0));
+            const totalQuy = labelsQuy.map(label => dataQuy.filter(item => item.ten_linh_vuc === label).reduce((acc, curr) => acc + curr.total, 0));
+    
+            const labelsNam = Array.from(new Set(dataNam.map(item => item.ten_linh_vuc)));
+            const kpiNam = labelsNam.map(label => dataNam.filter(item => item.ten_linh_vuc === label).reduce((acc, curr) => acc + curr.kpi, 0));
+            const totalNam = labelsNam.map(label => dataNam.filter(item => item.ten_linh_vuc === label).reduce((acc, curr) => acc + curr.total, 0));
     
             if (barChartThang) {
                 barChartThang.destroy();
@@ -237,10 +245,16 @@
             if (barChartNam) {
                 barChartNam.destroy();
             }
-            barChartThang = createBarChart(document.getElementById('barChartThang').getContext('2d'), labelsThang, kpiThang, totalThang, 'thangTable');
-            barChartQuy = createBarChart(document.getElementById('barChartQuy').getContext('2d'), labelsQuy, kpiQuy, totalQuy, 'quyTable');
-            barChartNam = createBarChart(document.getElementById('barChartNam').getContext('2d'), labelsNam, kpiNam, totalNam, 'namTable');
+    
+            barChartThang = createBarChart(document.getElementById('barChartThang').getContext('2d'), labelsThang, kpiThang, totalThang);
+            barChartQuy = createBarChart(document.getElementById('barChartQuy').getContext('2d'), labelsQuy, kpiQuy, totalQuy);
+            barChartNam = createBarChart(document.getElementById('barChartNam').getContext('2d'), labelsNam, kpiNam, totalNam);
+    
+            updateTable(dataThang, 'thangTable');
+            updateTable(dataQuy, 'quyTable');
+            updateTable(dataNam, 'namTable');
         }
+    
         function viewDetail(thoiGian) {
             const month = document.getElementById('selectMonth').value;
             const year = document.getElementById('selectYear').value;
@@ -253,6 +267,7 @@
         setInterval(renderCharts, 3600000); // Update every hour
         renderCharts(); // Initial render
     </script>
+    
     <style>
         .legend-container {
             display: flex;

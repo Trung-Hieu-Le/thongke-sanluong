@@ -17,14 +17,17 @@
                 </div>
                 <div class="col-lg-4 col-md-12">
                     <div class="legend-container d-flex justify-content-center mt-3">
-                        <div class="legend-item">
-                            Chú thích: &nbsp;<span style="background-color: #EE3642;"></span> Dưới 33%
+                        <div class="legend-item me-2">
+                            Chú thích: &nbsp;<span style="background-color: #EE4266; display: inline-block; width: 16px; height: 16px;"></span> <=40%
                         </div>
-                        <div class="legend-item mx-2">
-                            <span style="background-color: #EB5B00;"></span> 33-60%
+                        <div class="legend-item me-2">
+                            <span style="background-color: #FFD23F; display: inline-block; width: 16px; height: 16px;"></span> <=70%
+                        </div>
+                        <div class="legend-item me-2">
+                            <span style="background-color: #337357; display: inline-block; width: 16px; height: 16px;"></span> <=100%
                         </div>
                         <div class="legend-item">
-                            <span style="background-color: #46D725;"></span> Trên 60%
+                            <span style="background-color: #5E1675; display: inline-block; width: 16px; height: 16px;"></span> >100%
                         </div>
                     </div>
                     <div id="statTable" class="mt-3"></div>
@@ -44,7 +47,6 @@
         async function fetchData(type, thoiGian, thang, nam, hopDongId) {
             let response;
             if (type === "tongquat") {
-                // TODO: lọc hợp đồng
                 response = await fetch(`/thongke/all?time_format=${thoiGian}&thang=${thang}&nam=${nam}&hop_dong=${hopDongId}`);
             } else if (type === "linhvuc") {
                 response = await fetch(`/thongke/linhvuc/all?time_format=${thoiGian}&thang=${thang}&nam=${nam}`);
@@ -59,20 +61,23 @@
 
             const backgroundColors = dataTotal.map((total, index) => {
                 const percentage = showKPI && dataKPI[index] ? (total / dataKPI[index] * 100).toFixed(1) : 'N/A';
-                if (percentage > 60) return '#46D725';
-                if (percentage > 33) return '#EB5B00';
-                return '#EE3642';
+                if (percentage > 100) return '#5E1675'; // Purple
+                if (percentage > 70) return '#337357'; // Green
+                if (percentage > 40) return '#FFD23F'; // Yellow
+                return '#EE4266'; // Red
             });
+
             const legendMargin = {
                 id: 'legendMargin',
-                beforeInit(chart, legend, options) {
-                    const fitValue=chart.legend.fit;
+                beforeInit(chart) {
+                    const fitValue = chart.legend.fit;
                     chart.legend.fit = function fit() {
                         fitValue.bind(chart.legend)();
-                        return this.height +=15;
-                    }
+                        return this.height += 15;
+                    };
                 }
-            }
+            };
+
             const datasets = [
                 {
                     label: 'Thực hiện',
@@ -85,7 +90,7 @@
                 datasets.unshift({
                     label: 'KPI',
                     data: dataKPI,
-                    backgroundColor: '#ececec'
+                    backgroundColor: '#1B5EBE'
                 });
             }
 
@@ -105,13 +110,13 @@
                     plugins: {
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
+                                label: function (context) {
                                     if (context.dataset.label === 'Thực hiện') {
                                         const index = context.dataIndex;
                                         const percentage = showKPI && dataKPI[index] ? ((dataTotal[index] / dataKPI[index]) * 100).toFixed(1) : 'N/A';
-                                        return `${context.dataset.label}: ${context.raw} (${percentage}%)`;
+                                        return `${context.dataset.label}: ${context.raw.toFixed(1)} (${percentage}%)`;
                                     } else {
-                                        return `${context.dataset.label}: ${context.raw}`;
+                                        return `${context.dataset.label}: ${context.raw.toFixed(1)}`;
                                     }
                                 }
                             }
@@ -123,14 +128,14 @@
                                 if (context.dataset.label === 'Thực hiện') {
                                     const index = context.dataIndex;
                                     const percentage = showKPI && dataKPI[index] ? ((value / dataKPI[index]) * 100).toFixed(1) : 'N/A';
-                                    return `${value} \n${percentage}%`;
+                                    return `${value.toFixed(1)} \n${percentage}%`;
                                 } else {
-                                    return value;
+                                    return value.toFixed(1);
                                 }
                             },
                             color: '#000',
                             font: {
-                                size: 15
+                                size: 10
                             },
                         }
                     }
@@ -148,7 +153,6 @@
                 thang: params.get('thang'),
                 nam: params.get('nam'),
                 hopDong: params.get('hop_dong')
-                // TODO: Lọc hợp đồng
             };
         }
 
@@ -169,32 +173,64 @@
             if (barChart) {
                 barChart.destroy();
             }
-            console.log(labels, kpi, total, showKPI);
             barChart = createBarChart(document.getElementById('barChart').getContext('2d'), labels, kpi, total, showKPI);
-            renderTable(labels, kpi, total, showKPI, 'statTable');
+            renderTable(type, data, 'statTable');
         }
 
-        function renderTable(labels, kpi, total, showKPI, tableId) {
-            const tableRows = labels.map((label, index) => {
-                const percentage = showKPI && kpi[index] ? ((total[index] / kpi[index]) * 100).toFixed(1) : 'N/A';
-                return `
-                    <tr>
-                        <td>${percentage}%</td>
-                        <td>${label}</td>
-                        <td>${kpi[index].toFixed(1)}</td>
-                        <td>${total[index].toFixed(1)}</td>
-                    </tr>
-                `;
-            }).join('');
+        function renderTable(type, data, tableId) {
+            let tableRows = '';
+            let totalKPI = 0;
+            let totalTotal = 0;
 
-            const totalKPI = kpi.reduce((acc, val) => acc + val, 0);
-            const totalTotal = total.reduce((acc, val) => acc + val, 0);
-            const totalPercentage = showKPI ? ((totalTotal / totalKPI) * 100).toFixed(1) : 'N/A';
+            if (type === "linhvuc") {
+                const groupedData = {};
+                data.forEach(item => {
+                    if (!groupedData[item.ten_khu_vuc]) {
+                        groupedData[item.ten_khu_vuc] = [];
+                    }
+                    groupedData[item.ten_khu_vuc].push(item);
+                });
+
+                for (const khuVuc in groupedData) {
+                    const khuVucData = groupedData[khuVuc];
+                    khuVucData.forEach(item => {
+                        const percentage = item.kpi ? ((item.total / item.kpi) * 100).toFixed(1) : 'N/A';
+                        tableRows += `
+                            <tr>
+                                <td>${percentage}%</td>
+                                <td>${khuVuc}</td>
+                                <td>${item.ten_linh_vuc}</td>
+                                <td>${item.kpi.toFixed(1)}</td>
+                                <td>${item.total.toFixed(1)}</td>
+                            </tr>
+                        `;
+                        totalKPI += item.kpi;
+                        totalTotal += item.total;
+                    });
+                }
+            } else {
+                tableRows = data.map((item) => {
+                    const percentage = item.kpi ? ((item.total / item.kpi) * 100).toFixed(1) : 'N/A';
+                    totalKPI += item.kpi;
+                    totalTotal += item.total;
+                    return `
+                        <tr>
+                            <td>${percentage}%</td>
+                            <td>${item.ten_khu_vuc || item.ten_linh_vuc}</td>
+                            <td>${item.kpi.toFixed(1)}</td>
+                            <td>${item.total.toFixed(1)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            const totalPercentage = totalKPI ? ((totalTotal / totalKPI) * 100).toFixed(1) : 'N/A';
 
             const totalRow = `
                 <tr>
                     <td><strong>${totalPercentage}%</strong></td>
                     <td><strong>Tổng cộng</strong></td>
+                    ${type === "linhvuc" ? '<td></td>' : ''}
                     <td><strong>${totalKPI.toFixed(1)}</strong></td>
                     <td><strong>${totalTotal.toFixed(1)}</strong></td>
                 </tr>
@@ -205,7 +241,8 @@
                     <thead>
                         <tr>
                             <th>Tỷ lệ</th>
-                            <th>Đơn vị</th>
+                            <th>Khu vực</th>
+                            ${type === "linhvuc" ? '<th>Lĩnh vực</th>' : ''}
                             <th>KPI</th>
                             <th>Thực hiện</th>
                         </tr>

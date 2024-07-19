@@ -18,6 +18,7 @@
                     </select>
                     <select id="selectHopDong" class="form-control me-2">
                         {{-- TODO: Tất cả HĐ --}}
+                        <option value="">Tất cả hợp đồng</option>
                         @foreach ($hopDongs as $hopDong)
                             <option value="{{ $hopDong->HopDong_Id }}">{{ $hopDong->HopDong_SoHopDong }}</option>
                         @endforeach
@@ -41,13 +42,16 @@
         <div class="container">
             <div class="d-flex justify-content-end align-items-center legend-container my-2" style="font-size: 15px;">
                 <div class="legend-item me-2">
-                    Chú thích: &nbsp;<span style="background-color: #EE3642; display: inline-block; width: 18px; height: 18px;"></span> Dưới 33%
+                    Chú thích: &nbsp;<span style="background-color: #EE4266; display: inline-block; width: 18px; height: 18px;"></span> <=40%
                 </div>
                 <div class="legend-item me-2">
-                    <span style="background-color: #EB5B00; display: inline-block; width: 18px; height: 18px;"></span> 33-60%
+                    <span style="background-color: #FFD23F; display: inline-block; width: 18px; height: 18px;"></span> <=70%
+                </div>
+                <div class="legend-item me-2">
+                    <span style="background-color: #337357; display: inline-block; width: 18px; height: 18px;"></span> <=100%
                 </div>
                 <div class="legend-item">
-                    <span style="background-color: #46D725; display: inline-block; width: 18px; height: 18px;"></span> Trên 60%
+                    <span style="background-color: #5E1675; display: inline-block; width: 18px; height: 18px;"></span> >100%
                 </div>
             </div>
             <div class="row">
@@ -96,12 +100,10 @@
             }
             const backgroundColors = dataTotal.map((total, index) => {
                 const percentage = dataKPI[index] ? (total / dataKPI[index] * 100).toFixed(1) : 'N/A';
-                // if (percentage <= 33) return '#EE3642'; // Red
-                // if (percentage <= 60) return '#EB5B00'; // Orange
-                // return '#46D725'; // Green
-                if (percentage > 60) return '#46D725';
-                if (percentage > 33) return '#EB5B00';
-                return '#EE3642';
+                if (percentage > 100) return '#5E1675'; // Purple
+                if (percentage > 70) return '#337357'; // Green
+                if (percentage > 40) return '#FFD23F'; // Yellow
+                return '#EE4266'; // Red
             });
             const legendMargin = {
                 id: 'legendMargin',
@@ -121,7 +123,7 @@
                         {
                             label: 'KPI',
                             data: dataKPI,
-                            backgroundColor: '#ececec'
+                            backgroundColor: '#1B5EBE'
                         },
                         {
                             label: 'Thực hiện',
@@ -205,7 +207,7 @@
                     <thead>
                         <tr>
                             <th>Tỷ lệ</th>
-                            <th>Đơn vị</th>
+                            <th>Khu vực</th>
                             <th>KPI</th>
                             <th>Thực hiện</th>
                         </tr>

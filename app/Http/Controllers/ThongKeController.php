@@ -23,17 +23,19 @@ class ThongKeController extends Controller
         $role = session('role');
         $userId = session('userid');
         $userKhuVuc = null;
+        
+        $khuVucListQuery = DB::table('tbl_tinh')
+            ->distinct()
+            // ->where('ten_khu_vuc', $userKhuVuc)
+            ->select('ten_khu_vuc')
+            ->orderBy('ten_khu_vuc');
         if ($role != 3) {
             $userKhuVuc = DB::table('tbl_user')
                 ->where('user_id', $userId)
                 ->value('user_khuvuc');
+            $khuVucListQuery->where('ten_khu_vuc', $userKhuVuc);
         }
-        $khuVucList = DB::table('tbl_tinh')
-            ->distinct()
-            ->where('ten_khu_vuc', $userKhuVuc)
-            ->select('ten_khu_vuc')
-            ->orderBy('ten_khu_vuc')
-            ->get()->toArray();
+        $khuVucList=$khuVucListQuery->get()->toArray();
         return view('thong_ke.thongke_tinh', compact('khuVucList'));
     }
     public function indexTram(Request $request)
@@ -103,7 +105,6 @@ class ThongKeController extends Controller
                 $kpi_thang[$i + 6] = $kpi_quy->kpi_quy_3 / 3;
                 $kpi_thang[$i + 9] = $kpi_quy->kpi_quy_4 / 3;
             }
-
             $whereClauseSanLuong = "";
             $whereClauseThaoLap = "";
             switch ($timeFormat) {
@@ -146,17 +147,21 @@ class ThongKeController extends Controller
                         $query->orWhere('SanLuong_Tram', 'LIKE', "$maTinh%");
                     }
                 });
-            if ($hopDongId) {
+            if (!empty($hopDongId)) {
                 $sanluongQuery->where('HopDong_Id', $hopDongId);
             }
             $sanluongData = $sanluongQuery->get();
 
             // Lấy dữ liệu từ bảng tbl_sanluong_khac
-            $sanluongKhacData = DB::table('tbl_sanluong_khac')
+            //TODO: Hợp đồng của sản lượng khác
+            $sanluongKhacData = null;
+            if (empty($hopDongId)) {
+                $sanluongKhacData = DB::table('tbl_sanluong_khac')
                 ->select('SanLuong_Tram', 'SanLuong_Ngay', 'SanLuong_Gia')
                 ->whereRaw($whereClauseSanLuong)
                 ->where('SanLuong_KhuVuc', $khuVuc)
-                ->get();
+                ->get();            
+            }
 
             // Lấy dữ liệu từ bảng tbl_sanluong_thaolap
             $thaolapQuery = DB::table('tbl_sanluong_thaolap')
@@ -176,7 +181,7 @@ class ThongKeController extends Controller
                         $query->orWhere('ThaoLap_MaTram', 'LIKE', "$maTinh%");
                     }
                 });
-            if ($hopDongId) {
+            if (!empty($hopDongId)) {
                 $thaolapQuery->where('HopDong_Id', $hopDongId);
             }
             $sanluongThaolapData = $thaolapQuery->get();
@@ -534,58 +539,70 @@ class ThongKeController extends Controller
 
     //TODO: Số liệu? không khớp với thống kê tổng quát (có thể từ tbl_sanluong_thaolap không có kv)
     public function thongKeLinhVuc(Request $request)
-    {
-        $timeFormat = $request->input('time_format');
-        $currentYear = $request->input('nam', date('Y'));
-        $currentMonth = $request->input('thang', date('n'));
-        $currentQuarter = ceil($currentMonth / 3);
-        $userRole = session('role');
-        $userId = session('userid');
-        $userKhuVuc = null;
-        if ($userRole != 3) {
-            $userKhuVuc = DB::table('tbl_user')
-                ->where('user_id', $userId)
-                ->value('user_khuvuc');
+{
+    $timeFormat = $request->input('time_format');
+    $currentYear = $request->input('nam', date('Y'));
+    $currentMonth = $request->input('thang', date('n'));
+    $currentQuarter = ceil($currentMonth / 3);
+    $userRole = session('role');
+    $userId = session('userid');
+    $userKhuVuc = null;
+    if ($userRole != 3) {
+        $userKhuVuc = DB::table('tbl_user')
+            ->where('user_id', $userId)
+            ->value('user_khuvuc');
+    }
+
+    $whereClauseSanLuong = "";
+    $whereClauseThaoLap = "";
+    switch ($timeFormat) {
+        case 'ngay':
+            $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = CURRENT_DATE()";
+            $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') = CURRENT_DATE()";
+            break;
+        case 'tuan':
+            $whereClauseSanLuong = "WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK(CURRENT_DATE())";
+            $whereClauseThaoLap = "WEEK(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = WEEK(CURRENT_DATE())";
+            break;
+        case 'thang':
+            $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentMonth";
+            $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentMonth";
+            break;
+        case 'quy':
+            $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentQuarter";
+            $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentQuarter";
+            break;
+        case 'nam':
+            $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear";
+            $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear";
+            break;
+        default:
+            return response()->json(['error' => 'Thời gian không hợp lệ']);
+    }
+
+    $khuVucs = DB::table('tbl_tinh')
+        ->distinct()
+        ->pluck('ten_khu_vuc');
+
+    $results = [];
+
+    foreach ($khuVucs as $khuVuc) {
+        if ($userRole != 3 && $khuVuc != $userKhuVuc) {
+            continue;
         }
 
-        $whereClauseSanLuong = "";
-        $whereClauseThaoLap = "";
-        switch ($timeFormat) {
-            case 'ngay':
-                $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = CURRENT_DATE()";
-                $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') = CURRENT_DATE()";
-                break;
-            case 'tuan':
-                $whereClauseSanLuong = "WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = WEEK(CURRENT_DATE())";
-                $whereClauseThaoLap = "WEEK(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = WEEK(CURRENT_DATE())";
-                break;
-            case 'thang':
-                $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentMonth";
-                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentMonth";
-                break;
-            case 'quy':
-                $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentQuarter";
-                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentQuarter";
-                break;
-            case 'nam':
-                $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear";
-                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear";
-                break;
-            default:
-                return response()->json(['error' => 'Thời gian không hợp lệ']);
-        }
+        $maTinhs = DB::table('tbl_tinh')
+            ->where('ten_khu_vuc', $khuVuc)
+            ->pluck('ma_tinh');
 
-        // Lấy dữ liệu từ bảng tbl_sanluong
         $sanluongDataQuery = DB::table('tbl_sanluong')
             ->join('tbl_tinh', 'tbl_sanluong.SanLuong_Tram', 'LIKE', DB::raw("CONCAT(tbl_tinh.ma_tinh, '%')"))
             ->select(DB::raw("IFNULL(CAST(SanLuong_Gia AS UNSIGNED), 0) as SanLuong_Gia"))
             ->whereRaw($whereClauseSanLuong)
-            ->where('ten_hinh_anh_da_xong', '<>', '');
-        if ($userRole != 3) {
-            $sanluongDataQuery->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
-        }
+            ->where('ten_hinh_anh_da_xong', '<>', '')
+            ->whereIn('tbl_tinh.ma_tinh', $maTinhs);
         $sanluongData = $sanluongDataQuery->get();
-        // Lấy dữ liệu từ bảng tbl_sanluong_thaolap
+
         $sanluongThaolapDataQuery = DB::table('tbl_sanluong_thaolap')
             ->join('tbl_tinh', 'tbl_sanluong_thaolap.ThaoLap_MaTram', 'LIKE', DB::raw("CONCAT(tbl_tinh.ma_tinh, '%')"))
             ->select(
@@ -598,85 +615,82 @@ class ThongKeController extends Controller
                 ) as SanLuong_Gia
             ")
             )
-            ->whereRaw($whereClauseThaoLap);
-        if ($userRole != 3) {
-            $sanluongThaolapDataQuery->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
-        }
+            ->whereRaw($whereClauseThaoLap)
+            ->whereIn('tbl_tinh.ma_tinh', $maTinhs);
         $sanluongThaolapData = $sanluongThaolapDataQuery->get();
-        // Tổng hợp dữ liệu EC từ tbl_sanluong và tbl_sanluong_thaolap
+
         $totalEC = $sanluongData->sum('SanLuong_Gia') + $sanluongThaolapData->sum('SanLuong_Gia');
 
-        // Lấy dữ liệu từ bảng tbl_sanluong_khac
         $sanluongKhacDataQuery = DB::table('tbl_sanluong_khac')
-            // ->join('tbl_tinh', 'tbl_sanluong_khac.ten_khu_vuc', 'LIKE', 'tbl_sanluong_khac.SanLuong_KhuVuc')
             ->select('SanLuong_TenHangMuc', DB::raw('SUM(SanLuong_Gia) as total'))
             ->whereRaw($whereClauseSanLuong)
+            ->where('SanLuong_KhuVuc', $khuVuc)
             ->groupBy('SanLuong_TenHangMuc');
-        if ($userRole != 3) {
-            $sanluongKhacDataQuery->where('SanLuong_KhuVuc', $userKhuVuc);
-        }
         $sanluongKhacData = $sanluongKhacDataQuery->get();
 
-
-        $kpiDataQuery = DB::table('tbl_kpi_quy')
-            // ->join('tbl_tinh', 'tbl_sanluong_khac.ten_khu_vuc', 'LIKE', 'tbl_kpi_quy.ten_khu_vuc')
-            ->select('noi_dung', 'kpi_quy_1', 'kpi_quy_2', 'kpi_quy_3', 'kpi_quy_4')
-            ->where('year', $currentYear);
-        if ($userRole != 3) {
-            $kpiDataQuery->where('ten_khu_vuc', $userKhuVuc);
-        }
-        $kpiData = $kpiDataQuery->get();
-        // Initialize results array
-        $results = [];
-
-        // Add EC to results
-        $results['EC'] = [
+        $results[$khuVuc]['EC'] = [
             'ten_linh_vuc' => 'EC',
             'total' => round($totalEC / 1e9, 1),
             'kpi' => 0
         ];
 
-        // Add other fields to results
         foreach ($sanluongKhacData as $row) {
-            $results[$row->SanLuong_TenHangMuc] = [
+            $results[$khuVuc][$row->SanLuong_TenHangMuc] = [
                 'ten_linh_vuc' => $row->SanLuong_TenHangMuc,
                 'total' => round($row->total / 1e9, 1),
                 'kpi' => 0
             ];
         }
+    }
 
-        // Calculate KPI
-        foreach ($kpiData as $kpi) {
-            $kpiValue = 0;
-            switch ($timeFormat) {
-                case 'thang':
-                    $kpiValue = round(($kpi->{'kpi_quy_' . $currentQuarter} / 3), 1);
-                    break;
-                case 'quy':
-                    $kpiValue = round($kpi->{'kpi_quy_' . $currentQuarter}, 1);
-                    break;
-                case 'nam':
-                    $kpiValue = round($kpi->kpi_quy_1 + $kpi->kpi_quy_2 + $kpi->kpi_quy_3 + $kpi->kpi_quy_4, 1);
-                    break;
-            }
+    $kpiDataQuery = DB::table('tbl_kpi_quy')
+        ->select('ten_khu_vuc', 'noi_dung', 'kpi_quy_1', 'kpi_quy_2', 'kpi_quy_3', 'kpi_quy_4')
+        ->where('year', $currentYear);
+    if ($userRole != 3) {
+        $kpiDataQuery->where('ten_khu_vuc', $userKhuVuc);
+    }
+    $kpiData = $kpiDataQuery->get();
 
-            if ($kpi->noi_dung === 'EC') {
-                $results['EC']['kpi'] += $kpiValue;
-            } else {
-                if (isset($results[$kpi->noi_dung])) {
-                    $results[$kpi->noi_dung]['kpi'] += $kpiValue;
-                }
-            }
+    foreach ($kpiData as $kpi) {
+        $kpiValue = 0;
+        switch ($timeFormat) {
+            case 'thang':
+                $kpiValue = round(($kpi->{'kpi_quy_' . $currentQuarter} / 3), 1);
+                break;
+            case 'quy':
+                $kpiValue = round($kpi->{'kpi_quy_' . $currentQuarter}, 1);
+                break;
+            case 'nam':
+                $kpiValue = round($kpi->kpi_quy_1 + $kpi->kpi_quy_2 + $kpi->kpi_quy_3 + $kpi->kpi_quy_4, 1);
+                break;
         }
 
-        // Round the final KPI values
-        foreach ($results as &$result) {
+        if (isset($results[$kpi->ten_khu_vuc][$kpi->noi_dung])) {
+            $results[$kpi->ten_khu_vuc][$kpi->noi_dung]['kpi'] += $kpiValue;
+        }
+    }
+
+    foreach ($results as &$khuVucData) {
+        foreach ($khuVucData as &$result) {
             $result['kpi'] = round($result['kpi'], 1);
         }
-
-        // Format the results array to return only values
-        $finalResults = array_values($results);
-
-        return response()->json($finalResults);
     }
+
+    $finalResults = [];
+    foreach ($results as $khuVuc => $data) {
+        foreach ($data as $item) {
+            $item['khu_vuc'] = $khuVuc;
+            $finalResults[] = $item;
+        }
+    }
+
+    // Sort final results by khu_vuc in ascending order
+    usort($finalResults, function($a, $b) {
+        return strcmp($a['khu_vuc'], $b['khu_vuc']);
+    });
+
+    return response()->json($finalResults);
+}
+
+
 }
