@@ -31,7 +31,7 @@
             <hr>
         </div>
 
-        @if (session('role') == 3)
+        @if (session('role') == 3 || session('role') == 2)
         <div class="container">
             <div class="d-flex justify-content-end align-items-center legend-container my-2" style="font-size: 15px;">
                 <div class="legend-item me-2">

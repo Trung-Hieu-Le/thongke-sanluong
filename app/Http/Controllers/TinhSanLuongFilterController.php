@@ -14,6 +14,9 @@ class TinhSanLuongFilterController extends Controller
     if (!$request->session()->has('username')) {
         return redirect('login');
     }
+    $userId = $request->session()->get('userid');
+    $userRole = $request->session()->get('role');
+    $userKhuVuc = DB::table('tbl_user')->where('user_id', $userId)->value('user_khuvuc');
 
     // Lấy thông tin ngày
     $daysString = $request->input('days', date('d-m-Y'));
@@ -36,7 +39,10 @@ class TinhSanLuongFilterController extends Controller
     $searchConditionHopDong = !empty($searchHopDong) ? "AND tbl_hopdong.HopDong_SoHopDong LIKE '%$searchHopDong%'" : "";
     $searchConditionKhuVuc = !empty($searchKhuVuc) ? "AND tbl_tinh.ten_khu_vuc LIKE '%$searchKhuVuc%'" : "";
     $thaoLapDayCondition = count($days) > 0 ? "AND DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y') IN (" . implode(',', $days) . ")" : "";
-
+    $userKhuVucCondition = '';
+    if ($userRole !== 3) {
+        $userKhuVucCondition = "AND tbl_tinh.ten_khu_vuc = '$userKhuVuc'";
+    }
     $perPage = 100; // Number of items per page
 
     // Truy vấn dữ liệu chi tiết từ ba bảng
@@ -57,6 +63,7 @@ class TinhSanLuongFilterController extends Controller
             $searchCondition
             $searchConditionHopDong
             $searchConditionKhuVuc
+            $userKhuVucCondition
             GROUP BY SanLuong_Tram, tbl_tinh.ten_khu_vuc, tbl_hopdong.HopDong_SoHopDong
             
             UNION ALL
@@ -75,6 +82,7 @@ class TinhSanLuongFilterController extends Controller
             $searchCondition2
             $searchConditionHopDong
             $searchConditionKhuVuc
+            $userKhuVucCondition
             GROUP BY ThaoLap_MaTram, tbl_tinh.ten_khu_vuc, tbl_hopdong.HopDong_SoHopDong
         ) as combined
     "))
@@ -101,6 +109,7 @@ class TinhSanLuongFilterController extends Controller
             $searchCondition
             $searchConditionHopDong
             $searchConditionKhuVuc
+            $userKhuVucCondition
             GROUP BY tbl_tinh.ten_khu_vuc
             
             UNION ALL
@@ -118,6 +127,7 @@ class TinhSanLuongFilterController extends Controller
             $searchCondition2
             $searchConditionHopDong
             $searchConditionKhuVuc
+            $userKhuVucCondition
             GROUP BY tbl_tinh.ten_khu_vuc
         ) as combined
     "))

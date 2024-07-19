@@ -25,21 +25,31 @@ class TinhSanLuongController extends Controller
         }, $days);
     }
     $daysList = "'" . implode("','", $days) . "'";
+    $perPage = 100;
 
-    $perPage = 100; // Number of items per page
+    $userId = $request->session()->get('userid');
+    $userRole = $request->session()->get('role');
+    $userKhuVuc = DB::table('tbl_user')->where('user_id', $userId)->value('user_khuvuc');
 
-    // Fetching paginated data from tbl_sanluong
-    $sanluongData = DB::table('tbl_sanluong')
-        ->select('HopDong_Id', 'SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
-        DB::raw("CASE WHEN SanLuong_Gia IS NULL OR SanLuong_Gia = '' THEN 0 ELSE SanLuong_Gia END as SanLuong_Gia"), 'SanLuong_TenHangMuc', 
-        DB::raw("CASE WHEN ten_hinh_anh_da_xong <> '' THEN 1 ELSE 0 END as SoLuong"),
-        DB::raw("CASE WHEN ten_hinh_anh_da_xong <> '' THEN 'Đã thi công' ELSE 'Đã khảo sát' END as TrangThai"))
-        ->where('SanLuong_Tram', $ma_tram)
-        ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d%m%Y')"), $days)
-        ->simplePaginate($perPage, ['*'], 'sanluong_page');
+    $sanluongDataQuery = DB::table('tbl_sanluong')
+        ->join('tbl_tinh', DB::raw("LEFT(tbl_sanluong.SanLuong_Tram, 3)"), '=', 'tbl_tinh.ma_tinh')
+        ->select('tbl_sanluong.HopDong_Id', 'tbl_sanluong.SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
+        DB::raw("CASE WHEN tbl_sanluong.SanLuong_Gia IS NULL OR tbl_sanluong.SanLuong_Gia = '' THEN 0 ELSE tbl_sanluong.SanLuong_Gia END as SanLuong_Gia"), 'tbl_sanluong.SanLuong_TenHangMuc', 
+        DB::raw("CASE WHEN tbl_sanluong.ten_hinh_anh_da_xong <> '' THEN 1 ELSE 0 END as SoLuong"),
+        DB::raw("CASE WHEN tbl_sanluong.ten_hinh_anh_da_xong <> '' THEN 'Đã thi công' ELSE 'Đã khảo sát' END as TrangThai"))
+        ->where('tbl_sanluong.SanLuong_Tram', $ma_tram)
+        ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d%m%Y')"), $days);
+
+    // Apply user level filter
+    if ($userRole != 3) {
+        $sanluongDataQuery->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
+    }
+
+    $sanluongData = $sanluongDataQuery->simplePaginate($perPage, ['*'], 'sanluong_page');
 
     // Fetching and transforming paginated data from tbl_sanluong_thaolap
-    $sanluongThaolapData = DB::table('tbl_sanluong_thaolap')
+    $sanluongThaolapDataQuery = DB::table('tbl_sanluong_thaolap')
+        ->join('tbl_tinh', DB::raw("LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3)"), '=', 'tbl_tinh.ma_tinh')
         ->select('tbl_sanluong_thaolap.HopDong_Id', 'ThaoLap_MaTram as SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
             DB::raw("'Anten' as SanLuong_TenHangMuc"), 
             DB::raw("CASE WHEN ThaoLap_Anten IS NULL OR ThaoLap_Anten = '' THEN 0 ELSE ThaoLap_Anten END as SoLuong"), 
@@ -76,8 +86,13 @@ class TinhSanLuongController extends Controller
                 DB::raw("'Đã thi công' as TrangThai"))
             ->where('tbl_sanluong_thaolap.ThaoLap_MaTram', $ma_tram)
             ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong_thaolap.ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y')"), $days)
-        )
-        ->simplePaginate($perPage, ['*'], 'sanluong_thaolap_page');
+        );
+
+    if ($userRole != 3) {
+        $sanluongThaolapDataQuery->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
+    }
+
+    $sanluongThaolapData = $sanluongThaolapDataQuery->simplePaginate($perPage, ['*'], 'sanluong_thaolap_page');
 
     // Merging data from all tables
     $allData = new Collection;
@@ -102,11 +117,6 @@ class TinhSanLuongController extends Controller
     return view('san_luong.sanluong_tram_view', compact('pagedData', 'ma_tram', 'days', 'totalThanhTien'));
 }
 
-    
-
-
-
-
     public function viewHinhAnhTram(Request $request)
     {
         if (!$request->session()->has('username')) {
@@ -122,15 +132,22 @@ class TinhSanLuongController extends Controller
                 return str_replace('-', '', $day);
             }, $days);
         }
+        $userId = $request->session()->get('userid');
+        $userRole = $request->session()->get('role');
+        $userKhuVuc = DB::table('tbl_user')->where('user_id', $userId)->value('user_khuvuc');
 
         $query = DB::table('tbl_hinhanh')
+            ->join('tbl_tinh', DB::raw("LEFT(tbl_hinhanh.ma_tram, 3)"), '=', 'tbl_tinh.ma_tinh')
             ->where('ma_tram', $ma_tram)
             ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(thoi_gian_chup, '%d%m%Y'), '%d%m%Y')"), $days)
             ->select('ten_hang_muc', 'ten_anh_chuan_bi', 'ten_anh_da_xong');
 
-        $userid = $request->session()->get('userid');
-        if (in_array($userid, [0, 1])) {
-            $query->where('user_id', $userid);
+        // $userid = $request->session()->get('role');
+        // if (in_array($userRole, [0, 1])) {
+        //     $query->where('user_id', $userRole);
+        // }
+        if ($userRole != 3) {
+            $query->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
         }
 
         $rawData = $query->get();

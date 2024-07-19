@@ -89,7 +89,7 @@
                 </table>
                 @else
                 <div class="alert alert-danger container">
-                    Bạn không đủ thẩm quyền để xem thống kê.
+                    Bạn không đủ thẩm quyền để xem Sản lượng khác.
                 </div>
                 @endif
             </div>

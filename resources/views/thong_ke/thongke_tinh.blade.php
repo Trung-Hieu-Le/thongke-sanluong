@@ -36,7 +36,7 @@
         </center>
     </div>
     
-    @if (session('role') == 3)
+    @if (session('role') == 3 || session('role') == 2)
     <div class="container">
         <div class="row">
             <div class="col-lg-4 col-md-12">
@@ -193,23 +193,23 @@
                         var row = `
                             <tr>
                                 <td class="ma-tinh"><a class="simple-link" href="/thongke/tinh/${item.ma_tinh}">${item.ma_tinh}</a></td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.nam)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.quy_1)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.quy_2)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.quy_3)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.quy_4)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_1)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_2)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_3)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_4)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_5)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_6)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_7)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_8)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_9)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_10)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_11)}</td>
-                                <td>${Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(item.tong_san_luong.thang_12)}</td>
+                                <td>${formatNumber(item.tong_san_luong.nam)}</td>
+                                <td>${formatNumber(item.tong_san_luong.quy_1)}</td>
+                                <td>${formatNumber(item.tong_san_luong.quy_2)}</td>
+                                <td>${formatNumber(item.tong_san_luong.quy_3)}</td>
+                                <td>${formatNumber(item.tong_san_luong.quy_4)}</td>
+                                <td>${formatNumber(item.tong_san_luong.thang_1)}</td>
+                                <td>${formatNumber(item.tong_san_luong.thang_2)}</td>
+                                <td>${formatNumber(item.tong_san_luong.thang_3)}</td>
+                                <td>${formatNumber(item.tong_san_luong.thang_4)}</td>
+                                <td>${formatNumber(item.tong_san_luong.thang_5)}</td>
+                                <td>${formatNumber(item.tong_san_luong.thang_6)}</td>
+                                <td>${formatNumber(item.tong_san_luong.thang_7)}</td>
+                                <td>${formatNumber(item.tong_san_luong.thang_8)}</td>
+                                <td>${formatNumber(item.tong_san_luong.thang_9)}</td>
+                                <td>${formatNumber(item.tong_san_luong.thang_10)}</td>
+                                <td>${formatNumber(item.tong_san_luong.thang_11)}</td>
+                                <td>${formatNumber(item.tong_san_luong.thang_12)}</td>
                             </tr>
                         `;
                         tbody.append(row);
@@ -217,6 +217,11 @@
                 }
             });
         }
+
+        function formatNumber(number) {
+            return Math.round(number).toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
 
         // Cập nhật tất cả các biểu đồ và bảng khi thay đổi khu vực hoặc ngày
         $('#khu-vuc-chon, #ngay-chon').on('change', function() {

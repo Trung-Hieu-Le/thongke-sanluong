@@ -16,6 +16,12 @@
                             <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>Năm {{ $year }}</option>
                         @endfor
                     </select>
+                    <select id="selectHopDong" class="form-control me-2">
+                        {{-- TODO: Tất cả HĐ --}}
+                        @foreach ($hopDongs as $hopDong)
+                            <option value="{{ $hopDong->HopDong_Id }}">{{ $hopDong->HopDong_SoHopDong }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 {{-- <a href="/thongke/khuvuc/" class="simple-link h4 mb-0">Thống kê theo khu vực</a> --}}
             </div>
@@ -31,19 +37,8 @@
             <hr>
         </div>
 
-        @if (session('role') == 3)
+        @if (session('role') == 3 || session('role') == 2 ) 
         <div class="container">
-            {{-- <div class="legend-container d-flex justify-content-center mt-3">
-                <div class="legend-item">
-                    Chú thích: &nbsp;<span style="background-color: #EE3642;"></span> Dưới 33%
-                </div>
-                <div class="legend-item mx-2">
-                    <span style="background-color: #EB5B00;"></span> 33-60%
-                </div>
-                <div class="legend-item">
-                    <span style="background-color: #46D725;"></span> Trên 60%
-                </div>
-            </div> --}}
             <div class="d-flex justify-content-end align-items-center legend-container my-2" style="font-size: 15px;">
                 <div class="legend-item me-2">
                     Chú thích: &nbsp;<span style="background-color: #EE3642; display: inline-block; width: 18px; height: 18px;"></span> Dưới 33%
@@ -90,8 +85,8 @@
         console.log("Script thành công");
         let barChartThang, barChartQuy, barChartNam;
     
-        async function fetchData(thoiGian, thang, nam) {
-            const response = await fetch(`/thongke/all?time_format=${thoiGian}&thang=${thang}&nam=${nam}`);
+        async function fetchData(thoiGian, thang, nam, hopDongId) {
+            const response = await fetch(`/thongke/all?time_format=${thoiGian}&thang=${thang}&nam=${nam}&hop_dong=${hopDongId}`);
             return response.json();
         }
     
@@ -226,9 +221,10 @@
         async function renderCharts() {
             const thang = document.getElementById('selectMonth').value;
             const nam = document.getElementById('selectYear').value;
-            const dataThang = await fetchData('thang', thang, nam);
-            const dataQuy = await fetchData('quy', thang, nam);
-            const dataNam = await fetchData('nam', thang, nam);
+            const hopDongId = document.getElementById('selectHopDong').value;
+            const dataThang = await fetchData('thang', thang, nam, hopDongId);
+            const dataQuy = await fetchData('quy', thang, nam, hopDongId);
+            const dataNam = await fetchData('nam', thang, nam, hopDongId);
             const labelsThang = dataThang.map(item => item.ten_khu_vuc);
             const kpiThang = dataThang.map(item => item.kpi);
             const totalThang = dataThang.map(item => item.total);
@@ -255,12 +251,14 @@
         function viewDetail(thoiGian) {
             const month = document.getElementById('selectMonth').value;
             const year = document.getElementById('selectYear').value;
-            window.location.href = `/chi-tiet-chart?type=tongquat&time-format=${thoiGian}&thang=${month}&nam=${year}`;
+            const hopDongId = document.getElementById('selectHopDong').value;
+            window.location.href = `/chi-tiet-chart?type=tongquat&time-format=${thoiGian}&thang=${month}&nam=${year}&hop_dong=${hopDongId}`;
         }
     
         document.getElementById('selectMonth').addEventListener('change', renderCharts);
         document.getElementById('selectYear').addEventListener('change', renderCharts);
-    
+        document.getElementById('selectHopDong').addEventListener('change', renderCharts);
+
         setInterval(renderCharts, 3600000); // Update every hour
         renderCharts(); // Initial render
     </script>

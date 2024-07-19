@@ -15,11 +15,11 @@
         <div class="main-content px-3">
             <div id="results">
                 <div class="d-flex justify-content-start mb-2">
-                    @if (session('role') == 2 || session('role') == 3)
+                    @if ( session('role') == 3)
                         <a href="{{route('kpiquy.add')}}"><button class="btn btn-primary">Thêm</button></a>
                     @endif
                 </div>
-                @if (session('role') == 2 || session('role') == 3)
+                @if ( session('role') == 3)
                 <table class="scrollable-table mb-3">
                     <thead>
                         <tr>
@@ -60,7 +60,7 @@
                 </table>
                 @else
                 <div class="alert alert-danger container">
-                    Bạn không đủ thẩm quyền để xem thống kê.
+                    Bạn không đủ thẩm quyền để xem KPI.
                 </div>
                 @endif
             </div>

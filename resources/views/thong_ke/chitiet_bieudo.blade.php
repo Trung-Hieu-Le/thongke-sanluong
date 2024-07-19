@@ -9,7 +9,7 @@
             </div>
         </div>
 
-        @if (session('role') == 3)
+        @if (session('role') == 3 || session('role') == 2)
         <div class="container">
             <div class="row">
                 <div class="col-lg-8 col-md-12">
@@ -41,13 +41,12 @@
     <script>
         let barChart;
 
-        async function fetchData(type, thoiGian, thang, nam) {
+        async function fetchData(type, thoiGian, thang, nam, hopDongId) {
             let response;
             if (type === "tongquat") {
-                console.log("Lấy data tổng quát");
-                response = await fetch(`/thongke/all?time_format=${thoiGian}&thang=${thang}&nam=${nam}`);
+                // TODO: lọc hợp đồng
+                response = await fetch(`/thongke/all?time_format=${thoiGian}&thang=${thang}&nam=${nam}&hop_dong=${hopDongId}`);
             } else if (type === "linhvuc") {
-                console.log("Lấy data lĩnh vực");
                 response = await fetch(`/thongke/linhvuc/all?time_format=${thoiGian}&thang=${thang}&nam=${nam}`);
             }
             return response.json();
@@ -147,7 +146,9 @@
                 type: params.get('type'),
                 timeFormat: params.get('time-format'),
                 thang: params.get('thang'),
-                nam: params.get('nam')
+                nam: params.get('nam'),
+                hopDong: params.get('hop_dong')
+                // TODO: Lọc hợp đồng
             };
         }
 
@@ -157,8 +158,9 @@
             const timeFormat = params.timeFormat;
             const thang = params.thang;
             const nam = params.nam;
+            const hopDong = params.hopDong;
 
-            const data = await fetchData(type, timeFormat, thang, nam);
+            const data = await fetchData(type, timeFormat, thang, nam, hopDong);
             const labels = type === "tongquat" ? data.map(item => item.ten_khu_vuc) : data.map(item => item.ten_linh_vuc);
             const kpi = type === "tongquat" || type === "linhvuc" ? data.map(item => item.kpi) : [];
             const total = data.map(item => item.total);
