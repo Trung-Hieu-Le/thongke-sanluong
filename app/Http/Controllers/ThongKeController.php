@@ -12,8 +12,22 @@ class ThongKeController extends Controller
         if (!$request->session()->has('username')) {
             return redirect('/login');
         }
+        $role = session('role');
+        $userId = session('userid');
+        $userKhuVuc = null;
+        if ($role != 3) {
+            $userKhuVuc = DB::table('tbl_user')
+                ->where('user_id', $userId)
+                ->value('user_khuvuc');
+        }
+        $khuVucs = DB::table('tbl_tinh')
+            ->distinct()
+            ->orderBy('ten_khu_vuc')
+            ->pluck('ten_khu_vuc');
+        // dd($khuVucs);
         $hopDongs = DB::table('tbl_hopdong')->select('HopDong_Id', 'HopDong_SoHopDong')->get();
-        return view('thong_ke.thongke_tongquat', compact('hopDongs'));    
+        $doiTacs = DB::table('tbl_user')->select('user_id', 'user_name')->get();
+        return view('thong_ke.thongke_tongquat', compact('hopDongs', 'khuVucs', 'doiTacs'));    
     }
     public function indexTinh(Request $request)
     {
@@ -63,11 +77,12 @@ class ThongKeController extends Controller
         $currentQuarter = ceil($currentMonth / 3);
         $hopDongId = $request->input('hop_dong');
         $role = session('role');
-        $userId = session('userid');
+        $userId = $request->input('user'); // Lấy user từ request
+        $role = session('role');
         $userKhuVuc = null;
         if ($role != 3) {
             $userKhuVuc = DB::table('tbl_user')
-                ->where('user_id', $userId)
+                ->where('user_id', session('userid'))
                 ->value('user_khuvuc');
         }
         // dd($userKhuVuc);
@@ -156,11 +171,14 @@ class ThongKeController extends Controller
             //TODO: Hợp đồng của sản lượng khác
             $sanluongKhacData = null;
             if (empty($hopDongId)) {
-                $sanluongKhacData = DB::table('tbl_sanluong_khac')
+                $sanluongKhacQuery = DB::table('tbl_sanluong_khac')
                 ->select('SanLuong_Tram', 'SanLuong_Ngay', 'SanLuong_Gia')
                 ->whereRaw($whereClauseSanLuong)
-                ->where('SanLuong_KhuVuc', $khuVuc)
-                ->get();            
+                ->where('SanLuong_KhuVuc', $khuVuc);
+                if (!empty($userId)) {
+                    $sanluongKhacQuery->where('user_id', $userId);
+                }
+                $sanluongKhacData = $sanluongKhacQuery->get();      
             }
 
             // Lấy dữ liệu từ bảng tbl_sanluong_thaolap
@@ -203,6 +221,184 @@ class ThongKeController extends Controller
 
         return response()->json($results);
     }
+    //TODO: thêm phần hợp đồng và user
+    public function thongKeXuTheKhuVuc(Request $request)
+{
+    // Lấy tham số từ request
+    $timeFormat = $request->input('time_format');
+    $ngayChon = $request->input('ngay_chon', date('Y-m-d')); // mặc định là ngày hiện tại
+    $hopDongId = $request->input('hop_dong');
+    $userId = $request->input('user_id');
+    $role = session('role');
+    $userKhuVuc = null;
+
+    if ($role != 3) {
+        $userKhuVuc = DB::table('tbl_user')
+            ->where('user_id', $userId)
+            ->value('user_khuvuc');
+    }
+
+    $khuVucs = DB::table('tbl_tinh')
+        ->distinct()
+        ->orderBy('ten_khu_vuc')
+        ->pluck('ten_khu_vuc');
+
+    $results = [];
+
+    foreach ($khuVucs as $khuVuc) {
+        if ($role != 3 && $khuVuc != $userKhuVuc) {
+            continue;
+        }
+
+        $maTinhs = DB::table('tbl_tinh')
+            ->where('ten_khu_vuc', $khuVuc)
+            ->pluck('ma_tinh')
+            ->toArray();
+
+        // Khởi tạo mảng lưu kết quả chi tiết
+        $detailedResults = [];
+
+        // Thiết lập điều kiện thời gian
+        $currentYear = date('Y', strtotime($ngayChon));
+        $currentMonth = date('n', strtotime($ngayChon));
+        $currentQuarter = ceil($currentMonth / 3);
+        $dayOfWeek = date('N', strtotime($ngayChon));
+        $startOfWeek = date('Y-m-d', strtotime("$ngayChon -" . ($dayOfWeek - 1) . " days"));
+        $endOfWeek = date('Y-m-d', strtotime("$startOfWeek +6 days"));
+
+        switch ($timeFormat) {
+            case 'tuan':
+                for ($i = 0; $i < 7; $i++) {
+                    $date = date('Y-m-d', strtotime("$startOfWeek +$i days"));
+                    $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = '$date'";
+                    $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') = '$date'";
+                    $result = $this->getSanLuongData($khuVuc, $maTinhs, $whereClauseSanLuong, $whereClauseThaoLap, $hopDongId, $userId);
+                    $result['time_period'] = date('Y-m-d', strtotime($date));
+                    $detailedResults[] = $result;
+                }
+                break;
+            case 'thang':
+                for ($i = 1; $i <= 12; $i++) {
+                    $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $i";
+                    $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $i";
+                    $result = $this->getSanLuongData($khuVuc, $maTinhs, $whereClauseSanLuong, $whereClauseThaoLap, $hopDongId, $userId);
+                    $result['time_period'] = $i; // Month
+                    $detailedResults[] = $result;
+                }
+                break;
+            case 'quy':
+                for ($i = 1; $i <= 4; $i++) {
+                    $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $i";
+                    $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $i";
+                    $result = $this->getSanLuongData($khuVuc, $maTinhs, $whereClauseSanLuong, $whereClauseThaoLap, $hopDongId, $userId);
+                    $result['time_period'] = $i; // Quarter
+                    $detailedResults[] = $result;
+                }
+                break;
+            case 'nam':
+                $years = DB::table('tbl_sanluong')
+                    ->selectRaw('YEAR(STR_TO_DATE(SanLuong_Ngay, "%d%m%Y")) as year')
+                    ->orderBy('year', 'asc')
+                    ->distinct()
+                    ->pluck('year');
+                foreach ($years as $year) {
+                    $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $year";
+                    $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $year";
+                    $result = $this->getSanLuongData($khuVuc, $maTinhs, $whereClauseSanLuong, $whereClauseThaoLap, $hopDongId, $userId);
+                    $result['time_period'] = $year; // Year
+                    $detailedResults[] = $result;
+                }
+                break;
+            default:
+                return response()->json(['error' => 'Thời gian không hợp lệ']);
+        }
+
+        // Tính tổng sản lượng và thêm kết quả vào mảng
+        $total = array_reduce($detailedResults, function ($carry, $item) {
+            return $carry + $item['total'];
+        }, 0);
+
+        $results[] = [
+            'ten_khu_vuc' => $khuVuc,
+            'total' => round($total / 1e9, 1),
+            'details' => $detailedResults
+        ];
+    }
+
+    return response()->json($results);
+}
+
+// Hàm phụ để lấy dữ liệu sản lượng
+private function getSanLuongData($khuVuc, $maTinhs, $whereClauseSanLuong, $whereClauseThaoLap, $hopDongId, $userId)
+{
+    // Lấy dữ liệu từ bảng tbl_sanluong
+    $sanluongQuery = DB::table('tbl_sanluong')
+        ->select('SanLuong_Tram', 'SanLuong_Ngay', 'SanLuong_Gia')
+        ->whereRaw($whereClauseSanLuong)
+        ->where('ten_hinh_anh_da_xong', '!=', '')
+        ->where(function ($query) use ($maTinhs) {
+            foreach ($maTinhs as $maTinh) {
+                $query->orWhere('SanLuong_Tram', 'LIKE', "$maTinh%");
+            }
+        });
+    if (!empty($hopDongId)) {
+        $sanluongQuery->where('HopDong_Id', $hopDongId);
+    }
+    $sanluongData = $sanluongQuery->get();
+
+    // Lấy dữ liệu từ bảng tbl_sanluong_khac
+    // TODO: Hợp đồng của sản lượng khác
+    $sanluongKhacData = null;
+    if (empty($hopDongId)) {
+        $sanluongKhacQuery = DB::table('tbl_sanluong_khac')
+            ->select('SanLuong_Tram', 'SanLuong_Ngay', 'SanLuong_Gia')
+            ->whereRaw($whereClauseSanLuong)
+            ->where('SanLuong_KhuVuc', $khuVuc);
+            if (!empty($userId)) {
+                $sanluongKhacQuery->where('user_id', $userId);
+            }
+            $sanluongKhacData = $sanluongKhacQuery->get(); 
+    }
+
+    // Lấy dữ liệu từ bảng tbl_sanluong_thaolap
+    $thaolapQuery = DB::table('tbl_sanluong_thaolap')
+        ->select(
+            'ThaoLap_MaTram as SanLuong_Tram',
+            DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') as SanLuong_Ngay"),
+            DB::raw("
+                ThaoLap_Anten * DonGia_Anten +
+                ThaoLap_RRU * DonGia_RRU +
+                ThaoLap_TuThietBi * DonGia_TuThietBi +
+                ThaoLap_CapNguon * DonGia_CapNguon as SanLuong_Gia
+            ")
+        )
+        ->whereRaw($whereClauseThaoLap)
+        ->where(function ($query) use ($maTinhs) {
+            foreach ($maTinhs as $maTinh) {
+                $query->orWhere('ThaoLap_MaTram', 'LIKE', "$maTinh%");
+            }
+        });
+    if (!empty($hopDongId)) {
+        $thaolapQuery->where('HopDong_Id', $hopDongId);
+    }
+    $sanluongThaolapData = $thaolapQuery->get();
+
+    // Kết hợp dữ liệu từ 3 bảng
+    $sanluongData = $sanluongData->concat($sanluongThaolapData);
+    if (!empty($sanluongKhacData)) {
+        $sanluongData = $sanluongData->concat($sanluongKhacData);
+    }
+
+    // Tính tổng sản lượng
+    $total = $sanluongData->reduce(function ($carry, $item) {
+        $gia = is_numeric($item->SanLuong_Gia) ? floatval($item->SanLuong_Gia) : 0;
+        return $carry + $gia;
+    }, 0);
+
+    return ['total' => $total];
+}
+
+
     public function thongKeTinh(Request $request)
     {
         // $khuVuc = $request->input('khu_vuc');

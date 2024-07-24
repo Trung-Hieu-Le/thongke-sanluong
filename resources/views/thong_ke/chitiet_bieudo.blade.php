@@ -55,6 +55,7 @@
         }
 
         function createBarChart(ctx, labels, dataKPI, dataTotal, showKPI) {
+            console.log(labels);
             if (ctx.chart) {
                 ctx.chart.destroy();
             }
@@ -165,10 +166,23 @@
             const hopDong = params.hopDong;
 
             const data = await fetchData(type, timeFormat, thang, nam, hopDong);
-            const labels = type === "tongquat" ? data.map(item => item.ten_khu_vuc) : data.map(item => item.ten_linh_vuc);
+            // TODO: thêm khu vực
+            const labels = type === "tongquat" ? data.map(item => item.ten_khu_vuc) : data.map(item => item.ten_linh_vuc + '-' + item.khu_vuc);
             const kpi = type === "tongquat" || type === "linhvuc" ? data.map(item => item.kpi) : [];
             const total = data.map(item => item.total);
             const showKPI = type === "tongquat" || type === "linhvuc";
+            // let labels, kpi, total, showKPI;
+            // if (type == "linhvuc") {
+            //     labels = Array.from(new Set(data.map(item => item.ten_linh_vuc)));
+            //     kpi = labels.map(label => data.filter(item => item.ten_linh_vuc === label).reduce((acc, curr) => acc + curr.kpi, 0));
+            //     total = labels.map(label => data.filter(item => item.ten_linh_vuc === label).reduce((acc, curr) => acc + curr.total, 0));
+            //     showKPI = true;
+            // } else {
+            //     labels = data.map(item => item.ten_khu_vuc);
+            //     kpi = data.map(item => item.kpi);
+            //     total = data.map(item => item.total);
+            //     showKPI = true;
+            // }
 
             if (barChart) {
                 barChart.destroy();
@@ -185,11 +199,12 @@
             if (type === "linhvuc") {
                 const groupedData = {};
                 data.forEach(item => {
-                    if (!groupedData[item.ten_khu_vuc]) {
-                        groupedData[item.ten_khu_vuc] = [];
+                    if (!groupedData[item.khu_vuc]) {
+                        groupedData[item.khu_vuc] = [];
                     }
-                    groupedData[item.ten_khu_vuc].push(item);
+                    groupedData[item.khu_vuc].push(item);
                 });
+                console.log(groupedData);
 
                 for (const khuVuc in groupedData) {
                     const khuVucData = groupedData[khuVuc];
@@ -198,7 +213,7 @@
                         tableRows += `
                             <tr>
                                 <td>${percentage}%</td>
-                                <td>${khuVuc}</td>
+                                <td>${item.khu_vuc}</td>
                                 <td>${item.ten_linh_vuc}</td>
                                 <td>${item.kpi.toFixed(1)}</td>
                                 <td>${item.total.toFixed(1)}</td>
@@ -216,7 +231,7 @@
                     return `
                         <tr>
                             <td>${percentage}%</td>
-                            <td>${item.ten_khu_vuc || item.ten_linh_vuc}</td>
+                            <td>${item.ten_khu_vuc}</td>
                             <td>${item.kpi.toFixed(1)}</td>
                             <td>${item.total.toFixed(1)}</td>
                         </tr>

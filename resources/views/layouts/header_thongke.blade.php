@@ -23,7 +23,7 @@
                 </button>
                 <div class="collapse navbar-collapse justify-content-end text-end" id="navbarSupportedContent">
                     <ul class="navbar-nav fill h-100" style="font-size: 15px;">
-                        <li class="nav-item dropdown ms-1 me-4">
+                        <li class="nav-item dropdown ms-1 me-2">
                             <a class="nav-link fw-semibold " href="#" style="color:#040404 ;z-index: 2;" data-bs-toggle="dropdown">THỐNG KÊ</a>
                             <ul class="dropdown-menu p-0 text-end text-lg-start border-0 shadow-sm">
                                 <li class="dropdown-navbar">
@@ -43,20 +43,23 @@
                                 </li>
                             </ul>
                         </li>
-                        <li class="nav-item ms-1 me-4">
-                            <a class="nav-link fw-semibold " href="{{ route('tram.filter')}}" style="color:#040404 ;z-index: 2;">TÍNH SẢN LƯỢNG</a>
+                        <li class="nav-item ms-1 me-2">
+                            <a class="nav-link fw-semibold " href="{{ route('tram.filter')}}" style="color:#040404 ;z-index: 2;">SẢN LƯỢNG THI CÔNG</a>
                         </li>
-                        <li class="nav-item ms-1 me-4">
-                            <a class="nav-link fw-semibold " href="/sanluong-khac/index" style="color:#040404 ;z-index: 2;">SẢN LƯỢNG KHÁC</a>
-                        </li>
-                        
-                        <li class="nav-item ms-1 me-4">
+                        <li class="nav-item ms-1 me-2">
                             <a class="nav-link fw-semibold " href="/kpi-quy/index" style="color:#040404 ;z-index: 2;">KPI</a>
                         </li>
-                        <li class="nav-item dropdown ms-1 me-4">
-                                <a style="color:#040404 ;z-index: 2;" href="#" class="nav-link fw-semibold" data-bs-toggle="dropdown"
-                                aria-expanded="true">
-                                TÀI KHOẢN
+                        <li class="nav-item ms-1 me-2 bg-danger rounded-pill mb-2">
+                            <a class="nav-link fw-semibold text-light" href="/sanluong-khac/index" style="color:#040404 ;z-index: 2;">LĨNH VỰC KHÁC +</a>
+                        </li>
+                        <li class="nav-item ms-1 me-2">
+                            <a class="nav-link fw-semibold " href="#" style="color:#040404 ; font-size:20px ;z-index: 2;"><i class="fa fa-comments" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown ms-1 me-2">
+                            <a style="color:#040404; font-size:20px ;z-index: 2;" href="#" class="nav-link fw-semibold" data-bs-toggle="dropdown"
+                            aria-expanded="true">
+                                <i class="fa fa-user-circle" aria-hidden="true"></i>
                             </a>
                             <ul class="dropdown-menu p-0 text-end text-lg-start border-0 shadow-sm">
                                 {{-- <li class="dropdown-navbar">
