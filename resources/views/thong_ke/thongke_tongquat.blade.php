@@ -42,7 +42,7 @@
                                     <option value="{{ $i }}" {{ $i == date('n') ? 'selected' : '' }}>Tháng {{ $i }}</option>
                                 @endfor
                             </select>
-                            <select id="selectQuarter" class="form-control me-2">
+                            <select id="selectQuarter" class="form-control me-2" hidden>
                                 @for ($i = 1; $i <= 4; $i++)
                                     <option value="{{ $i }}" {{ $i == ceil(date('m')/3) ? 'selected' : '' }}>Quý {{ $i }}</option>
                                 @endfor
@@ -106,9 +106,12 @@
                             <span style="background-color: #5E1675; display: inline-block; width: 15px; height: 15px;"></span> >100%
                         </div>
                     </div>
-                    <div class="col-lg-4 col-md-12">
-                        <i class="fa fa-search-plus ml-2" aria-hidden="true" onclick="viewDetail('thang')"></i>                        
-                        <canvas id="barChartXuThe"></canvas>
+                    <div>
+                        {{-- TODO: View detail --}}
+                        {{-- <i class="fa fa-search-plus ml-2" aria-hidden="true" onclick="viewDetail('thang')"></i>                         --}}
+                        <div id="chart-wrapper">
+                            <canvas id="barChartXuThe"></canvas>
+                        </div>
                         <div class="table-container mt-lg-3" id="tableXuThe"></div>
                     </div>
                 </div>
@@ -165,6 +168,7 @@
                     }]
                 },
                 options: {
+                    responsive: true,
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -220,14 +224,76 @@
                 }
             });
         }
-    
+
+        const ctx = document.getElementById('barChartXuThe').getContext('2d');
+        const barChartXuThe = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'KPI',
+                        data: [],
+                        backgroundColor: '#1B5EBE'
+                    },
+                    {
+                        label: 'Thực hiện',
+                        data: [],
+                        backgroundColor: [] // This will be updated
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataset.label === 'Thực hiện') {
+                                    const index = context.dataIndex;
+                                    const percentage = context.chart.data.datasets[0].data[index] ? ((context.raw / context.chart.data.datasets[0].data[index]) * 100).toFixed(1) : 'N/A';
+                                    return `${context.dataset.label}: ${context.raw} (${percentage}%)`;
+                                } else {
+                                    return `${context.dataset.label}: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'end',
+                        formatter: (value, context) => {
+                            if (context.dataset.label === 'Thực hiện') {
+                                const index = context.dataIndex;
+                                const percentage = context.chart.data.datasets[0].data[index] ? ((value / context.chart.data.datasets[0].data[index]) * 100).toFixed(1) : 'N/A';
+                                return `${value} \n${percentage}%`;
+                            } else {
+                                return value;
+                            }
+                        },
+                        color: '#000',
+                        font: {
+                            size: 10
+                        },
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+
+
         // Initialize all charts
         const barCharts = {};
         @foreach ($khuVucs as $khuVuc)
             barCharts["{{ $khuVuc }}"] = createBarChart(document.getElementById('chart-{{ $khuVuc }}').getContext('2d'));
         @endforeach
         const lineChart = createLineChart(document.getElementById('lineChart').getContext('2d'));
-        const barChartXuThe = createBarChart(document.getElementById('barChartXuThe').getContext('2d'));
+      
 
     
         function updateAllCharts(time_format, ngay_chon, hop_dong, user) {
@@ -304,7 +370,41 @@
 
                     const chart = barChartXuThe;
                     chart.data.labels = labels;
-                    chart.data.datasets[0].data = dataTotal;
+                    
+                    // Ensure datasets are initialized
+                    if (chart.data.datasets.length < 2) {
+                        chart.data.datasets = [
+                            {
+                                label: 'KPI',
+                                data: dataKPI,
+                                backgroundColor: '#1B5EBE'
+                            },
+                            {
+                                label: 'Thực hiện',
+                                data: dataTotal,
+                                backgroundColor: dataTotal.map((total, index) => {
+                                    const percentage = dataKPI[index] ? (total / dataKPI[index] * 100).toFixed(1) : 'N/A';
+                                    if (percentage > 100) return '#5E1675'; // Purple
+                                    if (percentage > 70) return '#337357'; // Green
+                                    if (percentage > 40) return '#FFD23F'; // Yellow
+                                    return '#EE4266'; // Red
+                                })
+                            }
+                        ];
+                    } else {
+                        chart.data.datasets[0].data = dataKPI;
+                        chart.data.datasets[1].data = dataTotal;
+                        
+                        // Update background colors based on percentage
+                        chart.data.datasets[1].backgroundColor = dataTotal.map((total, index) => {
+                            const percentage = dataKPI[index] ? (total / dataKPI[index] * 100).toFixed(1) : 'N/A';
+                            if (percentage > 100) return '#5E1675'; // Purple
+                            if (percentage > 70) return '#337357'; // Green
+                            if (percentage > 40) return '#FFD23F'; // Yellow
+                            return '#EE4266'; // Red
+                        });
+                    }
+
                     chart.update();
 
                     const tableRows = data.map((item, index) => {
@@ -358,6 +458,22 @@
             const year = document.getElementById('selectYear').value;
             return `${year}-${month}-${day}`;
         }
+
+        function updateTotals() {
+            const ngay_chon = getFormattedDate();
+            $.ajax({
+                url: `/thongke/tong-thang-nam`,
+                method: 'GET',
+                data: { ngay_chon: ngay_chon },
+                success: function(data) {
+                    console.log(data);
+                    const totalYear = data.totalYear;
+                    const totalMonth = data.totalMonth;
+                    document.getElementById('totalYear').textContent = `${number_format(totalYear, 0, ',', '.')} VNĐ`;
+                    document.getElementById('totalMonth').textContent = `${number_format(totalMonth, 0, ',', '.')} VNĐ`;
+                }
+            });
+        }
     
         $('#timeFormat, #selectDay, #selectMonth, #selectQuarter, #selectYear, #selectHopDong, #selectUser').on('change', function() {
             const selectedTimeFormat = $('#timeFormat').val();
@@ -366,6 +482,7 @@
             const user = $('#selectUser').val();
             const quarter = $('#selectQuarter').val();
             updateAllCharts(selectedTimeFormat, formattedDate, hop_dong, user);
+            updateTotals();
         });
     
         $(document).ready(function() {
@@ -376,6 +493,7 @@
             const user = $('#selectUser').val();
             const quarter = $('#selectQuarter').val();
             updateAllCharts(initialTimeFormat, formattedDate, hop_dong, user);
+            updateTotals();
         });
     
         setInterval(function() {
@@ -385,8 +503,15 @@
             const user = $('#selectUser').val();
             const quarter = $('#selectQuarter').val();
             updateAllCharts(selectedTimeFormat, formattedDate, hop_dong, user);
+            updateTotals();
         }, 3600000);
     </script>
-    
+    {{-- <style>
+        #chart-wrapper {
+          display: inline-block;
+          position: relative;
+          width: 100%;
+        }
+      </style> --}}
 </body>
 </html>

@@ -7,7 +7,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 class TinhSanLuongController extends Controller
 {
-    //TODO: check lỗi
     public function viewSanLuongTram(Request $request)
 {
     if (!$request->session()->has('username')) {

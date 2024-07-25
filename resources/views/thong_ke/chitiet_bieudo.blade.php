@@ -166,7 +166,6 @@
             const hopDong = params.hopDong;
 
             const data = await fetchData(type, timeFormat, thang, nam, hopDong);
-            // TODO: thêm khu vực
             const labels = type === "tongquat" ? data.map(item => item.ten_khu_vuc) : data.map(item => item.ten_linh_vuc + '-' + item.khu_vuc);
             const kpi = type === "tongquat" || type === "linhvuc" ? data.map(item => item.kpi) : [];
             const total = data.map(item => item.total);

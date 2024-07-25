@@ -17,7 +17,6 @@
                         @endfor
                     </select>
                     <select id="selectHopDong" class="form-control me-2">
-                        {{-- TODO: Tất cả HĐ --}}
                         <option value="">Tất cả hợp đồng</option>
                         @foreach ($hopDongs as $hopDong)
                             <option value="{{ $hopDong->HopDong_Id }}">{{ $hopDong->HopDong_SoHopDong }}</option>

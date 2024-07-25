@@ -16,6 +16,7 @@ class UserController extends Controller
         }
     }
 
+    //TODO: remember me 1 tuần
     public function actionLogin(Request $request)
     {
         $err = '';
@@ -26,6 +27,11 @@ class UserController extends Controller
                 ->get()->toArray();
 
             if (count($user) == 1) {
+                if ($request->termsCheckbox) {
+                    config(['session.lifetime' => 10080]); // 10080 phút = 7 ngày
+                } else {
+                    config(['session.lifetime' => config('session.lifetime')]);
+                }
                 $request->session()->put('userid', $user[0]->user_id);
                 $request->session()->put('username', $user[0]->user_name);
                 $request->session()->put('role', $user[0]->user_permission);
