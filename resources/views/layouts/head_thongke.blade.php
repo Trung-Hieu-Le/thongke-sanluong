@@ -63,8 +63,8 @@
         th {
             background-color: #f2f2f2;
             white-space: nowrap; /* Ngăn tiêu đề xuống dòng */
-    overflow: hidden; /* Ẩn phần nội dung tràn */
-    text-overflow: ellipsis;
+            overflow: hidden; /* Ẩn phần nội dung tràn */
+            text-overflow: ellipsis;
         }
     </style>
 </head>
