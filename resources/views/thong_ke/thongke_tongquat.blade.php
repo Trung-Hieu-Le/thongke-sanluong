@@ -249,6 +249,16 @@
         }
 
         const ctx = document.getElementById('barChartXuThe').getContext('2d');
+        const legendMargin = {
+                id: 'legendMargin',
+                beforeInit(chart, legend, options) {
+                    const fitValue=chart.legend.fit;
+                    chart.legend.fit = function fit() {
+                        fitValue.bind(chart.legend)();
+                        return this.height +=30;
+                    }
+                }
+            }
         const barChartXuThe = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -306,7 +316,7 @@
                     }
                 }
             },
-            plugins: [ChartDataLabels]
+            plugins: [ChartDataLabels, legendMargin]
         });
 
 
