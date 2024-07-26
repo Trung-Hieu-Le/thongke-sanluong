@@ -69,7 +69,7 @@ class ThongKeController extends Controller
         return view('thong_ke.thongke_linhvuc');
     }
 
-    //TODO: phân theo khu vực
+    //TODO: phân theo khu vực, thống kê đang sai
     public function thongKeTongThangVaNam(Request $request)
     {
         $ngayChon = $request->input('ngay_chon', date('Y-m-d')); // mặc định là ngày hiện tại
