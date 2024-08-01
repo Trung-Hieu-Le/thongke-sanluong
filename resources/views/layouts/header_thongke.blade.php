@@ -1,7 +1,7 @@
 <header class="container-fluid sticky-top fw-2 rounded p-0 g-0 bg-white" style="box-shadow: 0 10px 10px 0 rgba(200,200,200,0.2);">
     <div class="container-fluid">
         <div class="row justify-content-center align-items-start g-2">
-        <div class="col-4 col-sm-4 col-lg-2 text-center text-sm-start">
+        <div class="col-4 col-sm-4 col-lg-2 text-center text-sm-start mt-1">
             <a class="m-0 ms-xxl-4 p-0 ps-xl-2 ps-lg-0 opacity-100 pb-1" href="/">
                 <img src="{{ asset('images/vtk_logo.jpg') }}" class="img-fluid logo" alt="..." style="height:50px; width:107px;">
             </a>

@@ -35,6 +35,7 @@ Route::get('/thongke', [ThongKeController::class, 'indexKhuVuc']);
 Route::get('/thongke/all', [ThongKeController::class, 'thongKeKhuVuc']);
 Route::get('/thongke/xuthe/all', [ThongKeController::class, 'thongKeXuTheKhuVuc']);
 Route::get('/thongke/tong-thang-nam', [ThongKeController::class, 'thongKeTongThangVaNam']);
+Route::get('/thongke/update-tonghop-sanluong', [ThongKeController::class, 'updateTableTongHopSanLuong']);
 // Route::get('/thongke/tongquat', [ThongKeController::class, 'thongKeKhuVucTongQuat']);
 Route::get('/thongke/linhvuc', [ThongKeController::class, 'indexLinhVuc']);
 Route::get('/thongke/linhvuc/all', [ThongKeController::class, 'thongKeLinhVuc']);

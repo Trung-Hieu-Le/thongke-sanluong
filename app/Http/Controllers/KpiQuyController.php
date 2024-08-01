@@ -7,28 +7,76 @@ use Illuminate\Support\Facades\DB;
 
 class KpiQuyController extends Controller
 {
-    public function indexKpiQuy(){
-        $kpi = DB::table('tbl_kpi_quy')
-            // ->select('ten_khu_vuc', 'noi_dung', 'year', 'kpi_quy_1', 'kpi_quy_2', 'kpi_quy_3', 'kpi_quy_4')
-            ->orderBy('ten_khu_vuc')
+    public function indexKpiQuy(Request $request)
+    {
+        if (!$request->session()->has('username')) {
+            return redirect('login');
+        }
+        
+        if ($request->has('khu_vuc') && $request->has('year')) {
+            $this->checkAndInsertMissingKpi($request->khu_vuc, $request->year);
+        }
+        $query = DB::table('tbl_kpi_quy');
+        if ($request->has('khu_vuc') && $request->khu_vuc != '') {
+            $query->where('ten_khu_vuc', $request->khu_vuc);
+        }
+        if ($request->has('year') && $request->year != '') {
+            $query->where('year', $request->year);
+        }
+        $kpi = $query->orderBy('ten_khu_vuc')
             ->orderBy('year')
-            ->get()->toArray();
+            ->get();
+        $years = range(2023, date('Y'));
+        $khu_vucs = DB::table('tbl_sanluongkhac_noidung')
+            ->select('khu_vuc')
+            ->distinct()
+            ->get();
 
-    // $data = [];
-    // foreach ($kpi as $row) {
-    //     $key = $row->ten_khu_vuc . '-' . $row->year;
-    //     if (!isset($data[$key])) {
-    //         $data[$key] = [
-    //             'ten_khu_vuc' => $row->ten_khu_vuc,
-    //             'noi_dung' => $row->noi_dung,
-    //             'year' => $row->year,
-    //             'quarters' => [null, null, null, null]
-    //         ];
-    //     }
-    //     $data[$key]['quarters'][$row->quarter - 1] = $row->kpi_quy;
-    // }
-    return view('kpi.kpi_quy_view', compact('kpi'));
+        return view('kpi.kpi_quy_view', compact('kpi', 'years', 'khu_vucs'));
     }
+
+    private function checkAndInsertMissingKpi($khuVuc, $year)
+    {
+        $noiDungs = DB::table('tbl_sanluongkhac_noidung')
+            ->where('khu_vuc', $khuVuc)
+            ->pluck('noi_dung')
+            ->toArray();
+            
+            foreach ($noiDungs as $noiDung) {
+            $existingKpi = DB::table('tbl_kpi_quy')
+                ->where('ten_khu_vuc', $khuVuc)
+                ->where('year', $year)
+                ->where('noi_dung', $noiDung)
+                ->first();
+
+            if (!$existingKpi) {
+                DB::table('tbl_kpi_quy')->insert([
+                    'ten_khu_vuc' => $khuVuc,
+                    'noi_dung' => $noiDung,
+                    'year' => $year,
+                    'kpi_quy_1' => '0',
+                    'kpi_quy_2' => '0',
+                    'kpi_quy_3' => '0',
+                    'kpi_quy_4' => '0',
+                    'kpi_nam' => '0',
+                    'kpi_thang_1' => '0',
+                    'kpi_thang_2' => '0',
+                    'kpi_thang_3' => '0',
+                    'kpi_thang_4' => '0',
+                    'kpi_thang_5' => '0',
+                    'kpi_thang_6' => '0',
+                    'kpi_thang_7' => '0',
+                    'kpi_thang_8' => '0',
+                    'kpi_thang_9' => '0',
+                    'kpi_thang_10' => '0',
+                    'kpi_thang_11' => '0',
+                    'kpi_thang_12' => '0'
+                ]);
+            }
+        }
+    }
+
+
     // Thêm sản lượng theo ngày
     public function addKpiQuy(Request $request)
     {
@@ -61,13 +109,14 @@ class KpiQuyController extends Controller
 
         return redirect()->route('kpiquy.add')->with('success', 'Thêm KPI thành công.');
     }
-    public function editKpiQuy(Request $request){
+    public function editKpiQuy(Request $request)
+    {
         if (!$request->session()->has('username')) {
             return redirect('login');
         }
         $kpiData = DB::table('tbl_kpi_quy')
-        ->where('id', $request->id)
-        ->first();
+            ->where('id', $request->id)
+            ->first();
 
         $khuVucList = DB::table('tbl_sanluongkhac_noidung')
             ->distinct()
@@ -78,7 +127,8 @@ class KpiQuyController extends Controller
         // dd($noidungs);
         return view('kpi.kpi_quy_edit', compact('kpiData', 'khuVucList', 'noidungs'));
     }
-    public function handleEditKpiQuy(Request $request){
+    public function handleEditKpiQuy(Request $request)
+    {
         if (!$request->session()->has('username')) {
             return redirect('login');
         }
@@ -86,13 +136,26 @@ class KpiQuyController extends Controller
             ->where('id', $request->id)
             // ->where('year', $request->input('year'))
             ->update([
-                'ten_khu_vuc' => $request->khu_vuc,
-                'year' => $request->year,
-                'noi_dung' => $request->noi_dung,
+                // 'ten_khu_vuc' => $request->khu_vuc,
+                // 'year' => $request->year,
+                // 'noi_dung' => $request->noi_dung,
                 'kpi_quy_1' => $request->kpi_quy_1,
                 'kpi_quy_2' => $request->kpi_quy_2,
                 'kpi_quy_3' => $request->kpi_quy_3,
                 'kpi_quy_4' => $request->kpi_quy_4,
+                'kpi_thang_1' => $request->kpi_thang_1,
+                'kpi_thang_2' => $request->kpi_thang_2,
+                'kpi_thang_3' => $request->kpi_thang_3,
+                'kpi_thang_4' => $request->kpi_thang_4,
+                'kpi_thang_5' => $request->kpi_thang_5,
+                'kpi_thang_6' => $request->kpi_thang_6,
+                'kpi_thang_7' => $request->kpi_thang_7,
+                'kpi_thang_8' => $request->kpi_thang_8,
+                'kpi_thang_9' => $request->kpi_thang_9,
+                'kpi_thang_10' => $request->kpi_thang_10,
+                'kpi_thang_11' => $request->kpi_thang_11,
+                'kpi_thang_12' => $request->kpi_thang_12,
+                'kpi_nam' => $request->kpi_quy_1 + $request->kpi_quy_2 + $request->kpi_quy_3 + $request->kpi_quy_4
             ]);
         return redirect()->route('kpiquy.index')->with('success', 'KPI đã được cập nhật');
     }
@@ -102,9 +165,9 @@ class KpiQuyController extends Controller
             return redirect('login');
         }
         DB::table('tbl_kpi_quy')
-        ->where('id', $request->id)
-        ->delete();
-        
+            ->where('id', $request->id)
+            ->delete();
+
         return redirect()->route('kpiquy.index')->with('success', 'Xóa KPI thành công');
     }
 }

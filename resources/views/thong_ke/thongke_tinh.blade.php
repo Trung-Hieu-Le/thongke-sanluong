@@ -160,7 +160,7 @@
             $.ajax({
                 url: `/thongke/khuvuc/all`,
                 method: 'GET',
-                data: { khu_vuc: khu_vuc, ngay: ngay_chon },
+                data: { khu_vuc: khu_vuc, ngay_chon: ngay_chon },
                 success: function(data) {
                     var labels = data.map(item => item.ma_tinh);
                     var chartData = {

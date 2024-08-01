@@ -14,9 +14,31 @@
     <div class="container mt-3">
         <div class="main-content px-3">
             <div id="results">
-                <div class="d-flex justify-content-start mb-2">
+                <div class="mb-2" style="max-width:500px;">
                     @if ( session('role') == 3)
-                        <a href="{{route('kpiquy.add')}}"><button class="btn btn-primary">Thêm</button></a>
+                    <form method="GET" action="{{ route('kpiquy.index') }}" class="mb-3">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <select name="khu_vuc" class="form-control" required>
+                                    <option value="">Chọn khu vực</option>
+                                    @foreach ($khu_vucs as $khu_vuc)
+                                        <option value="{{ $khu_vuc->khu_vuc }}" {{ request('khu_vuc') == $khu_vuc->khu_vuc ? 'selected' : '' }}>{{ $khu_vuc->khu_vuc }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select name="year" class="form-control" required>
+                                    <option value="">Chọn năm</option>
+                                    @foreach ($years as $year)
+                                        <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary">Lọc</button>
+                            </div>
+                        </div>
+                    </form>
                     @endif
                 </div>
                 @if ( session('role') == 3)
@@ -27,10 +49,23 @@
                             <th>Khu vực</th>
                             <th>Lĩnh vực</th>
                             <th>Năm</th>
+                            <th>KPI Năm</th>
                             <th>Quý 1</th>
                             <th>Quý 2</th>
                             <th>Quý 3</th>
                             <th>Quý 4</th>
+                            <th>Tháng 1</th>
+                            <th>Tháng 2</th>
+                            <th>Tháng 3</th>
+                            <th>Tháng 4</th>
+                            <th>Tháng 5</th>
+                            <th>Tháng 6</th>
+                            <th>Tháng 7</th>
+                            <th>Tháng 8</th>
+                            <th>Tháng 9</th>
+                            <th>Tháng 10</th>
+                            <th>Tháng 11</th>
+                            <th>Tháng 12</th>
                             <th>Hành động</th>
                         </tr>
                     </thead>
@@ -42,10 +77,23 @@
                             <td>{{ $row->ten_khu_vuc }}</td>
                             <td>{{ $row->noi_dung }}</td>
                             <td>{{ $row->year }}</td>
+                            <td>{{ $row->kpi_nam ?? '-' }}</td>
                             <td>{{ $row->kpi_quy_1 ?? '-' }}</td>
                             <td>{{ $row->kpi_quy_2 ?? '-' }}</td>
                             <td>{{ $row->kpi_quy_3 ?? '-' }}</td>
                             <td>{{ $row->kpi_quy_4 ?? '-' }}</td>
+                            <td>{{ $row->kpi_thang_1 ?? '-' }}</td>
+                            <td>{{ $row->kpi_thang_2 ?? '-' }}</td>
+                            <td>{{ $row->kpi_thang_3 ?? '-' }}</td>
+                            <td>{{ $row->kpi_thang_4 ?? '-' }}</td>
+                            <td>{{ $row->kpi_thang_5 ?? '-' }}</td>
+                            <td>{{ $row->kpi_thang_6 ?? '-' }}</td>
+                            <td>{{ $row->kpi_thang_7 ?? '-' }}</td>
+                            <td>{{ $row->kpi_thang_8 ?? '-' }}</td>
+                            <td>{{ $row->kpi_thang_9 ?? '-' }}</td>
+                            <td>{{ $row->kpi_thang_10 ?? '-' }}</td>
+                            <td>{{ $row->kpi_thang_11 ?? '-' }}</td>
+                            <td>{{ $row->kpi_thang_12 ?? '-' }}</td>
                             <td>
                                 <a href="{{ url('/kpi-quy/edit/' . $row->id) }}">
                                 <button class="btn btn-primary">Sửa</button>
