@@ -1114,15 +1114,15 @@ private function getWeeksInRange($start, $end)
         return response()->json($finalResults);
     }
     public function updateTableTongHopSanLuong (Request $request){
-    // $years = [2020, date('Y')];
-    // $months = range(1, 12);
-    $ngayChon = $request->input('ngay_chon', date('Y-m-d'));
-    $year = date('Y', strtotime($ngayChon));
-    $month = date('m', strtotime($ngayChon));
-    $day = date('d', strtotime($ngayChon));
+    $years = [2020, date('Y')];
+    $months = range(1, 12);
+    // $ngayChon = $request->input('ngay_chon', date('Y-m-d'));
+    // $year = date('Y', strtotime($ngayChon));
+    // $month = date('m', strtotime($ngayChon));
+    // $day = date('d', strtotime($ngayChon));
 
-    // foreach ($years as $year) {
-    //     foreach ($months as $month) {
+    foreach ($years as $year) {
+        foreach ($months as $month) {
             $formattedMonth = str_pad($month, 2, '0', STR_PAD_LEFT);
             $sanluongData = DB::table('tbl_sanluong')
             ->select(
@@ -1132,10 +1132,10 @@ private function getWeeksInRange($start, $end)
                 'tbl_tinh.ten_khu_vuc as khu_vuc'
             )
             ->leftJoin('tbl_tinh', DB::raw("UPPER(LEFT(tbl_sanluong.SanLuong_Tram, 3))"), '=', 'tbl_tinh.ma_tinh')
-            // ->whereYear(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), $year)
-            // ->whereMonth(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), $month)
+            ->whereYear(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), $year)
+            ->whereMonth(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), $month)
             ->where('ten_hinh_anh_da_xong', '<>', '')
-            ->whereDate(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), '=', $ngayChon)
+            // ->whereDate(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), '=', $ngayChon)
             ->groupBy(DB::raw("UPPER(LEFT(SanLuong_Tram, 3))"), DB::raw("DATE_FORMAT(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), '%d')"), 'tbl_tinh.ten_khu_vuc')
             ->get();
 
@@ -1147,9 +1147,9 @@ private function getWeeksInRange($start, $end)
                     'tbl_tinh.ten_khu_vuc as khu_vuc'
                 )
                 ->leftJoin('tbl_tinh', DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh')
-                // ->whereYear(DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')"), $year)
-                // ->whereMonth(DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')"), $month)
-                ->whereDate(DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')"), '=', $ngayChon)
+                ->whereYear(DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')"), $year)
+                ->whereMonth(DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')"), $month)
+                // ->whereDate(DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')"), '=', $ngayChon)
                 ->groupBy(DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3))"), 'day', 'tbl_tinh.ten_khu_vuc')
                 ->get();
 
@@ -1161,9 +1161,9 @@ private function getWeeksInRange($start, $end)
                     DB::raw("SUM(SanLuong_Gia) as total_sanluong"),
                     'SanLuong_KhuVuc as khu_vuc'
                 )
-                // ->whereYear(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), $year)
-                // ->whereMonth(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), $month)
-                ->whereDate(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), '=', $ngayChon)
+                ->whereYear(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), $year)
+                ->whereMonth(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), $month)
+                // ->whereDate(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), '=', $ngayChon)
                 ->groupBy('ma_tinh', 'day', 'SanLuong_TenHangMuc', 'SanLuong_KhuVuc')
                 ->get();
 
@@ -1255,7 +1255,7 @@ private function getWeeksInRange($start, $end)
                     $data
                     );            
                 }
-        //     }
-        // }
+            }
+        }
     }
 }
