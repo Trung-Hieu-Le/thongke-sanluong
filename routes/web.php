@@ -10,6 +10,7 @@ use App\Http\Controllers\KpiQuyController;
 use App\Http\Controllers\ThongKeController;
 use App\Http\Controllers\SanLuongKhacController;
 use App\Http\Controllers\TinhSanLuongController;
+use App\Http\Controllers\TableUpdateController;
 
 
 /*
@@ -35,10 +36,11 @@ Route::get('/thongke', [ThongKeController::class, 'indexKhuVuc']);
 Route::get('/thongke/all', [ThongKeController::class, 'thongKeKhuVuc']);
 Route::get('/thongke/xuthe/all', [ThongKeController::class, 'thongKeXuTheKhuVuc']);
 Route::get('/thongke/tong-thang-nam', [ThongKeController::class, 'thongKeTongThangVaNam']);
-Route::get('/thongke/update-tonghop-sanluong', [ThongKeController::class, 'updateTableTongHopSanLuong']);
 // Route::get('/thongke/tongquat', [ThongKeController::class, 'thongKeKhuVucTongQuat']);
 Route::get('/thongke/linhvuc', [ThongKeController::class, 'indexLinhVuc']);
 Route::get('/thongke/linhvuc/all', [ThongKeController::class, 'thongKeLinhVuc']);
+
+Route::get('/table-update/tonghop-sanluong', [TableUpdateController::class, 'updateTableTongHopSanLuong']);
 
 Route::get('/thongke/khuvuc', [ThongKeController::class, 'indexTinh']);
 Route::get('/thongke/khuvuc/all', [ThongKeController::class, 'thongKeTinh']);
