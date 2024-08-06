@@ -137,7 +137,7 @@ class TableUpdateController extends Controller
                     }
                     $combinedData[$key]["SanLuong_Ngay_{$data->day}"] += $data->total_sanluong;
                 }
-                dd($combinedData);
+                //dd($combinedData);
 
                 //TODO: Nếu có rồi thì update
                 foreach ($combinedData as $data) {
@@ -154,4 +154,6 @@ class TableUpdateController extends Controller
             }
         }
     }
+    //TODO: làm hàm này chạy 1h/lần
+    public function updateDailyTableTongHopSanLuong(Request $request){}
 }

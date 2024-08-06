@@ -14,7 +14,8 @@
                             <div class="col-6 d-flex align-items-center">
                                 <div class="me-2">
                                     <h6 class="text-secondary mb-0" style="font-size: 12px;">TỔNG SẢN LƯỢNG NĂM</h6>
-                                    <span id="totalYearValue" class="fw-bold fs-2 fs-md-6">0</span>
+                                    <span id="totalYearValue" class="fw-bold fs-2 fs-md-6">0</span><br>
+                                    <span id="totalKpiYear" class="text-secondary ms-2" style="font-size: 12px;">Tổng KPI: 0 tỉ đồng</span>
                                 </div>
                                 <div class="d-flex flex-column align-items-center">
                                     <span id="totalYearUnit" class="text-secondary" style="font-size: 12px;">VNĐ</span>
@@ -24,7 +25,8 @@
                             <div class="col-6 d-flex align-items-center">
                                 <div class="me-2">
                                     <h6 class="text-secondary mb-0" style="font-size: 12px;">SẢN LƯỢNG THÁNG</h6>
-                                    <span id="totalMonthValue" class="fw-bold fs-2 fs-md-6">0</span>
+                                    <span id="totalMonthValue" class="fw-bold fs-2 fs-md-6">0</span><br>
+                                    <span id="totalKpiMonth" class="text-secondary ms-2" style="font-size: 12px;">Tổng KPI: 0 tỉ đồng</span>
                                 </div>
                                 <div class="d-flex flex-column align-items-center">
                                     <span id="totalMonthUnit" class="text-secondary" style="font-size: 12px;">VNĐ</span>
@@ -89,6 +91,13 @@
                             <option value="{{ $hopDong->HopDong_Id }}">{{ $hopDong->HopDong_SoHopDong }}</option>
                             @endforeach
                         </select>
+                        <select id="selectLinhVuc" class="form-control form-select form-select-sm me-2 mb-2">
+                            <option value="">Tất cả lĩnh vực</option>
+                            {{-- <option value="EC">EC</option> --}}
+                            @foreach ($linhVucs as $linhVuc)
+                            <option value="{{ $linhVuc->noi_dung }}">{{ $linhVuc->noi_dung }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div>
                         <label for="startDate" class="form-label ms-2 text-secondary"style="font-size: 15px;">Ngày bắt đầu: &nbsp;</label>
@@ -105,12 +114,19 @@
                         <div class="">
                             <div class="shadow p-2 bg-body rounded mb-2">
                                 <h6 class="d-flex justify-content-between align-items-center">
-                                    <span>{{ $khuVuc }}: <span id="total-{{ $khuVuc }}" class="fw-bold"></span><span class="text-secondary ms-2" style="font-size: 12px;">VNĐ</span></span>
+                                    <div class="flex-grow-1">
+                                        <span>{{ $khuVuc }}: <span id="total-{{ $khuVuc }}" class="fw-bold"></span>
+                                        <span class="text-secondary ms-2" style="font-size: 12px;">VNĐ</span></span>
+                                        <div class="text-secondary text-start mt-1" style="font-size: 12px;">
+                                            Tổng KPI: <span id="totalKpi-{{ $khuVuc }}"></span>
+                                        </div>
+                                    </div>
                                     <span id="kpi-{{ $khuVuc }}" class="bg-light text-success fw-bold p-1 m-0 rounded-pill" style="font-size: 12px;">100%</span>
                                 </h6>
                                 <div style="min-width: 150px;">
                                     <canvas id="chart-{{ $khuVuc }}"></canvas>
                                 </div>
+                                <div id="timeFormatText-{{ $khuVuc }}" class="text-center">Thống kê theo tháng</div>
                             </div>
                         </div>
                     </div>
@@ -180,7 +196,6 @@
         </div>
         @endif
     </div>
-    {{-- TODO: updateDay khi change tháng, năm, vd tháng 2 nhưng 31 ngày??? --}}
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script>
         function populateDays() {
@@ -201,54 +216,57 @@
             }
         }
         function updateDateRange() {
-                const format = timeFormat.value;
-                const selectedDay = parseInt(selectDay.value, 10);
-                const selectedMonth = parseInt(selectMonth.value, 10);
-                const selectedQuarter = parseInt(selectQuarter.value, 10);
-                const selectedYear = parseInt(selectYear.value, 10);
-
-                let start, end;
-
-                if (format === 'tuan') {
-                    const date = new Date(selectedYear, selectedMonth - 1, selectedDay);
-                    const dayOfWeek = (date.getDay() + 6) % 7; // Adjust Sunday to 6, Monday to 0, ..., Saturday to 5
-                    start = new Date(date);
-                    start.setDate(date.getDate() - dayOfWeek); // Set to Monday
-                    end = new Date(start);
-                    end.setDate(start.getDate() + 6);
-                } else if (format === 'thang') {
+            const format = timeFormat.value;
+            const selectedDay = parseInt(selectDay.value, 10);
+            const selectedMonth = parseInt(selectMonth.value, 10);
+            const selectedQuarter = parseInt(selectQuarter.value, 10);
+            const selectedYear = parseInt(selectYear.value, 10);
+            let start, end;
+            if (format === 'tuan') {
+                if (selectedDay >= 1 && selectedDay <= 7) {
                     start = new Date(selectedYear, selectedMonth - 1, 1);
-                    end = new Date(selectedYear, selectedMonth, 0);
-                } else if (format === 'quy') {
-                    start = new Date(selectedYear, (selectedQuarter - 1) * 3, 1);
-                    end = new Date(selectedYear, selectedQuarter * 3, 0);
-                } else if (format === 'nam') {
-                    start = new Date(selectedYear, 0, 1);
-                    end = new Date(selectedYear, 11, 31);
-                } else if (format === 'ngay') {
-                    start = new Date(selectedYear, selectedMonth - 1, selectedDay);
-                    end = new Date(selectedYear, selectedMonth - 1, selectedDay);
+                    end = new Date(selectedYear, selectedMonth - 1, 7);
+                } else if (selectedDay >= 8 && selectedDay <= 14) {
+                    start = new Date(selectedYear, selectedMonth - 1, 8);
+                    end = new Date(selectedYear, selectedMonth - 1, 14);
+                } else if (selectedDay >= 15 && selectedDay <= 21) {
+                    start = new Date(selectedYear, selectedMonth - 1, 15);
+                    end = new Date(selectedYear, selectedMonth - 1, 21);
+                } else if (selectedDay >= 22) {
+                    start = new Date(selectedYear, selectedMonth - 1, 22);
+                    end = new Date(selectedYear, selectedMonth, 0); // Last day of the month
                 }
-                if (start > end) {
-                    alert('Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc');
-                    return;
-                }
-
-                startDate.min = formatDate(start);
-                startDate.max = formatDate(end);
-                endDate.min = formatDate(start);
-                endDate.max = formatDate(end);
-
-                startDate.value = formatDate(start);
-                endDate.value = formatDate(end);
+            } else if (format === 'thang') {
+                start = new Date(selectedYear, selectedMonth - 1, 1);
+                end = new Date(selectedYear, selectedMonth, 0);
+            } else if (format === 'quy') {
+                start = new Date(selectedYear, (selectedQuarter - 1) * 3, 1);
+                end = new Date(selectedYear, selectedQuarter * 3, 0);
+            } else if (format === 'nam') {
+                start = new Date(selectedYear, 0, 1);
+                end = new Date(selectedYear, 11, 31);
+            } else if (format === 'ngay') {
+                start = new Date(selectedYear, selectedMonth - 1, selectedDay);
+                end = new Date(selectedYear, selectedMonth - 1, selectedDay);
             }
-
-            function formatDate(date) {
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                return `${year}-${month}-${day}`;
+            if (start > end) {
+            //TODO: sửa phần alert này
+                alert('Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc');
+                return;
             }
+            startDate.min = formatDate(start);
+            startDate.max = formatDate(end);
+            endDate.min = formatDate(start);
+            endDate.max = formatDate(end);
+            startDate.value = formatDate(start);
+            endDate.value = formatDate(end);
+        }
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${year}-${month}-${day}`;
+        }
         document.addEventListener('DOMContentLoaded', function () {
             const timeFormat = document.getElementById('timeFormat');
             const selectDay = document.getElementById('selectDay');
@@ -257,6 +275,7 @@
             const selectYear = document.getElementById('selectYear');
             const startDate = document.getElementById('startDate');
             const endDate = document.getElementById('endDate');
+            const khuVucs = {!! json_encode($khuVucs) !!};
 
             function updateVisibility() {
                 const format = timeFormat.value;
@@ -269,6 +288,30 @@
                 if (format === 'tuan' || format === 'thang') {
                     populateDays();
                 }
+                updateStatisticsText(format);
+            }
+            function updateStatisticsText(format) {
+                let text;
+                switch (format) {
+                    case 'tuan':
+                        text = 'Thống kê theo tuần';
+                        break;
+                    case 'thang':
+                        text = 'Thống kê theo tháng';
+                        break;
+                    case 'quy':
+                        text = 'Thống kê theo quý';
+                        break;
+                    case 'nam':
+                        text = 'Thống kê theo năm';
+                        break;
+                    default:
+                        text = 'Thống kê theo năm';
+                }
+
+                khuVucs.forEach(khuVuc => {
+                    document.getElementById(`timeFormatText-${khuVuc}`).textContent = text;
+                });
             }
 
             timeFormat.addEventListener('change', updateVisibility);
@@ -446,15 +489,14 @@
         });
     </script>
     <script>
-        function updateAllCharts(time_format, ngay_chon, hop_dong, user, startDate, endDate) {
-            console.log(startDate, endDate);
+        function updateAllCharts(time_format, ngay_chon, hop_dong, user, linh_vuc, startDate, endDate) {
             const khuVucs = {!! json_encode($khuVucs) !!};
             // Update bar charts
             khuVucs.forEach(khu_vuc => {
                 $.ajax({
                     url: `/thongke/khuvuc/all`,
                     method: 'GET',
-                    data: { khu_vuc: khu_vuc, time_format: time_format, ngay_chon: ngay_chon, start_date: startDate, end_date: endDate },
+                    data: { khu_vuc: khu_vuc, time_format: time_format, ngay_chon: ngay_chon, start_date: startDate, end_date: endDate, linh_vuc: linh_vuc },
                     success: function(data) {
                         const labels = data.map(item => item.ma_tinh);
                         const chartData = data.map(item => item.totals[time_format]);
@@ -471,7 +513,7 @@
             $.ajax({
                 url: `/thongke/xuthe/all`,
                 method: 'GET',
-                data: { time_format: time_format, ngay_chon: ngay_chon, hop_dong: hop_dong, user: user, start_date: startDate, end_date: endDate },
+                data: { time_format: time_format, ngay_chon: ngay_chon, hop_dong: hop_dong, user: user, linh_vuc: linh_vuc, start_date: startDate, end_date: endDate },
                 success: function(data) {
                     // Collect all unique time periods
                     const labelsSet = new Set();
@@ -513,7 +555,7 @@
             $.ajax({
                 url: `/thongke/all`,
                 method: 'GET',
-                data: { time_format: time_format, ngay_chon: ngay_chon, hop_dong: hop_dong, user: user, start_date: startDate, end_date: endDate },
+                data: { time_format: time_format, ngay_chon: ngay_chon, hop_dong: hop_dong, user: user, linh_vuc: linh_vuc, start_date: startDate, end_date: endDate },
                 success: function(data) {
                     const labels = data.map(item => item.ten_khu_vuc);
                     const dataKPI = data.map(item => item.kpi);
@@ -613,14 +655,20 @@
                     const totalMonth = data.totalMonth;
                     const kpiYear = data.kpiYear;
                     const kpiMonth = data.kpiMonth;
+                    const totalKpiYear = data.totalKpiYear;
+                    const totalKpiMonth = data.totalKpiMonth;   
 
                     document.getElementById('totalYearValue').textContent = number_format(totalYear, 0, ',', '.');
                     document.getElementById('totalMonthValue').textContent = number_format(totalMonth, 0, ',', '.');
                     document.getElementById('yearKPI').textContent = kpiYear + "%";
                     document.getElementById('monthKPI').textContent = kpiMonth + "%";
+                    document.getElementById('totalKpiYear').textContent = "Tổng KPI: " + number_format(totalKpiYear, 1, ',', '.') + " tỉ đồng";
+                    document.getElementById('totalKpiMonth').textContent = "Tổng KPI: " + number_format(totalKpiMonth, 1, ',', '.') + " tỉ đồng";
+
                     data.details.forEach(detail => {
                         document.getElementById(`total-${detail.khuVuc}`).textContent = number_format(detail.total, 0, ',', '.');
                         document.getElementById(`kpi-${detail.khuVuc}`).textContent = detail.kpi + "%";
+                        document.getElementById(`totalKpi-${detail.khuVuc}`).textContent = number_format(detail.totalKpi, 1, ',', '.') + " tỉ đồng";
                     });
                 }
             });
@@ -667,35 +715,36 @@
         function getStartEndDate() {
             const start_date = document.getElementById('startDate').value;
             const end_date = document.getElementById('endDate').value;
-            console.log(start_date, end_date); //TODO: Dùng cái này
             return `start_date=${start_date}&end_date=${end_date}`;
         }
 
         //TODO: ko đổi đc start_end_date
-        $('#timeFormat, #selectDay, #selectMonth, #selectQuarter, #selectYear, #selectHopDong, #selectUser').on('change', function() {
+        $('#timeFormat, #selectDay, #selectMonth, #selectQuarter, #selectYear, #selectHopDong, #selectUser, #selectLinhVuc').on('change', function() {
             const selectedTimeFormat = $('#timeFormat').val();
             const formattedDate = getFormattedDate();
             const hop_dong = $('#selectHopDong').val(); 
             const user = $('#selectUser').val();
+            const linh_vuc = $('#selectLinhVuc').val();
             const quarter = $('#selectQuarter').val();
             updateDateRange();
             const startDate = $('#startDate').val();
             const endDate = $('#endDate').val();
             populateDays();
             updateTotals(selectedTimeFormat, startDate, endDate);
-            updateAllCharts(selectedTimeFormat, formattedDate, hop_dong, user, startDate, endDate);
+            updateAllCharts(selectedTimeFormat, formattedDate, hop_dong, user, linh_vuc, startDate, endDate);
         });
         $('#startDate, #endDate').on('change', function() {
             const selectedTimeFormat = $('#timeFormat').val();
             const formattedDate = getFormattedDate();
             const hop_dong = $('#selectHopDong').val(); 
             const user = $('#selectUser').val();
+            const linh_vuc = $('#selectLinhVuc').val();
             const quarter = $('#selectQuarter').val();
             const startDate = $('#startDate').val();
             const endDate = $('#endDate').val();
             populateDays();
             updateTotals(selectedTimeFormat, startDate, endDate);
-            updateAllCharts(selectedTimeFormat, formattedDate, hop_dong, user, startDate, endDate);
+            updateAllCharts(selectedTimeFormat, formattedDate, hop_dong, user, linh_vuc, startDate, endDate);
         });
 
     
@@ -705,12 +754,13 @@
             const formattedDate = getFormattedDate();
             const hop_dong = $('#selectHopDong').val(); 
             const user = $('#selectUser').val();
+            const linh_vuc = $('#selectLinhVuc').val();
             const quarter = $('#selectQuarter').val();
             updateDateRange();
             const startDate = $('#startDate').val();
             const endDate = $('#endDate').val();
             updateTotals(initialTimeFormat, startDate, endDate);
-            updateAllCharts(initialTimeFormat, formattedDate, hop_dong, user, startDate, endDate);
+            updateAllCharts(initialTimeFormat, formattedDate, hop_dong, user, linh_vuc, startDate, endDate);
         });
     
         setInterval(function() {
@@ -718,12 +768,13 @@
             const formattedDate = getFormattedDate();
             const hop_dong = $('#selectHopDong').val();
             const user = $('#selectUser').val();
+            const linh_vuc = $('#selectLinhVuc').val();
             const quarter = $('#selectQuarter').val();
             updateDateRange();
             const startDate = $('#startDate').val();
             const endDate = $('#endDate').val();
             updateTotals(selectedTimeFormat, startDate, endDate);
-            updateAllCharts(selectedTimeFormat, formattedDate, hop_dong, user, startDate, endDate);
+            updateAllCharts(selectedTimeFormat, formattedDate, hop_dong, user, linh_vuc, startDate, endDate);
         }, 3600000);
     </script>
     

@@ -28,7 +28,8 @@ class ThongKeController extends Controller
             ->pluck('ten_khu_vuc');
         $hopDongs = DB::table('tbl_hopdong')->select('HopDong_Id', 'HopDong_SoHopDong')->get();
         $doiTacs = DB::table('tbl_user')->select('user_id', 'user_name')->get();
-        return view('thong_ke.thongke_tongquat', compact('hopDongs', 'khuVucs', 'doiTacs'));
+        $linhVucs = DB::table('tbl_sanluongkhac_noidung')->distinct()->select('noi_dung')->get();
+        return view('thong_ke.thongke_tongquat', compact('hopDongs', 'khuVucs', 'doiTacs','linhVucs'));
     }
     public function indexTinh(Request $request)
     {
@@ -69,7 +70,6 @@ class ThongKeController extends Controller
         return view('thong_ke.thongke_linhvuc');
     }
 
-    //TODO: phân theo khu vực, thống kê đang sai???
     public function thongKeTongThangVaNam(Request $request)
     {
         $timeFormat = $request->input('time_format', 'thang');
@@ -110,8 +110,8 @@ class ThongKeController extends Controller
             $daysInYear = $this->getDistinctDays($maTinhs, $khuVuc, $ngayChon, 'nam', null, null);
             $kpi_thang = $kpi_ngay * $daysInMonth;
             $kpi_nam = $kpi_ngay * $daysInYear;
-            $totalThang = $this->getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, null, null, 'thang', null, null, null, null);
-            $totalNam = $this->getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, null, null, 'nam', null, null, null, null);
+            $totalThang = $this->getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, null, null, null, 'thang', null, null, null, null);
+            $totalNam = $this->getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, null, null, null, 'nam', null, null, null, null);
 
             // Cộng dồn tổng tháng, tổng năm, KPI tháng, KPI năm
             $totalMonth += $totalThang;
@@ -119,12 +119,13 @@ class ThongKeController extends Controller
             $kpiMonth += $kpi_thang;
             $kpiYear += $kpi_nam;
 
-            $daysDetail = $this->getDistinctDays($maTinhs, $khuVuc, $ngayChon, $timeFormat, $startDate, $endDate, null, null);
+            $daysDetail = $this->getDistinctDays($maTinhs, $khuVuc, $ngayChon, $timeFormat, $startDate, $endDate);
             $kpiDetail = $kpi_ngay * $daysDetail;
-            $totalDetail = $this->getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, null, null, $timeFormat, $startDate, $endDate, null, null);
+            $totalDetail = $this->getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, null, null, null, $timeFormat, $startDate, $endDate, null, null);
             $details[] = [
                 'khuVuc' => $khuVuc,
                 'total' => round($totalDetail),
+                'totalKpi' => round($kpiDetail),
                 'kpi' => ($kpiDetail > 0) ? round($totalDetail / 1e7 / $kpiDetail, 2) : 0
             ];
         }
@@ -132,6 +133,8 @@ class ThongKeController extends Controller
         $results = [
             'totalMonth' => round($totalMonth), // Tổng tháng
             'totalYear' => round($totalYear), // Tổng năm
+            'totalKpiMonth' => round($kpiMonth),
+            'totalKpiYear' => round($kpiYear),
             'kpiMonth' => ($kpiMonth > 0) ? round($totalMonth / 1e7 / $kpiMonth, 2) : 0, // KPI tháng
             'kpiYear' => ($kpiYear > 0) ? round($totalYear / 1e7 / $kpiYear, 2) : 0, // KPI năm
             'details' => $details
@@ -148,7 +151,8 @@ class ThongKeController extends Controller
         $endDate = $request->input('end_date');
         $hopDongId = $request->input('hop_dong');
         $role = session('role');
-        $userId = $request->input('user'); // Lấy user từ request
+        $userId = $request->input('user');
+        $linhVuc = $request->input('linh_vuc');
         $userKhuVuc = null;
         if ($role != 3) {
             $userKhuVuc = DB::table('tbl_user')
@@ -180,7 +184,7 @@ class ThongKeController extends Controller
             $distinctDays = $this->getDistinctDays($maTinhs, $khuVuc, $ngayChon, $timeFormat, $startDate, $endDate);
             $kpi = $kpiData['kpi_ngay'] * $distinctDays;
 
-            $totalSanLuong = $this->getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, $hopDongId, $userId, $timeFormat, $startDate, $endDate, null, null);
+            $totalSanLuong = $this->getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, $hopDongId, $userId, $linhVuc, $timeFormat, $startDate, $endDate, null, null);
 
             $results[] = [
                 'ten_khu_vuc' => $khuVuc,
@@ -222,6 +226,7 @@ class ThongKeController extends Controller
         $currentYear = date('Y', strtotime($ngayChon));
         $currentQuarter = ceil($currentMonth / 3);
 
+        $whereClauseSanLuong = $whereClauseThaoLap = "";
         switch ($timeFormat) {
             case 'ngay':
                 $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = DATE('$ngayChon')";
@@ -281,12 +286,12 @@ class ThongKeController extends Controller
 
         return $distinctDays;
     }
-    private function getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, $hopDongId = null, $userId = null, $timeFormat, $startDate, $endDate, $whereClauseSanLuong=null, $whereClauseThaoLap=null)
+    private function getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, $hopDongId = null, $userId = null, $linhVuc = null, $timeFormat, $startDate, $endDate, $whereClauseSanLuong=null, $whereClauseThaoLap=null)
     {
         if (empty($whereClauseSanLuong) || empty($whereClauseThaoLap)){
             [$whereClauseSanLuong, $whereClauseThaoLap] = $this->whereClauseTimeFormat($ngayChon, $timeFormat, $startDate, $endDate);
         }
-        if (empty($hopDongId) && empty($userId) && !empty($startDate) && !empty($endDate)) {
+        if (empty($hopDongId) && empty($userId) && empty($linhVuc) && !empty($startDate) && !empty($endDate)) {
             $start = Carbon::parse($startDate);
             $end = Carbon::parse($endDate);
 
@@ -347,9 +352,13 @@ class ThongKeController extends Controller
         if (!empty($hopDongId)) {
             $sanluongQuery->where('HopDong_Id', $hopDongId);
         }
-        $sanluongData = $sanluongQuery->get();
+        if (!empty($linhVuc) && $linhVuc != "EC"){
+            $sanluongData = collect();
+        } else {
+            $sanluongData = $sanluongQuery->get();
+        }
 
-        $sanluongKhacData = null;
+        $sanluongKhacData = collect();
         if (empty($hopDongId)) {
             $sanluongKhacQuery = DB::table('tbl_sanluong_khac')
                 ->select('SanLuong_Gia')
@@ -357,6 +366,9 @@ class ThongKeController extends Controller
                 ->where('SanLuong_KhuVuc', $khuVuc);
             if (!empty($userId)) {
                 $sanluongKhacQuery->where('user_id', $userId);
+            }
+            if (!empty($linhVuc)){
+                $sanluongKhacQuery->where('SanLuong_TenHangMuc', $linhVuc);
             }
             $sanluongKhacData = $sanluongKhacQuery->get();
         }
@@ -377,7 +389,11 @@ class ThongKeController extends Controller
         if (!empty($hopDongId)) {
             $thaolapQuery->where('HopDong_Id', $hopDongId);
         }
-        $sanluongThaolapData = $thaolapQuery->get();
+        if (!empty($linhVuc) && $linhVuc != "EC"){
+            $sanluongThaolapData = collect();
+        } else {
+            $sanluongThaolapData = $thaolapQuery->get();
+        }
 
         $combinedData = $sanluongData->merge($sanluongKhacData)->merge($sanluongThaolapData);
         $combinedData = $combinedData->map(function ($item) {
@@ -389,7 +405,6 @@ class ThongKeController extends Controller
         return $total;
     }
 
-    //TODO: tăng tốc độ lấy data, lọc đối tác, start_date, end_date
     public function thongKeXuTheKhuVuc(Request $request)
 {
     // Lấy tham số từ request
@@ -398,19 +413,11 @@ class ThongKeController extends Controller
     $endDate = $request->input('end_date');
     $hopDongId = $request->input('hop_dong');
     $userId = $request->input('user');
+    $linhVuc = $request->input('linh_vuc');
     $role = session('role');
-    $userKhuVuc = null;
+    $userKhuVuc = ($role != 3) ? DB::table('tbl_user')->where('user_id', $userId)->value('user_khuvuc') : null;
 
-    if ($role != 3) {
-        $userKhuVuc = DB::table('tbl_user')
-            ->where('user_id', $userId)
-            ->value('user_khuvuc');
-    }
-
-    $khuVucs = DB::table('tbl_tinh')
-        ->distinct()
-        ->orderBy('ten_khu_vuc')
-        ->pluck('ten_khu_vuc');
+    $khuVucs = DB::table('tbl_tinh')->distinct()->orderBy('ten_khu_vuc')->pluck('ten_khu_vuc');
 
     $results = [];
 
@@ -419,60 +426,50 @@ class ThongKeController extends Controller
             continue;
         }
 
-        $maTinhs = DB::table('tbl_tinh')
-            ->where('ten_khu_vuc', $khuVuc)
-            ->pluck('ma_tinh')
-            ->toArray();
+        $maTinhs = DB::table('tbl_tinh')->where('ten_khu_vuc', $khuVuc)->pluck('ma_tinh')->toArray();
 
         // Khởi tạo mảng lưu kết quả chi tiết
         $detailedResults = [];
+        $periods = [];
 
         switch ($timeFormat) {
             case 'tuan':
                 $days = $this->getDaysInRange($startDate, $endDate);
-                foreach ($days as $day) {
-                    $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = '{$day['date']}'";
-                    $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') = '{$day['date']}'";
-                    $totalSanLuong = $this->getTotalSanLuong($maTinhs, $khuVuc, null, $hopDongId, $userId, $timeFormat, $day['date'], $day['date'], $whereClauseSanLuong, $whereClauseThaoLap);
-                    $result = [
-                        'total' => round($totalSanLuong / 1e9, 2),
-                        'time_period' => "{$day['label']}"
-                    ];
-                    $detailedResults[] = $result;
-                }
+                $periods = array_map(fn($day) => [
+                    'start' => $day['date'],
+                    'end' => $day['date'],
+                    'label' => $day['label']
+                ], $days);
                 break;
             case 'thang':
             case 'quy':
                 $weeks = $this->getWeeksInRange($startDate, $endDate);
-                dd($weeks);
-                $weekNumber = 1;
-                foreach ($weeks as $week) {
-                    $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') BETWEEN '{$week['start']}' AND '{$week['end']}'";
-                    $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') BETWEEN '{$week['start']}' AND '{$week['end']}'";
-                    $totalSanLuong = $this->getTotalSanLuong($maTinhs, $khuVuc, null, $hopDongId, $userId, $timeFormat, $week['start'], $week['end'], $whereClauseSanLuong, $whereClauseThaoLap);
-                    $result = [
-                        'total' => round($totalSanLuong / 1e9, 2),
-                        'time_period' => "Tuần $weekNumber"
-                    ];
-                    $detailedResults[] = $result;
-                    $weekNumber++;
-                }
+                $periods = array_map(fn($week, $index) => [
+                    'start' => $week['start'],
+                    'end' => $week['end'],
+                    'label' => "Tuần " . ($index + 1)
+                ], $weeks, array_keys($weeks));
                 break;
-             case 'nam':
+            case 'nam':
                 $months = $this->getMonthsInRange($startDate, $endDate);
-                foreach ($months as $month) {
-                    $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') BETWEEN '{$month['start']}' AND '{$month['end']}'";
-                    $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') BETWEEN '{$month['start']}' AND '{$month['end']}'";
-                    $totalSanLuong = $this->getTotalSanLuong($maTinhs, $khuVuc, null, $hopDongId, $userId, $timeFormat, $month['start'], $month['end'], $whereClauseSanLuong, $whereClauseThaoLap);
-                    $result = [
-                        'total' => round($totalSanLuong / 1e9, 2),
-                        'time_period' => "Tháng " . (new DateTime($month['start']))->format('n')
-                    ];
-                    $detailedResults[] = $result;
-                }
+                $periods = array_map(fn($month) => [
+                    'start' => $month['start'],
+                    'end' => $month['end'],
+                    'label' => "Tháng " . (new DateTime($month['start']))->format('n')
+                ], $months);
                 break;
             default:
                 return response()->json(['error' => 'Thời gian không hợp lệ']);
+        }
+
+        foreach ($periods as $period) {
+            $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') BETWEEN '{$period['start']}' AND '{$period['end']}'";
+            $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') BETWEEN '{$period['start']}' AND '{$period['end']}'";
+            $totalSanLuong = $this->getTotalSanLuong($maTinhs, $khuVuc, null, $hopDongId, $userId, $linhVuc, $timeFormat, $period['start'], $period['end'], $whereClauseSanLuong, $whereClauseThaoLap);
+            $detailedResults[] = [
+                'total' => round($totalSanLuong / 1e9, 2),
+                'time_period' => $period['label']
+            ];
         }
 
         // Thêm kết quả vào mảng
@@ -484,6 +481,7 @@ class ThongKeController extends Controller
 
     return response()->json($results);
 }
+
 
 private function getDaysInRange($startDate, $endDate)
 {
@@ -544,18 +542,14 @@ private function getWeeksInRange($startDate, $endDate)
 }
 public function getMonthsInRange($startDate, $endDate)
 {
-    $start = new DateTime($startDate);
-    $end = new DateTime($endDate);
-    $end->modify('last day of this month');
-
+    $start = Carbon::parse($startDate);
+    $end = Carbon::parse($endDate);
+    
     $months = [];
 
     while ($start <= $end) {
-        $monthStart = clone $start;
-        $monthStart->modify('first day of this month');
-
-        $monthEnd = clone $start;
-        $monthEnd->modify('last day of this month');
+        $monthStart = $start->copy()->startOfMonth();
+        $monthEnd = $start->copy()->endOfMonth();
 
         if ($monthStart < new DateTime($startDate)) {
             $monthStart = new DateTime($startDate);
@@ -575,15 +569,14 @@ public function getMonthsInRange($startDate, $endDate)
 
     return $months;
 }
-
-
-    //TODO: start_date, end_date
+//TODO: Lọc hợp đồng, đối tác???
     public function thongKeTinh(Request $request)
     {
         // $khuVuc = $request->input('khu_vuc');
         $ngayChon = $request->input('ngay_chon', date('Y-m-d'));
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+        $linhVuc = $request->input('linh_vuc');
 
         // if (is_null($ngayChon) || $ngayChon === '') {
         //     $ngayChon = date('Y-m-d');
@@ -601,52 +594,99 @@ public function getMonthsInRange($startDate, $endDate)
         $maTinhs = DB::table('tbl_tinh')
             ->where('ten_khu_vuc', $khuVuc)
             ->pluck('ma_tinh');
-        $khuVucTotals = (object) [
-            'ngay' => 0,
-            'tuan' => 0,
-            'thang' => 0,
-            'quy' => 0,
-            'nam' => 0
-        ];
         $results = [];
+        if (!empty($linhVuc) && $linhVuc != "EC"){
+            return response()->json($results);
+        }
         foreach ($maTinhs as $maTinh) {
             if (!empty($startDate) && !empty($endDate)) {
+                $start = Carbon::parse($startDate);
+                $end = Carbon::parse($endDate);
+
+                $startMonth = $start->month;
+                $startYear = $start->year;
+                $endMonth = $end->month;
+                $endYear = $end->year;
+
+                $totals = [];
+
+                for ($year = $startYear; $year <= $endYear; $year++) {
+                    $startMonthLoop = ($year == $startYear) ? $startMonth : 1;
+                    $endMonthLoop = ($year == $endYear) ? $endMonth : 12;
+
+                    for ($month = $startMonthLoop; $month <= $endMonthLoop; $month++) {
+                        $formattedMonth = str_pad($month, 2, '0', STR_PAD_LEFT);
+
+                        $query = DB::table('tbl_tonghop_sanluong')
+                            ->select('SanLuong_Ngay_01', 'SanLuong_Ngay_02', 'SanLuong_Ngay_03', 'SanLuong_Ngay_04', 'SanLuong_Ngay_05', 'SanLuong_Ngay_06', 'SanLuong_Ngay_07', 'SanLuong_Ngay_08', 'SanLuong_Ngay_09', 'SanLuong_Ngay_10', 'SanLuong_Ngay_11', 'SanLuong_Ngay_12', 'SanLuong_Ngay_13', 'SanLuong_Ngay_14', 'SanLuong_Ngay_15', 'SanLuong_Ngay_16', 'SanLuong_Ngay_17', 'SanLuong_Ngay_18', 'SanLuong_Ngay_19', 'SanLuong_Ngay_20', 'SanLuong_Ngay_21', 'SanLuong_Ngay_22', 'SanLuong_Ngay_23', 'SanLuong_Ngay_24', 'SanLuong_Ngay_25', 'SanLuong_Ngay_26', 'SanLuong_Ngay_27', 'SanLuong_Ngay_28', 'SanLuong_Ngay_29', 'SanLuong_Ngay_30', 'SanLuong_Ngay_31')
+                            ->where('ma_tinh', $maTinh)
+                            ->where('year', $year)
+                            ->where('month', $formattedMonth)
+                            ->get();
+
+                        if ($year == $startYear && $month == $startMonth) {
+                            $startDay = $start->day;
+                        } else {
+                            $startDay = 1;
+                        }
+
+                        if ($year == $endYear && $month == $endMonth) {
+                            $endDay = $end->day;
+                        } else {
+                            $endDay = Carbon::createFromDate($year, $month)->daysInMonth;
+                        }
+
+                        foreach ($query as $data) {
+                            for ($day = $startDay; $day <= $endDay; $day++) {
+                                $dayColumn = "SanLuong_Ngay_" . str_pad($day, 2, '0', STR_PAD_LEFT);
+                                if (isset($data->$dayColumn)) {
+                                    $totals[] += floatval($data->$dayColumn);
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                $day = (int)date('d', strtotime($ngayChon));
+                $month = (int)date('m', strtotime($ngayChon));
+                $year = (int)date('Y', strtotime($ngayChon));
+
+                if ($day >= 1 && $day <= 7) {
+                    $startWeek = "$year-$month-01";
+                    $endWeek = "$year-$month-07";
+                } elseif ($day >= 8 && $day <= 14) {
+                    $startWeek = "$year-$month-08";
+                    $endWeek = "$year-$month-14";
+                } elseif ($day >= 15 && $day <= 21) {
+                    $startWeek = "$year-$month-15";
+                    $endWeek = "$year-$month-21";
+                } else {
+                    $startWeek = "$year-$month-22";
+                    $endWeek = date('Y-m-t', strtotime($ngayChon)); // Ngày cuối tháng
+                }
                 $query = "
                 SELECT
-                    SUM(CASE WHEN DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) BETWEEN DATE('$startDate') AND DATE('$endDate') THEN SanLuong_Gia ELSE 0 END) as ngay
+                    SUM(CASE WHEN DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = DATE('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as ngay,
+                    SUM(CASE WHEN DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) BETWEEN DATE('$startWeek') AND DATE('$endWeek') THEN SanLuong_Gia ELSE 0 END) as tuan,
+                    SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = MONTH('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as thang,
+                    SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = QUARTER('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as quy,
+                    SUM(CASE WHEN YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as nam
                 FROM tbl_sanluong
                 WHERE SanLuong_Tram LIKE '$maTinh%'
                 AND ten_hinh_anh_da_xong NOT LIKE ''
                 UNION ALL
                 SELECT
-                    SUM(CASE WHEN DATE(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) BETWEEN DATE('$startDate') AND DATE('$endDate') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as ngay
+                    SUM(CASE WHEN DATE(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = DATE('$ngayChon') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as ngay,
+                    SUM(CASE WHEN DATE(STR_TO_DATE(ThaoLap_Ngay, '%d%m%Y')) BETWEEN DATE('$startWeek') AND DATE('$endWeek') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as tuan,               
+                    SUM(CASE WHEN MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = MONTH('$ngayChon') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as thang,
+                    SUM(CASE WHEN QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = QUARTER('$ngayChon') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as quy,
+                    SUM(CASE WHEN YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = YEAR('$ngayChon') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as nam
                 FROM tbl_sanluong_thaolap
                 WHERE ThaoLap_MaTram LIKE '$maTinh%'
             ";
-            } else {
-                $query = "
-                SELECT
-                SUM(CASE WHEN DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = DATE('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as ngay,
-                SUM(CASE WHEN WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), 1) = WEEK('$ngayChon', 1) THEN SanLuong_Gia ELSE 0 END) as tuan,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = MONTH('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as thang,
-                SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = QUARTER('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as quy,
-                SUM(CASE WHEN YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as nam
-                FROM tbl_sanluong
-                WHERE SanLuong_Tram LIKE '$maTinh%'
-                AND ten_hinh_anh_da_xong NOT LIKE ''
-                UNION ALL
-                SELECT
-                SUM(CASE WHEN DATE(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = DATE('$ngayChon') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as ngay,
-                SUM(CASE WHEN WEEK(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), 1) = WEEK('$ngayChon', 1) THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as tuan,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = MONTH('$ngayChon') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as thang,
-                SUM(CASE WHEN QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = QUARTER('$ngayChon') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as quy,
-                SUM(CASE WHEN YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = YEAR('$ngayChon') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as nam
-                FROM tbl_sanluong_thaolap
-                WHERE ThaoLap_MaTram LIKE '$maTinh%'
-                ";
+            $totals = DB::select($query);
             }
 
-            $totals = DB::select($query);
 
             $combinedTotals = (object) [
                 'ngay' => 0,
@@ -658,11 +698,11 @@ public function getMonthsInRange($startDate, $endDate)
 
             foreach ($totals as $total) {
                 if (!empty($startDate) && !empty($endDate)) {
-                    $combinedTotals->ngay += $total->ngay;
-                    $combinedTotals->tuan += $total->ngay;
-                    $combinedTotals->thang += $total->ngay;
-                    $combinedTotals->quy += $total->ngay;
-                    $combinedTotals->nam += $total->ngay;
+                    $combinedTotals->ngay += $total;
+                    $combinedTotals->tuan += $total;
+                    $combinedTotals->thang += $total;
+                    $combinedTotals->quy += $total;
+                    $combinedTotals->nam += $total;
                 } else {
                     $combinedTotals->ngay += $total->ngay;
                     $combinedTotals->tuan += $total->tuan;
@@ -682,22 +722,7 @@ public function getMonthsInRange($startDate, $endDate)
                     'nam' => round($combinedTotals->nam)
                 ]
             ];
-            $khuVucTotals->ngay += $combinedTotals->ngay;
-            $khuVucTotals->tuan += $combinedTotals->tuan;
-            $khuVucTotals->thang += $combinedTotals->thang;
-            $khuVucTotals->quy += $combinedTotals->quy;
-            $khuVucTotals->nam += $combinedTotals->nam;
         }
-        $resultsTotal[] = [
-            'khu_vuc' => $khuVuc,
-            'totals' => [
-                'ngay' => round($khuVucTotals->ngay),
-                'tuan' => round($khuVucTotals->tuan),
-                'thang' => round($khuVucTotals->thang),
-                'quy' => round($khuVucTotals->quy),
-                'nam' => round($khuVucTotals->nam)
-            ]
-        ];
 
         return response()->json($results);
     }
