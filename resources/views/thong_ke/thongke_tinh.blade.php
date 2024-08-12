@@ -192,7 +192,7 @@
                     data.forEach(function(item) {
                         var row = `
                             <tr>
-                                <td class="ma-tinh"><a class="simple-link" href="/thongke/tinh/${item.ma_tinh}">${item.ma_tinh}</a></td>
+                                <td class="ma-tinh"><a class="simple-link" href="#">${item.ma_tinh}</a></td>
                                 <td>${formatNumber(item.tong_san_luong.nam)}</td>
                                 <td>${formatNumber(item.tong_san_luong.quy_1)}</td>
                                 <td>${formatNumber(item.tong_san_luong.quy_2)}</td>

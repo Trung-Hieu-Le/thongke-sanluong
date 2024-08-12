@@ -30,7 +30,8 @@ class LocSanLuong extends Command
         $today = date('dmY');
 
         try {
-            // Fetch relevant records from tbl_hinhanh
+            Log::info('Starting the LocSanLuong command', ['date' => $today]);
+
             $images = DB::table('tbl_hinhanh')
                 ->select('ma_tram', 'ten_hang_muc', 'HopDong_Id', 'ten_anh_chuan_bi', 'ten_anh_da_xong')
                 ->where(function($query) use ($today) {
@@ -40,6 +41,8 @@ class LocSanLuong extends Command
                 })
                 ->whereDate('thoi_gian_chup', $today)
                 ->get();
+
+            Log::info('Fetched images', ['count' => $images->count()]);
 
             foreach ($images as $image) {
                 $ma_tram = $image->ma_tram;
@@ -71,6 +74,7 @@ class LocSanLuong extends Command
                     'ten_hinh_anh_chuan_bi' => $max_chuan_bi,
                     'ten_hinh_anh_da_xong' => $max_da_xong
                 ]);
+                Log::info('Inserted record into tbl_sanluong');
             }
 
             Log::info('Successfully updated tbl_sanluong');

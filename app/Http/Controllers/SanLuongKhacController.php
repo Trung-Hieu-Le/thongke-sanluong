@@ -9,6 +9,7 @@ use Illuminate\Support\Carbon;
 
 class SanLuongKhacController extends Controller
 {
+    //TODO: change tbl_tonghop_sanluong khi sửa/xóa
     public function indexSanLuong(Request $request)
     {
         if (!$request->session()->has('username')) {

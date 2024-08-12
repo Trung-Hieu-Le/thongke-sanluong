@@ -30,7 +30,8 @@ class TimHinhAnhTrung extends Command
         $today = date('dmY');
 
         try {
-            // Fetch distinct ma_tram and ten_hang_muc for today's entries with ten_anh_da_xong
+            Log::info('Starting the TimHinhAnhTrung command', ['date' => $today]);
+
             $images = DB::table('tbl_hinhanh')
                 ->select('ma_tram', 'ten_hang_muc')
                 ->distinct()
@@ -42,6 +43,7 @@ class TimHinhAnhTrung extends Command
                 Log::info('No images found for today.');
                 return 0;
             }
+            Log::info('Fetched images', ['count' => $images->count()]);
 
             foreach ($images as $image) {
                 $ma_tram = $image->ma_tram;

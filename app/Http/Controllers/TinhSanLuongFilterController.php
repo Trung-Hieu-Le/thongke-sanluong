@@ -9,6 +9,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class TinhSanLuongFilterController extends Controller
 {
+    //TODO: các phần lọc làm tròn xuống hàng đơn vị
     public function indexTramFilter(Request $request)
 {
     if (!$request->session()->has('username')) {
@@ -34,11 +35,13 @@ class TinhSanLuongFilterController extends Controller
 
     // Biến điều kiện
     $dayCondition = count($days) > 0 ? "AND SanLuong_Ngay IN (" . implode(',', $days) . ")" : "";
+    $thaoLapDayCondition = count($days) > 0 ? "AND DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y') IN (" . implode(',', $days) . ")" : "";
+    $kiemDinhDayCondition = count($days) > 0 ? "AND DATE_FORMAT(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y'), '%d%m%Y') IN (" . implode(',', $days) . ")" : "";
     $searchCondition = !empty($searchMaTram) ? "AND SanLuong_Tram LIKE '%$searchMaTram%'" : "";
     $searchCondition2 = !empty($searchMaTram) ? "AND ThaoLap_MaTram LIKE '%$searchMaTram%'" : "";
+    $searchCondition3 = !empty($searchMaTram) ? "AND KiemDinh_MaTram LIKE '%$searchMaTram%'" : "";
     $searchConditionHopDong = !empty($searchHopDong) ? "AND tbl_hopdong.HopDong_SoHopDong LIKE '%$searchHopDong%'" : "";
     $searchConditionKhuVuc = !empty($searchKhuVuc) ? "AND tbl_tinh.ten_khu_vuc LIKE '%$searchKhuVuc%'" : "";
-    $thaoLapDayCondition = count($days) > 0 ? "AND DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y') IN (" . implode(',', $days) . ")" : "";
     $userKhuVucCondition = '';
     if ($userRole !== 3) {
         $userKhuVucCondition = "AND tbl_tinh.ten_khu_vuc = '$userKhuVuc'";
@@ -84,6 +87,25 @@ class TinhSanLuongFilterController extends Controller
             $searchConditionKhuVuc
             $userKhuVucCondition
             GROUP BY ThaoLap_MaTram, tbl_tinh.ten_khu_vuc, tbl_hopdong.HopDong_SoHopDong
+
+            UNION ALL
+        
+            SELECT 
+                LEFT(KiemDinh_MaTram, 3) as ma_tinh,
+                KiemDinh_MaTram as SanLuong_Tram,
+                tbl_hopdong.HopDong_SoHopDong,
+                SUM(KiemDinh_DonGia) as SanLuong_Gia,
+                tbl_tinh.ten_khu_vuc
+            FROM tbl_sanluong_kiemdinh
+            LEFT JOIN tbl_tinh ON LEFT(tbl_sanluong_kiemdinh.KiemDinh_MaTram, 3) = tbl_tinh.ma_tinh
+            LEFT JOIN tbl_hopdong ON tbl_sanluong_kiemdinh.HopDong_Id = tbl_hopdong.HopDong_Id
+            WHERE 1
+            $kiemDinhDayCondition
+            $searchCondition3
+            $searchConditionHopDong
+            $searchConditionKhuVuc
+            $userKhuVucCondition
+            GROUP BY KiemDinh_MaTram, tbl_tinh.ten_khu_vuc, tbl_hopdong.HopDong_SoHopDong
         ) as combined
     "))
     ->select('ma_tinh', 'SanLuong_Tram','HopDong_SoHopDong', DB::raw('SUM(SanLuong_Gia) as SanLuong_Gia'), 'ten_khu_vuc')
@@ -125,6 +147,23 @@ class TinhSanLuongFilterController extends Controller
             WHERE 1
             $thaoLapDayCondition
             $searchCondition2
+            $searchConditionHopDong
+            $searchConditionKhuVuc
+            $userKhuVucCondition
+            GROUP BY tbl_tinh.ten_khu_vuc
+
+            UNION ALL
+        
+            SELECT 
+                tbl_tinh.ten_khu_vuc,
+                COUNT(DISTINCT KiemDinh_MaTram) as so_tram,
+                SUM(KiemDinh_DonGia) as tong_san_luong
+            FROM tbl_sanluong_kiemdinh
+            LEFT JOIN tbl_tinh ON LEFT(tbl_sanluong_kiemdinh.KiemDinh_MaTram, 3) = tbl_tinh.ma_tinh
+            LEFT JOIN tbl_hopdong ON tbl_sanluong_kiemdinh.HopDong_Id = tbl_hopdong.HopDong_Id
+            WHERE 1
+            $kiemDinhDayCondition
+            $searchCondition3
             $searchConditionHopDong
             $searchConditionKhuVuc
             $userKhuVucCondition

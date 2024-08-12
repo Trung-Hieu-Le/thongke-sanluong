@@ -34,10 +34,13 @@ class TinhSanLuongController extends Controller
         ->join('tbl_tinh', DB::raw("LEFT(tbl_sanluong.SanLuong_Tram, 3)"), '=', 'tbl_tinh.ma_tinh')
         ->select('tbl_sanluong.HopDong_Id', 'tbl_sanluong.SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
         DB::raw("CASE WHEN tbl_sanluong.SanLuong_Gia IS NULL OR tbl_sanluong.SanLuong_Gia = '' THEN 0 ELSE tbl_sanluong.SanLuong_Gia END as SanLuong_Gia"), 'tbl_sanluong.SanLuong_TenHangMuc', 
-        DB::raw("CASE WHEN tbl_sanluong.ten_hinh_anh_da_xong <> '' THEN 1 ELSE 0 END as SoLuong"),
-        DB::raw("CASE WHEN tbl_sanluong.ten_hinh_anh_da_xong <> '' THEN 'Đã thi công' ELSE 'Đã khảo sát' END as TrangThai"))
+        DB::raw("MAX(CASE WHEN tbl_sanluong.ten_hinh_anh_da_xong <> '' THEN 1 ELSE 0 END) as SoLuong"),
+        DB::raw("MAX(CASE WHEN tbl_sanluong.ten_hinh_anh_da_xong <> '' THEN 'Đã thi công' ELSE 'Đã khảo sát' END) as TrangThai")
+        )
         ->where('tbl_sanluong.SanLuong_Tram', $ma_tram)
-        ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d%m%Y')"), $days);
+        ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d%m%Y')"), $days)
+        ->groupBy('tbl_sanluong.SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y')"), 'tbl_sanluong.SanLuong_TenHangMuc', 'SanLuong_Gia', 'HopDong_Id');
+
 
     // Apply user level filter
     if ($userRole != 3) {
@@ -93,10 +96,28 @@ class TinhSanLuongController extends Controller
 
     $sanluongThaolapData = $sanluongThaolapDataQuery->simplePaginate($perPage, ['*'], 'sanluong_thaolap_page');
 
+    $sanluongKiemdinhDataQuery = DB::table('tbl_sanluong_kiemdinh')
+        ->join('tbl_tinh', DB::raw("LEFT(tbl_sanluong_kiemdinh.KiemDinh_MaTram, 3)"), '=', 'tbl_tinh.ma_tinh')
+        ->select('tbl_sanluong_kiemdinh.HopDong_Id', 'tbl_sanluong_kiemdinh.KiemDinh_MaTram', DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong_kiemdinh.KiemDinh_Ngay, '%d/%m/%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
+        DB::raw("CASE WHEN tbl_sanluong_kiemdinh.KiemDinh_DonGia IS NULL OR tbl_sanluong_kiemdinh.KiemDinh_DonGia = '' THEN 0 ELSE tbl_sanluong_kiemdinh.KiemDinh_DonGia END as SanLuong_Gia"), 
+        'tbl_sanluong_kiemdinh.KiemDinh_NoiDung as SanLuong_TenHangMuc', 
+        DB::raw("1 as SoLuong"), 
+        DB::raw("'Đã thi công' as TrangThai"))
+        ->where('tbl_sanluong_kiemdinh.KiemDinh_MaTram', $ma_tram)
+        ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong_kiemdinh.KiemDinh_Ngay, '%d/%m/%Y'), '%d%m%Y')"), $days);
+
+    // Apply user level filter
+    if ($userRole != 3) {
+        $sanluongKiemdinhDataQuery->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
+    }
+
+    $sanluongKiemdinhData = $sanluongKiemdinhDataQuery->simplePaginate($perPage, ['*'], 'kiemdinh_page');
+
     // Merging data from all tables
     $allData = new Collection;
     $allData = $allData->merge($sanluongData->items());
     $allData = $allData->merge($sanluongThaolapData->items());
+    $allData = $allData->merge($sanluongKiemdinhData->items());
 
     // Create a paginator for the merged data
     $currentPage = LengthAwarePaginator::resolveCurrentPage();

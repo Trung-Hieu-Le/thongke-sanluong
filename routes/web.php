@@ -46,9 +46,9 @@ Route::get('/thongke/khuvuc', [ThongKeController::class, 'indexTinh']);
 Route::get('/thongke/khuvuc/all', [ThongKeController::class, 'thongKeTinh']);
 Route::get('/thongke/khuvuc/tongquat', [ThongKeController::class, 'thongKeTinhTongQuat']);
 
-Route::get('/thongke/tinh/{ma_tinh}', [ThongKeController::class, 'indexTram']);
-Route::get('/thongke/tinh/{ma_tinh}/all', [ThongKeController::class, 'thongKeTram']);
-Route::get('/thongke/tinh/{ma_tinh}/tongquat', [ThongKeController::class, 'thongKeTramTongQuat']);
+// Route::get('/thongke/tinh/{ma_tinh}', [ThongKeController::class, 'indexTram']);
+// Route::get('/thongke/tinh/{ma_tinh}/all', [ThongKeController::class, 'thongKeTram']);
+// Route::get('/thongke/tinh/{ma_tinh}/tongquat', [ThongKeController::class, 'thongKeTramTongQuat']);
 
 Route::get('/thongke/filter', [TinhSanLuongFilterController::class, 'indexTramFilter'])->name('tram.filter');
 Route::get('/viewsanluong/{ma_tram}', [TinhSanLuongController::class, 'viewSanLuongTram']);

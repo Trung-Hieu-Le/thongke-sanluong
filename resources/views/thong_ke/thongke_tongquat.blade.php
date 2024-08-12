@@ -561,6 +561,14 @@
                     const dataKPI = data.map(item => item.kpi);
                     const dataTotal = data.map(item => item.total);
 
+                    const totalKPI = dataKPI.reduce((acc, curr) => acc + curr, 0);
+                    const totalTotal = dataTotal.reduce((acc, curr) => acc + curr, 0);
+                    const totalPercentage = totalKPI ? ((totalTotal / totalKPI) * 100).toFixed(2) : 'N/A';
+                    labels.push('Tổng cộng');
+                    dataKPI.push(parseFloat(totalKPI.toFixed(2)));  // Ensure number type
+                    dataTotal.push(parseFloat(totalTotal.toFixed(2)));  // Ensure number type   
+                    console.log(dataTotal, dataKPI);
+
                     const chart = barChartXuThe;
                     chart.data.labels = labels;
                     
@@ -576,7 +584,7 @@
                                 label: 'Thực hiện',
                                 data: dataTotal,
                                 backgroundColor: dataTotal.map((total, index) => {
-                                    const percentage = dataKPI[index] ? (total / dataKPI[index] * 100).toFixed(2) : 'N/A';
+                                    let percentage = dataKPI[index] ? (total / dataKPI[index] * 100).toFixed(2) : 'N/A';                                    
                                     if (percentage > 100) return '#5E1675'; // Purple
                                     if (percentage > 70) return '#337357'; // Green
                                     if (percentage > 40) return '#FFD23F'; // Yellow
@@ -590,7 +598,7 @@
                         
                         // Update background colors based on percentage
                         chart.data.datasets[1].backgroundColor = dataTotal.map((total, index) => {
-                            const percentage = dataKPI[index] ? (total / dataKPI[index] * 100).toFixed(2) : 'N/A';
+                            let percentage = dataKPI[index] ? (total / dataKPI[index] * 100).toFixed(2) : 'N/A';
                             if (percentage > 100) return '#5E1675'; // Purple
                             if (percentage > 70) return '#337357'; // Green
                             if (percentage > 40) return '#FFD23F'; // Yellow
@@ -601,7 +609,7 @@
                     chart.update();
 
                     const tableRows = data.map((item, index) => {
-                        const percentage = item.kpi ? ((item.total / item.kpi) * 100).toFixed(2) : 'N/A';
+                        let percentage = item.kpi ? ((item.total / item.kpi) * 100).toFixed(2) : 'N/A';
                         return `
                             <tr>
                                 <td>${percentage}%</td>
@@ -612,9 +620,6 @@
                         `;
                     }).join('');
 
-                    const totalKPI = dataKPI.reduce((acc, curr) => acc + curr, 0);
-                    const totalTotal = dataTotal.reduce((acc, curr) => acc + curr, 0);
-                    const totalPercentage = totalKPI ? ((totalTotal / totalKPI) * 100).toFixed(2) : 'N/A';
 
                     const totalRow = `
                         <tr>
@@ -662,13 +667,13 @@
                     document.getElementById('totalMonthValue').textContent = number_format(totalMonth, 0, ',', '.');
                     document.getElementById('yearKPI').textContent = kpiYear + "%";
                     document.getElementById('monthKPI').textContent = kpiMonth + "%";
-                    document.getElementById('totalKpiYear').textContent = "Tổng KPI: " + number_format(totalKpiYear, 1, ',', '.') + " tỉ đồng";
-                    document.getElementById('totalKpiMonth').textContent = "Tổng KPI: " + number_format(totalKpiMonth, 1, ',', '.') + " tỉ đồng";
+                    document.getElementById('totalKpiYear').textContent = "Tổng KPI: " + number_format(totalKpiYear, 2, ',', '.') + " tỉ đồng";
+                    document.getElementById('totalKpiMonth').textContent = "Tổng KPI: " + number_format(totalKpiMonth, 2, ',', '.') + " tỉ đồng";
 
                     data.details.forEach(detail => {
                         document.getElementById(`total-${detail.khuVuc}`).textContent = number_format(detail.total, 0, ',', '.');
                         document.getElementById(`kpi-${detail.khuVuc}`).textContent = detail.kpi + "%";
-                        document.getElementById(`totalKpi-${detail.khuVuc}`).textContent = number_format(detail.totalKpi, 1, ',', '.') + " tỉ đồng";
+                        document.getElementById(`totalKpi-${detail.khuVuc}`).textContent = number_format(detail.totalKpi, 2, ',', '.') + " tỉ đồng";
                     });
                 }
             });
@@ -718,7 +723,6 @@
             return `start_date=${start_date}&end_date=${end_date}`;
         }
 
-        //TODO: ko đổi đc start_end_date
         $('#timeFormat, #selectDay, #selectMonth, #selectQuarter, #selectYear, #selectHopDong, #selectUser, #selectLinhVuc').on('change', function() {
             const selectedTimeFormat = $('#timeFormat').val();
             const formattedDate = getFormattedDate();

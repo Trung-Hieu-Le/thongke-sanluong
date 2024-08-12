@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class KpiQuyController extends Controller
 {
+    //TODO: KPI sản lượng kiểm định
     public function indexKpiQuy(Request $request)
     {
         if (!$request->session()->has('username')) {
