@@ -75,3 +75,28 @@ Route::post('/kpi-quy/handleEdit', [KpiQuyController::class, 'handleEditKpiQuy']
 Route::get('/kpi-quy/delete/{id}', [KpiQuyController::class, 'deleteKpiQuy'])->name('kpiquy.delete');
 
 //TODO: getSanLuongThang_6 (1h update / lần)
+//TODO: Chú ý Illuminate\Foundation\Console\ServeCommand.php
+    // protected function getDateFromLine($line)
+    // {
+    //     $regex = env('PHP_CLI_SERVER_WORKERS', 1) > 1
+    //         ? '/^\[\d+]\s\[([a-zA-Z0-9: ]+)\]/'
+    //         : '/^\[([^\]]+)\]/';
+
+    //     $line = str_replace('  ', ' ', $line);
+
+    //     preg_match($regex, $line, $matches);
+
+    //     if (isset($matches[1])) {  
+	// 		return Carbon::createFromFormat('D M d H:i:s Y', $matches[1]);
+    //     }
+    //     return Carbon::now(); 
+    // }
+    // protected function getRequestPortFromLine($line)
+    // {
+    //     preg_match('/:(\d+)\s(?:(?:\w+$)|(?:\[.*))/', $line, $matches);
+
+	// 	if (isset($matches[1])) {
+	// 		return (int) $matches[1];
+	// 	}
+	// 	return null; 
+    // }

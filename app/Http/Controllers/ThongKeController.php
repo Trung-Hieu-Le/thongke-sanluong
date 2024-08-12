@@ -368,7 +368,7 @@ class ThongKeController extends Controller
             ->select('SanLuong_Gia')
             ->whereRaw($whereClauseSanLuong)
             ->where('ten_hinh_anh_da_xong', '!=', '')
-            ->groupBy('tbl_sanluong.SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y')"), 'tbl_sanluong.SanLuong_TenHangMuc', 'SanLuong_Gia')
+            ->groupBy('tbl_sanluong.SanLuong_Tram', 'SanLuong_Ngay', 'tbl_sanluong.SanLuong_TenHangMuc', 'SanLuong_Gia')
             ->where(function ($query) use ($maTinhs) {
                 foreach ($maTinhs as $maTinh) {
                     $query->orWhere('SanLuong_Tram', 'LIKE', "$maTinh%");
