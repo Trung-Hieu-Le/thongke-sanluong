@@ -567,7 +567,6 @@
                     labels.push('Tổng cộng');
                     dataKPI.push(parseFloat(totalKPI.toFixed(2)));  // Ensure number type
                     dataTotal.push(parseFloat(totalTotal.toFixed(2)));  // Ensure number type   
-                    console.log(dataTotal, dataKPI);
 
                     const chart = barChartXuThe;
                     chart.data.labels = labels;

@@ -180,11 +180,11 @@
             });
         }
 
-        function updateTable(khu_vuc) {
+        function updateTable(khu_vuc, ngay_chon) {
             $.ajax({
                 url: '/thongke/khuvuc/tongquat',
                 method: 'GET',
-                data: { khu_vuc: khu_vuc },
+                data: { khu_vuc: khu_vuc, ngay_chon: ngay_chon },
                 success: function(data) {
                     var tbody = $('#data-table tbody');
                     tbody.empty();
@@ -228,21 +228,21 @@
             var selectedKhuVuc = $('#khu-vuc-chon').val();
             var selectedNgay = $('#ngay-chon').val();
             updateAllCharts(selectedKhuVuc, selectedNgay);
-            updateTable(selectedKhuVuc);
+            updateTable(selectedKhuVuc, selectedNgay);
         });
 
         $(document).ready(function() {
             var initialKhuVuc = $('#khu-vuc-chon').val();
             var initialNgay = $('#ngay-chon').val();
             updateAllCharts(initialKhuVuc, initialNgay);
-            updateTable(initialKhuVuc);
+            updateTable(initialKhuVuc, initialNgay);
         });
 
         setInterval(function() {
             var selectedKhuVuc = $('#khu-vuc-chon').val();
             var selectedNgay = $('#ngay-chon').val();
             updateAllCharts(selectedKhuVuc, selectedNgay);
-            updateTable(selectedKhuVuc);
+            updateTable(selectedKhuVuc, selectedNgay);
         }, 3600000);
 
     </script>
