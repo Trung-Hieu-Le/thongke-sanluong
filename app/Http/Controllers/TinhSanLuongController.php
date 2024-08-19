@@ -9,12 +9,14 @@ class TinhSanLuongController extends Controller
 {
     public function viewSanLuongTram(Request $request)
 {
+    //TODO: Không hiện các trạm không có khu vực
     if (!$request->session()->has('username')) {
         return redirect('login');
     }
 
     $ma_tram = $request->ma_tram;
     $daysString = $request->input('days', date('dmY'));
+    $sohopdong = $request->input('sohopdong', '');
     $days = [];
 
     if (!empty($daysString)) {
@@ -31,7 +33,8 @@ class TinhSanLuongController extends Controller
     $userKhuVuc = DB::table('tbl_user')->where('user_id', $userId)->value('user_khuvuc');
 
     $sanluongDataQuery = DB::table('tbl_sanluong')
-        ->join('tbl_tinh', DB::raw("LEFT(tbl_sanluong.SanLuong_Tram, 3)"), '=', 'tbl_tinh.ma_tinh')
+        ->leftJoin('tbl_tinh', DB::raw("LEFT(tbl_sanluong.SanLuong_Tram, 3)"), '=', 'tbl_tinh.ma_tinh')
+        ->leftJoin('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
         ->select('tbl_sanluong.HopDong_Id', 'tbl_sanluong.SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
         DB::raw("CASE WHEN tbl_sanluong.SanLuong_Gia IS NULL OR tbl_sanluong.SanLuong_Gia = '' THEN 0 ELSE tbl_sanluong.SanLuong_Gia END as SanLuong_Gia"), 'tbl_sanluong.SanLuong_TenHangMuc', 
         DB::raw("MAX(CASE WHEN tbl_sanluong.ten_hinh_anh_da_xong <> '' THEN 1 ELSE 0 END) as SoLuong"),
@@ -41,17 +44,10 @@ class TinhSanLuongController extends Controller
         ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d%m%Y')"), $days)
         ->groupBy('tbl_sanluong.SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y')"), 'tbl_sanluong.SanLuong_TenHangMuc', 'SanLuong_Gia', 'HopDong_Id');
 
-
-    // Apply user level filter
-    if ($userRole != 3) {
-        $sanluongDataQuery->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
-    }
-
-    $sanluongData = $sanluongDataQuery->simplePaginate($perPage, ['*'], 'sanluong_page');
-
     // Fetching and transforming paginated data from tbl_sanluong_thaolap
     $sanluongThaolapDataQuery = DB::table('tbl_sanluong_thaolap')
-        ->join('tbl_tinh', DB::raw("LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3)"), '=', 'tbl_tinh.ma_tinh')
+        ->leftJoin('tbl_tinh', DB::raw("LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3)"), '=', 'tbl_tinh.ma_tinh')
+        ->join('tbl_hopdong', 'tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
         ->select('tbl_sanluong_thaolap.HopDong_Id', 'ThaoLap_MaTram as SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
             DB::raw("'Anten' as SanLuong_TenHangMuc"), 
             DB::raw("CASE WHEN ThaoLap_Anten IS NULL OR ThaoLap_Anten = '' THEN 0 ELSE ThaoLap_Anten END as SoLuong"), 
@@ -59,8 +55,13 @@ class TinhSanLuongController extends Controller
             DB::raw("'Đã thi công' as TrangThai"))
         ->where('tbl_sanluong_thaolap.ThaoLap_MaTram', $ma_tram)
         ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong_thaolap.ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y')"), $days)
+        ->when(!empty($sohopdong), function ($query) use ($sohopdong) {
+            return $query->where('tbl_hopdong.HopDong_SoHopDong', $sohopdong);
+        })
         ->unionAll(
             DB::table('tbl_sanluong_thaolap')
+            ->leftJoin('tbl_tinh', DB::raw("LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3)"), '=', 'tbl_tinh.ma_tinh')
+            ->join('tbl_hopdong', 'tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
             ->select('tbl_sanluong_thaolap.HopDong_Id', 'ThaoLap_MaTram as SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
                 DB::raw("'RRU' as SanLuong_TenHangMuc"), 
                 DB::raw("CASE WHEN ThaoLap_RRU IS NULL OR ThaoLap_RRU = '' THEN 0 ELSE ThaoLap_RRU END as SoLuong"), 
@@ -68,9 +69,14 @@ class TinhSanLuongController extends Controller
                 DB::raw("'Đã thi công' as TrangThai"))
             ->where('tbl_sanluong_thaolap.ThaoLap_MaTram', $ma_tram)
             ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong_thaolap.ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y')"), $days)
+            ->when(!empty($sohopdong), function ($query) use ($sohopdong) {
+                return $query->where('tbl_hopdong.HopDong_SoHopDong', $sohopdong);
+            })
         )
         ->unionAll(
             DB::table('tbl_sanluong_thaolap')
+            ->leftJoin('tbl_tinh', DB::raw("LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3)"), '=', 'tbl_tinh.ma_tinh')
+            ->join('tbl_hopdong', 'tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
             ->select('tbl_sanluong_thaolap.HopDong_Id', 'ThaoLap_MaTram as SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
                 DB::raw("'Tủ thiết bị' as SanLuong_TenHangMuc"), 
                 DB::raw("CASE WHEN ThaoLap_TuThietBi IS NULL OR ThaoLap_TuThietBi = '' THEN 0 ELSE ThaoLap_TuThietBi END as SoLuong"), 
@@ -78,9 +84,14 @@ class TinhSanLuongController extends Controller
                 DB::raw("'Đã thi công' as TrangThai"))
             ->where('tbl_sanluong_thaolap.ThaoLap_MaTram', $ma_tram)
             ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong_thaolap.ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y')"), $days)
+            ->when(!empty($sohopdong), function ($query) use ($sohopdong) {
+                return $query->where('tbl_hopdong.HopDong_SoHopDong', $sohopdong);
+            })
         )
         ->unionAll(
             DB::table('tbl_sanluong_thaolap')
+            ->leftJoin('tbl_tinh', DB::raw("LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3)"), '=', 'tbl_tinh.ma_tinh')
+            ->join('tbl_hopdong', 'tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
             ->select('tbl_sanluong_thaolap.HopDong_Id', 'ThaoLap_MaTram as SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
                 DB::raw("'Cáp nguồn' as SanLuong_TenHangMuc"), 
                 DB::raw("CASE WHEN ThaoLap_CapNguon IS NULL OR ThaoLap_CapNguon = '' THEN 0 ELSE ThaoLap_CapNguon END as SoLuong"), 
@@ -88,16 +99,14 @@ class TinhSanLuongController extends Controller
                 DB::raw("'Đã thi công' as TrangThai"))
             ->where('tbl_sanluong_thaolap.ThaoLap_MaTram', $ma_tram)
             ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong_thaolap.ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y')"), $days)
+            ->when(!empty($sohopdong), function ($query) use ($sohopdong) {
+                return $query->where('tbl_hopdong.HopDong_SoHopDong', $sohopdong);
+            })
         );
 
-    if ($userRole != 3) {
-        $sanluongThaolapDataQuery->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
-    }
-
-    $sanluongThaolapData = $sanluongThaolapDataQuery->simplePaginate($perPage, ['*'], 'sanluong_thaolap_page');
-
     $sanluongKiemdinhDataQuery = DB::table('tbl_sanluong_kiemdinh')
-        ->join('tbl_tinh', DB::raw("LEFT(tbl_sanluong_kiemdinh.KiemDinh_MaTram, 3)"), '=', 'tbl_tinh.ma_tinh')
+        ->leftJoin('tbl_tinh', DB::raw("LEFT(tbl_sanluong_kiemdinh.KiemDinh_MaTram, 3)"), '=', 'tbl_tinh.ma_tinh')
+        ->leftJoin('tbl_hopdong', 'tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
         ->select('tbl_sanluong_kiemdinh.HopDong_Id', 'tbl_sanluong_kiemdinh.KiemDinh_MaTram', DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong_kiemdinh.KiemDinh_Ngay, '%d/%m/%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
         DB::raw("CASE WHEN tbl_sanluong_kiemdinh.KiemDinh_DonGia IS NULL OR tbl_sanluong_kiemdinh.KiemDinh_DonGia = '' THEN 0 ELSE tbl_sanluong_kiemdinh.KiemDinh_DonGia END as SanLuong_Gia"), 
         'tbl_sanluong_kiemdinh.KiemDinh_NoiDung as SanLuong_TenHangMuc', 
@@ -107,10 +116,18 @@ class TinhSanLuongController extends Controller
         ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong_kiemdinh.KiemDinh_Ngay, '%d/%m/%Y'), '%d%m%Y')"), $days);
 
     // Apply user level filter
+    if (!empty($sohopdong)) {
+
+        $sanluongDataQuery->where('tbl_hopdong.HopDong_SoHopDong', $sohopdong);
+        $sanluongKiemdinhDataQuery->where('tbl_hopdong.HopDong_SoHopDong', $sohopdong);
+    }
     if ($userRole != 3) {
+        $sanluongDataQuery->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
+        $sanluongThaolapDataQuery->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
         $sanluongKiemdinhDataQuery->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
     }
-
+    $sanluongData = $sanluongDataQuery->simplePaginate($perPage, ['*'], 'sanluong_page');
+    $sanluongThaolapData = $sanluongThaolapDataQuery->simplePaginate($perPage, ['*'], 'sanluong_thaolap_page');
     $sanluongKiemdinhData = $sanluongKiemdinhDataQuery->simplePaginate($perPage, ['*'], 'kiemdinh_page');
 
     // Merging data from all tables
@@ -157,7 +174,7 @@ class TinhSanLuongController extends Controller
         $userKhuVuc = DB::table('tbl_user')->where('user_id', $userId)->value('user_khuvuc');
 
         $query = DB::table('tbl_hinhanh')
-            ->join('tbl_tinh', DB::raw("LEFT(tbl_hinhanh.ma_tram, 3)"), '=', 'tbl_tinh.ma_tinh')
+            ->leftJoin('tbl_tinh', DB::raw("LEFT(tbl_hinhanh.ma_tram, 3)"), '=', 'tbl_tinh.ma_tinh')
             ->where('ma_tram', $ma_tram)
             ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(thoi_gian_chup, '%d%m%Y'), '%d%m%Y')"), $days)
             ->select('ten_hang_muc', 'ten_anh_chuan_bi', 'ten_anh_da_xong');

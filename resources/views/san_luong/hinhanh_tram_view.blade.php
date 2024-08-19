@@ -53,10 +53,11 @@
                                 </div>
                             </div>
                         @else
+                            {{-- TODO: Sửa lại link đường dẫn img --}}
                             @foreach ($item['anh_chuan_bi'] as $image)
                                 <div class="item">
                                     <div class="card">
-                                        <img src="http://125.212.238.231:8083/PEC/uploads/{{ $ma_tram }}/{{ $image }}" 
+                                        <img src="http://dashboard.vtk.com.vn:8083/PEC/VTK/{{ $ma_tram }}/{{ $image }}" 
                                         onerror="this.onerror=null;this.src='{{ asset('/images/default_img.svg') }}';"
                                         class="card-img-top" alt="{{ $image }}">
                                         <div class="card-body">
@@ -69,7 +70,7 @@
                             @foreach ($item['anh_da_xong'] as $image)
                                 <div class="item">
                                     <div class="card">
-                                        <img src="http://125.212.238.231:8083/PEC/uploads/{{ $ma_tram }}/{{ $image }}" 
+                                        <img src="http://dashboard.vtk.com.vn:8083/PEC/VTK/{{ $ma_tram }}/{{ $image }}" 
                                         onerror="this.onerror=null;this.src='{{ asset('/images/default_img.svg') }}';"
                                         class="card-img-top" alt="{{ $image }}">
                                         <div class="card-body">

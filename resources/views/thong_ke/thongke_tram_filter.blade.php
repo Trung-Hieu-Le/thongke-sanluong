@@ -65,7 +65,7 @@
                             <td>{{ $row->ten_khu_vuc }}</td>
                             <td>{{ number_format($row->SanLuong_Gia, 3) }}</td>
                             <td>{{ $row->ma_tinh }}</td>
-                            <td><a class="simple-link" href="{{ url('/viewsanluong/'.$row->SanLuong_Tram.'?days='.implode(',', $days)) }}">Xem</a></td>
+                            <td><a class="simple-link" href="{{ url('/viewsanluong/'.$row->SanLuong_Tram.'?sohopdong='.$row->HopDong_SoHopDong.'&days='.implode(',', $days)) }}">Xem</a></td>
                         @endforeach
                     </tbody>
                 </table>
@@ -89,16 +89,17 @@
                             $totalProduction = 0;
                         @endphp
                         @foreach($khuVucData as $item)
-                            <tr>
-                                <td>{{ $item->ten_khu_vuc ?? 'Khác' }}</td>
-                                <td>{{ $item->so_tram }}</td>
-                                <td>{{ number_format($item->tong_san_luong, 3) }}</td>
-                            </tr>
-                            @php
-                                $totalStations += $item->so_tram;
-                                $totalProduction += $item->tong_san_luong;
-                            @endphp
-                        @endforeach
+                        <tr>
+                            <td>{{ $item['ten_khu_vuc'] ?? 'Khác' }}</td>
+                            <td>{{ $item['so_tram'] }}</td>
+                            <td>{{ number_format($item['tong_san_luong'], 3) }}</td>
+                        </tr>
+                        @php
+                            $totalStations += $item['so_tram'];
+                            $totalProduction += $item['tong_san_luong'];
+                        @endphp
+                    @endforeach
+                    
                     </tbody>
                     <tfoot>
                         <tr>
