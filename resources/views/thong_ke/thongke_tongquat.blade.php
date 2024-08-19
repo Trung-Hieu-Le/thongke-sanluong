@@ -141,12 +141,12 @@
                 </div>
                 <div class="container-fluid row px-xl-5">
                     <div class="col-lg-7 col-md-12">
-                        <div class="shadow p-2 my-2 bg-body rounded" style="min-height: 280px;">
+                        <div class="shadow p-2 my-2 bg-body rounded">
                             <canvas id="lineChart"></canvas>
                         </div>
                     </div>
                     <div class="col-lg-5 col-md-12">
-                        <div class="shadow p-2 my-2 bg-body rounded" style="min-height: 280px;">
+                        <div class="shadow p-2 my-2 bg-body rounded">
                             <div>
                                 <ul class="nav nav-tabs" id="chartTableTab" role="tablist">
                                     <li class="nav-item" role="presentation">
@@ -172,7 +172,7 @@
                                 </ul>
                                 <div class="tab-content mt-2" id="chartTableContent">
                                     <div class="tab-pane fade show active" id="chart-wrapper" role="tabpanel" aria-labelledby="chart-tab">
-                                        <div style="min-height: 220px;">
+                                        <div>
                                             <canvas id="barChartXuThe"></canvas>
                                         </div>
                                     </div>
@@ -343,7 +343,7 @@
                     }]
                 },
                 options: {
-                    maintainAspectRatio: false,
+                    // maintainAspectRatio: false,
                     responsive: true,
                     scales: {
                         y: {
@@ -381,7 +381,7 @@
                     datasets: []
                 },
                 options: {
-                    maintainAspectRatio: false,
+                    // maintainAspectRatio: false,
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -445,7 +445,7 @@
                 ]
             },
             options: {
-                maintainAspectRatio: false,
+                // maintainAspectRatio: false,
                 responsive: true,
                 scales: {
                     y: {
