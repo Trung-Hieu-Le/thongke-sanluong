@@ -163,9 +163,7 @@ class TinhSanLuongFilterController extends Controller
         ->leftJoin('tbl_hopdong', 'tbl_sanluong.HopDong_Id', 'tbl_hopdong.HopDong_Id')
         ->orderBy('SanLuong_Tram')
         ->get();
-//         $pagedData = $query->simplePaginate($perPage);
 
-//         // Truy vấn dữ liệu khu vực
 
         $mergedData = $sanluongData->merge($thaoLapKiemDinhData)->merge($hinhanhLeftData)->sortBy('SanLuong_Tram');
         

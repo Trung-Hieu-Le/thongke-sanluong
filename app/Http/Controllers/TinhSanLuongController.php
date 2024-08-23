@@ -9,7 +9,7 @@ class TinhSanLuongController extends Controller
 {
     public function viewSanLuongTram(Request $request)
 {
-    //TODO: Không hiện các trạm không có khu vực
+    //TODO: Sản lượng cùng hợp đồng, khác hạng mục bgg0007 ngày 16/7, 15/7?
     if (!$request->session()->has('username')) {
         return redirect('login');
     }

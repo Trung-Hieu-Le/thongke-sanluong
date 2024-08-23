@@ -566,7 +566,6 @@ class TableUpdateController extends Controller
             }
             $combinedData[$key]["SanLuong_Ngay_{$data->day}"] += $data->total_sanluong;
         }
-        // dd($combinedData);
 
         foreach ($combinedData as $key => $data) {
             $existingData = DB::table('tbl_tonghop_sanluong')

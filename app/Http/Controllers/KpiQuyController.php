@@ -77,8 +77,6 @@ class KpiQuyController extends Controller
         }
     }
 
-
-    // Thêm sản lượng theo ngày
     public function addKpiQuy(Request $request)
     {
         if (!$request->session()->has('username')) {
@@ -92,7 +90,6 @@ class KpiQuyController extends Controller
         return view('kpi.kpi_quy_add', compact('khuVucList'));
     }
 
-    // Lưu dữ liệu vào cơ sở dữ liệu
     public function handleAddKpiQuy(Request $request)
     {
         if (!$request->session()->has('username')) {

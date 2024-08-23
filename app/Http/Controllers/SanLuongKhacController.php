@@ -58,7 +58,6 @@ class SanLuongKhacController extends Controller
         return response()->json($noidungs);
     }
 
-    // Lưu dữ liệu vào cơ sở dữ liệu
     public function handleAddSanLuong(Request $request)
     {
         if (!$request->session()->has('username') || !$request->session()->has('userid')) {

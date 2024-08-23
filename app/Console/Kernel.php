@@ -12,9 +12,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
-        $schedule->command('app:loc-san-luong')->everyMinute();
-        $schedule->command('app:tim-hinh-anh-trung')->everyMinute();
+        // $schedule->command('app:loc-san-luong')->withoutOverlapping()->hourly();
+        // $schedule->command('app:tim-hinh-anh-trung')->withoutOverlapping()->hourly();
+        $schedule->command('app:update-san-luong-hourly')->withoutOverlapping()->hourly();
+
     }
 
     /**
