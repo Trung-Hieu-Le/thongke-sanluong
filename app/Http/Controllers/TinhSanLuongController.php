@@ -121,6 +121,16 @@ class TinhSanLuongController extends Controller
         $sanluongDataQuery->where('tbl_hopdong.HopDong_SoHopDong', $sohopdong);
         $sanluongKiemdinhDataQuery->where('tbl_hopdong.HopDong_SoHopDong', $sohopdong);
     }
+    if ($userRole == 0 or $userRole == 1) {
+        $sanluongDataQuery
+        ->join('tbl_hinhanh', 'tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram')
+        ->where('tbl_hinhanh.user_id', $userId);
+        $sanluongThaolapDataQuery
+        ->join('tbl_hinhanh', 'tbl_hinhanh.ma_tram', 'tbl_sanluong_thaolap.ThaoLap_MaTram')
+        ->where('tbl_hinhanh.user_id', $userId);
+        $sanluongKiemdinhDataQuery->where('User_Id', $userId);
+
+    }
     if ($userRole != 3) {
         $sanluongDataQuery->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
         $sanluongThaolapDataQuery->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
@@ -183,6 +193,9 @@ class TinhSanLuongController extends Controller
         // if (in_array($userRole, [0, 1])) {
         //     $query->where('user_id', $userRole);
         // }
+        if ($userRole == 0 or $userRole == 1) {
+            $query->where('user_id', $userId);
+        }
         if ($userRole != 3) {
             $query->where('tbl_tinh.ten_khu_vuc', $userKhuVuc);
         }
