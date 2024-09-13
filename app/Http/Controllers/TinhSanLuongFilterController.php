@@ -9,7 +9,6 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class TinhSanLuongFilterController extends Controller
 {
-    //TODO: các phần lọc làm tròn xuống hàng đơn vị
     public function indexTramFilter(Request $request)
     {
         if (!$request->session()->has('username')) {
@@ -139,7 +138,6 @@ class TinhSanLuongFilterController extends Controller
         ->orderBy('SanLuong_Tram', 'asc')
         ->get();
 
-        //TODO: Lọc theo hợp đồng, khu vực
         $hinhanhLeftData = DB::table('tbl_hinhanh')
         ->distinct()
         ->select(DB::raw('LEFT(ma_tram, 3) as ma_tinh,
@@ -166,6 +164,14 @@ class TinhSanLuongFilterController extends Controller
 
 
         $mergedData = $sanluongData->merge($thaoLapKiemDinhData)->merge($hinhanhLeftData)->sortBy('SanLuong_Tram');
+        if ($userRole == 0 || $userRole == 1) {
+            $mergedData = $mergedData->filter(function ($item) use ($userId) {
+                return DB::table('tbl_hinhanh')
+                    ->where('ma_tram', $item->SanLuong_Tram)
+                    ->where('user_id', $userId)
+                    ->exists();
+            });
+        }
         
         $khuVucData = $mergedData->groupBy('ten_khu_vuc')->map(function ($items, $khu_vuc) {
             return [

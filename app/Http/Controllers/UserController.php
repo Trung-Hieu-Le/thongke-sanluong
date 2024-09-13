@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
-    //TODO: Sửa view không cần thiết
     public function viewLogin(Request $request)
     {
         try {
@@ -16,7 +15,6 @@ class UserController extends Controller
         }
     }
 
-    //TODO: remember me 1 tuần
     public function actionLogin(Request $request)
     {
         $err = '';
@@ -28,7 +26,7 @@ class UserController extends Controller
 
             if (count($user) == 1) {
                 if ($request->termsCheckbox) {
-                    config(['session.lifetime' => 10080]); // 10080 phút = 7 ngày
+                    config(['session.lifetime' => 10080]);
                 } else {
                     config(['session.lifetime' => config('session.lifetime')]);
                 }

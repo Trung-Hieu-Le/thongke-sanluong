@@ -44,9 +44,11 @@
                             <a class="nav-link fw-semibold text-light" href="/sanluong-khac/index" style="color:#040404 ;z-index: 2;">LĨNH VỰC KHÁC +</a>
                         </li>
                         <li class="nav-item ms-1 me-2">
-                            <a class="nav-link fw-semibold " href="#" style="color:#040404 ; font-size:20px ;z-index: 2;"><i class="fa fa-comments" aria-hidden="true"></i>
+                            <a class="nav-link fw-semibold" href="/chat" style="color:#040404; font-size:20px; z-index: 2; position: relative;">
+                                <i class="fa fa-comments" aria-hidden="true"></i>
+                                <span id="unread-indicator" style="display:none; position: absolute; top: 0px; right: 0px; width: 10px; height: 10px; background-color: red; border-radius: 50%;"></span>
                             </a>
-                        </li>
+                        </li>                        
                         <li class="nav-item dropdown ms-1 me-2">
                             <a style="color:#040404; font-size:20px ;z-index: 2;" href="#" class="nav-link fw-semibold" data-bs-toggle="dropdown"
                             aria-expanded="true">
@@ -73,3 +75,22 @@
         </div>
     </div>
 </header>
+<script>
+    function checkUnreadMessages() {
+    fetch('/chat/checkUnreadMessages', {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.unread_count > 0) {
+            document.getElementById('unread-indicator').style.display = 'block';
+        } else {
+            document.getElementById('unread-indicator').style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error checking unread messages:', error);
+    });
+}
+checkUnreadMessages();
+</script>

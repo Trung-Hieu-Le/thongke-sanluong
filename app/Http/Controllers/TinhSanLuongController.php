@@ -9,7 +9,7 @@ class TinhSanLuongController extends Controller
 {
     public function viewSanLuongTram(Request $request)
 {
-    //TODO: Sản lượng cùng hợp đồng, khác hạng mục bgg0007 ngày 16/7, 15/7?
+    //TODO: Sản lượng cùng hợp đồng, khác hạng mục (VD: bgg0007 ngày 16/7, 15/7)
     if (!$request->session()->has('username')) {
         return redirect('login');
     }

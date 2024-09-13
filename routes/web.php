@@ -11,6 +11,7 @@ use App\Http\Controllers\ThongKeController;
 use App\Http\Controllers\SanLuongKhacController;
 use App\Http\Controllers\TinhSanLuongController;
 use App\Http\Controllers\TableUpdateController;
+use App\Http\Controllers\ChatController;
 
 
 /*
@@ -75,29 +76,11 @@ Route::get('/kpi-quy/edit/{id}', [KpiQuyController::class, 'editKpiQuy'])->name(
 Route::post('/kpi-quy/handleEdit', [KpiQuyController::class, 'handleEditKpiQuy'])->name('kpiquy.handleEdit');
 Route::get('/kpi-quy/delete/{id}', [KpiQuyController::class, 'deleteKpiQuy'])->name('kpiquy.delete');
 
-//TODO: getSanLuongThang_6 (1h update / lần)
-//TODO: Chú ý Illuminate\Foundation\Console\ServeCommand.php
-    // protected function getDateFromLine($line)
-    // {
-    //     $regex = env('PHP_CLI_SERVER_WORKERS', 1) > 1
-    //         ? '/^\[\d+]\s\[([a-zA-Z0-9: ]+)\]/'
-    //         : '/^\[([^\]]+)\]/';
-
-    //     $line = str_replace('  ', ' ', $line);
-
-    //     preg_match($regex, $line, $matches);
-
-    //     if (isset($matches[1])) {  
-	// 		return Carbon::createFromFormat('D M d H:i:s Y', $matches[1]);
-    //     }
-    //     return Carbon::now(); 
-    // }
-    // protected function getRequestPortFromLine($line)
-    // {
-    //     preg_match('/:(\d+)\s(?:(?:\w+$)|(?:\[.*))/', $line, $matches);
-
-	// 	if (isset($matches[1])) {
-	// 		return (int) $matches[1];
-	// 	}
-	// 	return null; 
-    // }
+Route::get('/chat/search', [ChatController::class, 'search'])->name('chat.search');
+Route::get('/chat/loadChat/{userId}', [ChatController::class, 'loadChat'])->name('chat.load');
+Route::post('/chat/sendMessage', [ChatController::class, 'sendMessage'])->name('chat.send.message');
+Route::get('/chat/deleteMessage/{id}', [ChatController::class, 'deleteMessage'])->name('chat.message.delete');
+Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+Route::post('/mark-messages-as-seen/{userId}', [ChatController::class, 'markMessagesAsSeen']);
+Route::get('/get-unread-message-count/{userId}', [ChatController::class, 'getUnreadMessageCount']);
+Route::get('/chat/checkUnreadMessages', [ChatController::class, 'checkUnreadMessages']);

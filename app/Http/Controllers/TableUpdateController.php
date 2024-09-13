@@ -300,7 +300,6 @@ class TableUpdateController extends Controller
             }
         }
     }
-    //TODO: làm hàm này chạy 1h/lần
     public function updateDailyTableTongHopSanLuong(Request $request)
     {
         // Ngày hiện tại

@@ -214,7 +214,6 @@ class ThongKeController extends Controller
                 $kpi_thang = $kpiSelect->$monthlyKpiField;
                 $kpi_ngay = $kpi_thang / 30;
             } elseif ($timeFormat == 'quy') {
-                // TODO: select kpi_quy_
                 $currentQuarter = ceil($currentMonth / 3);
                 $quarterlyKpiField = 'kpi_quy_' . $currentQuarter;
                 $kpi_quy = $kpiSelect->$quarterlyKpiField;
@@ -881,7 +880,6 @@ class ThongKeController extends Controller
                 WHERE KiemDinh_MaTram LIKE ? AND YEAR(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = ?
             ) as subquery
         ";
-            //TODO: Sai phần tbl_sanluong_kiemdinh
             $bindings = [
                 "$maTinh%", $namChon,
                 "$maTinh%", $namChon,
@@ -919,163 +917,6 @@ class ThongKeController extends Controller
         return response()->json($results);
     }
     
-    // public function thongKeTram(Request $request)
-    // {
-    //     $maTinh = $request->ma_tinh;
-    //     $ngayChon = $request->input('ngay');
-    //     if (is_null($ngayChon) || $ngayChon === '') {
-    //         $ngayChon = date('Y-m-d');
-    //     }
-    //     $role = session('role');
-    //     $userId = session('userid');
-    //     $userKhuVuc = null;
-    //     if ($role != 3) {
-    //         $userKhuVuc = DB::table('tbl_user')
-    //             ->where('user_id', $userId)
-    //             ->value('user_khuvuc');
-    //         $tinhKhuVuc = DB::table('tbl_tinh')
-    //             ->where('ma_tinh', $maTinh)
-    //             ->value('ten_khu_vuc');
-    //         if ($tinhKhuVuc != $userKhuVuc) {
-    //             return response()->json([]); // Trả về dữ liệu trống nếu không khớp
-    //         }
-    //     }
-
-    //     $query = "
-    //     SELECT
-    //         SanLuong_Tram,
-    //         ROUND(SUM(CASE WHEN DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = DATE(?) THEN SanLuong_Gia ELSE 0 END)) as ngay,
-    //         ROUND(SUM(CASE WHEN WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), 1) = WEEK(?, 1) THEN SanLuong_Gia ELSE 0 END)) as tuan,
-    //         ROUND(SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = MONTH(?) THEN SanLuong_Gia ELSE 0 END)) as thang,
-    //         ROUND(SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = QUARTER(?) THEN SanLuong_Gia ELSE 0 END)) as quy,
-    //         ROUND(SUM(CASE WHEN YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR(?) THEN SanLuong_Gia ELSE 0 END)) as nam
-    //     FROM tbl_sanluong
-    //     WHERE SanLuong_Tram LIKE ?
-    //     AND ten_hinh_anh_da_xong NOT LIKE ''
-    //     GROUP BY SanLuong_Tram
-    //     UNION ALL
-    //     SELECT
-    //         ThaoLap_MaTram as SanLuong_Tram,
-    //         ROUND(SUM(CASE WHEN DATE(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = DATE(?) THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END)) as ngay,
-    //         ROUND(SUM(CASE WHEN WEEK(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), 1) = WEEK(?, 1) THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END)) as tuan,
-    //         ROUND(SUM(CASE WHEN MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = MONTH(?) THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END)) as thang,
-    //         ROUND(SUM(CASE WHEN QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = QUARTER(?) THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END)) as quy,
-    //         ROUND(SUM(CASE WHEN YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = YEAR(?) THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END)) as nam
-    //     FROM tbl_sanluong_thaolap
-    //     WHERE ThaoLap_MaTram LIKE ?
-    //     GROUP BY SanLuong_Tram
-    //     ORDER BY SanLuong_Tram
-    // ";
-
-    //     $bindings = [
-    //         $ngayChon, $ngayChon, $ngayChon, $ngayChon, $ngayChon,
-    //         "$maTinh%",
-    //         $ngayChon, $ngayChon, $ngayChon, $ngayChon, $ngayChon,
-    //         "$maTinh%"
-    //     ];
-
-    //     $results = DB::select($query, $bindings);
-
-    //     return response()->json($results);
-    // }
-
-    // public function thongKeTramTongQuat(Request $request)
-    // {
-    //     $maTinh = $request->ma_tinh;
-    //     $currentYear = date('Y');
-    //     $role = session('role');
-    //     $userId = session('userid');
-    //     $userKhuVuc = null;
-    //     if ($role != 3) {
-    //         $userKhuVuc = DB::table('tbl_user')
-    //             ->where('user_id', $userId)
-    //             ->value('user_khuvuc');
-    //         $tinhKhuVuc = DB::table('tbl_tinh')
-    //             ->where('ma_tinh', $maTinh)
-    //             ->value('ten_khu_vuc');
-    //         if ($tinhKhuVuc != $userKhuVuc) {
-    //             return response()->json([]); // Trả về dữ liệu trống nếu không khớp
-    //         }
-    //     }
-
-    //     // Truy vấn SQL để lấy tất cả dữ liệu cần thiết trong một lần từ 3 bảng
-    //     $query = "
-    //     SELECT
-    //         SanLuong_Tram,
-    //         SUM(SanLuong_Gia) as total_nam,
-    //         SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 1 THEN SanLuong_Gia ELSE 0 END) as total_quy_1,
-    //         SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 2 THEN SanLuong_Gia ELSE 0 END) as total_quy_2,
-    //         SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 3 THEN SanLuong_Gia ELSE 0 END) as total_quy_3,
-    //         SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 4 THEN SanLuong_Gia ELSE 0 END) as total_quy_4,
-    //         SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 1 THEN SanLuong_Gia ELSE 0 END) as total_thang_1,
-    //         SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 2 THEN SanLuong_Gia ELSE 0 END) as total_thang_2,
-    //         SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 3 THEN SanLuong_Gia ELSE 0 END) as total_thang_3,
-    //         SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 4 THEN SanLuong_Gia ELSE 0 END) as total_thang_4,
-    //         SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 5 THEN SanLuong_Gia ELSE 0 END) as total_thang_5,
-    //         SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 6 THEN SanLuong_Gia ELSE 0 END) as total_thang_6,
-    //         SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 7 THEN SanLuong_Gia ELSE 0 END) as total_thang_7,
-    //         SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 8 THEN SanLuong_Gia ELSE 0 END) as total_thang_8,
-    //         SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 9 THEN SanLuong_Gia ELSE 0 END) as total_thang_9,
-    //         SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 10 THEN SanLuong_Gia ELSE 0 END) as total_thang_10,
-    //         SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 11 THEN SanLuong_Gia ELSE 0 END) as total_thang_11,
-    //         SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 12 THEN SanLuong_Gia ELSE 0 END) as total_thang_12
-    //     FROM (
-    //         SELECT
-    //             SanLuong_Tram,
-    //             SanLuong_Gia,
-    //             SanLuong_Ngay
-    //         FROM tbl_sanluong
-    //         WHERE SanLuong_Tram LIKE ? AND YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = ?
-    //         AND ten_hinh_anh_da_xong NOT LIKE ''
-    //         UNION ALL
-    //         SELECT
-    //             ThaoLap_MaTram as SanLuong_Tram,
-    //             ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon as SanLuong_Gia,
-    //             ThaoLap_Ngay as SanLuong_Ngay
-    //         FROM tbl_sanluong_thaolap
-    //         WHERE ThaoLap_MaTram LIKE ? AND YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = ?
-    //     ) as subquery
-    //     GROUP BY SanLuong_Tram
-    //     ORDER BY SanLuong_Tram
-    // ";
-
-    //     $bindings = [
-    //         "$maTinh%", $currentYear,
-    //         "$maTinh%", $currentYear
-    //     ];
-
-    //     $data = DB::select($query, $bindings);
-
-    //     // Xử lý kết quả
-    //     $results = [];
-    //     foreach ($data as $row) {
-    //         $results[] = [
-    //             'ma_tram' => $row->SanLuong_Tram,
-    //             'tong_san_luong' => [
-    //                 'nam' => round($row->total_nam),
-    //                 'quy_1' => round($row->total_quy_1),
-    //                 'quy_2' => round($row->total_quy_2),
-    //                 'quy_3' => round($row->total_quy_3),
-    //                 'quy_4' => round($row->total_quy_4),
-    //                 'thang_1' => round($row->total_thang_1),
-    //                 'thang_2' => round($row->total_thang_2),
-    //                 'thang_3' => round($row->total_thang_3),
-    //                 'thang_4' => round($row->total_thang_4),
-    //                 'thang_5' => round($row->total_thang_5),
-    //                 'thang_6' => round($row->total_thang_6),
-    //                 'thang_7' => round($row->total_thang_7),
-    //                 'thang_8' => round($row->total_thang_8),
-    //                 'thang_9' => round($row->total_thang_9),
-    //                 'thang_10' => round($row->total_thang_10),
-    //                 'thang_11' => round($row->total_thang_11),
-    //                 'thang_12' => round($row->total_thang_12),
-    //             ],
-    //         ];
-    //     }
-
-    //     return response()->json($results);
-    // }
-
     public function indexChiTietChart(Request $request)
     {
         if (!$request->session()->has('username')) {
