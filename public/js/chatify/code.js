@@ -190,6 +190,8 @@
             day: '2-digit', month: '2-digit', year: 'numeric',
             hour: '2-digit', minute: '2-digit', second: '2-digit'
         });
+        timestamp.style.fontSize = '10px'; 
+        timestamp.style.color = '#a6a6a6'; 
     
         const attachmentsWrapper = document.createElement('div');
         if (message.attachments) {
@@ -201,8 +203,10 @@
     
         const deleteButton = document.createElement('span');
         deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
-        deleteButton.style.padding = '6px 12px';
+        // deleteButton.style.padding = '6px 12px';
+        deleteButton.style.fontSize = '10px';
         deleteButton.style.cursor = 'pointer';
+        deleteButton.style.color = '#808080';
         deleteButton.onclick = function () {
             if (confirm('Bạn có chắc muốn xóa tin nhắn này không?')) {
                 deleteMessage(message.id);
@@ -251,7 +255,9 @@
         const downloadButton = document.createElement('span');
         downloadButton.innerHTML = '<i class="fas fa-download"></i>'; 
         downloadButton.style.padding = '6px 12px';
+        downloadButton.style.fontSize = '10px';
         downloadButton.style.cursor = 'pointer';
+        downloadButton.style.color = '#808080';
         downloadButton.onclick = () => {
             const a = document.createElement('a');
             a.href = fileUrl;
