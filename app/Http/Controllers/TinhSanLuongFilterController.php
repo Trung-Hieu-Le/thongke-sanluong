@@ -43,9 +43,9 @@ class TinhSanLuongFilterController extends Controller
         $searchConditionHopDong = !empty($searchHopDong) ? "AND tbl_hopdong.HopDong_SoHopDong LIKE '%$searchHopDong%'" : "";
         $searchConditionKhuVuc = !empty($searchKhuVuc) ? "AND tbl_tinh.ten_khu_vuc LIKE '%$searchKhuVuc%'" : "";
         $userKhuVucCondition = '';
-        if ($userRole !== 3) {
-            $userKhuVucCondition = "AND tbl_tinh.ten_khu_vuc = '$userKhuVuc'";
-        }
+        // if ($userRole !== 3) {
+        //     $userKhuVucCondition = "AND tbl_tinh.ten_khu_vuc = '$userKhuVuc'";
+        // }
 
         $page = request()->get('page', 1);
         $perPage = 100; // Number of items per page
@@ -57,7 +57,12 @@ class TinhSanLuongFilterController extends Controller
                     LEFT(SanLuong_Tram, 3) as ma_tinh,
                     SanLuong_Tram,
                     tbl_hopdong.HopDong_SoHopDong,
-                    SUM(SanLuong_Gia) as SanLuong_Gia,
+                    SUM(
+                        CASE 
+                            WHEN $userRole IN (0, 1) THEN 0 
+                            ELSE SanLuong_Gia 
+                        END
+                    ) as SanLuong_Gia,
                     tbl_tinh.ten_khu_vuc
                 FROM (
                     SELECT 
@@ -100,7 +105,12 @@ class TinhSanLuongFilterController extends Controller
                     LEFT(ThaoLap_MaTram, 3) as ma_tinh,
                     ThaoLap_MaTram as SanLuong_Tram,
                     tbl_hopdong.HopDong_SoHopDong,
-                    SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as SanLuong_Gia,
+                    SUM(
+                        CASE 
+                            WHEN $userRole IN (0, 1) THEN 0 
+                            ELSE ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon 
+                        END
+                    ) as SanLuong_Gia,
                     tbl_tinh.ten_khu_vuc
                 FROM tbl_sanluong_thaolap
                 JOIN tbl_tinh ON LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3) = tbl_tinh.ma_tinh
@@ -119,7 +129,12 @@ class TinhSanLuongFilterController extends Controller
                     LEFT(KiemDinh_MaTram, 3) as ma_tinh,
                     KiemDinh_MaTram as SanLuong_Tram,
                     tbl_hopdong.HopDong_SoHopDong,
-                    SUM(KiemDinh_DonGia) as SanLuong_Gia,
+                    SUM(
+                        CASE 
+                            WHEN $userRole IN (0, 1) THEN 0 
+                            ELSE KiemDinh_DonGia 
+                        END
+                    ) as SanLuong_Gia,
                     tbl_tinh.ten_khu_vuc
                 FROM tbl_sanluong_kiemdinh
                 JOIN tbl_tinh ON LEFT(tbl_sanluong_kiemdinh.KiemDinh_MaTram, 3) = tbl_tinh.ma_tinh
