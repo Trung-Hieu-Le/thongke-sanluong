@@ -1043,7 +1043,7 @@ class ThongKeController extends Controller
             }
             foreach ($sanluongKiemdinhData as $row) {
                 $results[$khuVuc][$row->KiemDinh_NoiDung] = [
-                    'ten_linh_vuc' => $row->KiemDinh_NoiDung,
+                    'ten_linh_vuc' => 'Kiểm định',
                     'total' => round($row->SanLuong_Gia / 1e9, 1),
                     'kpi' => 0
                 ];
