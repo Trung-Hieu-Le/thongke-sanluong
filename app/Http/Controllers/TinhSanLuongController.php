@@ -32,27 +32,27 @@ class TinhSanLuongController extends Controller
     $userRole = $request->session()->get('role');
     $userKhuVuc = DB::table('tbl_user')->where('user_id', $userId)->value('user_khuvuc');
 
+    //TODO: Hiện không lấy ngày đầu tiên (do SanLuong_Ngay dạng text)
     $sanluongDataQuery = DB::table('tbl_sanluong')
-        ->leftJoin('tbl_tinh', DB::raw("LEFT(tbl_sanluong.SanLuong_Tram, 3)"), '=', 'tbl_tinh.ma_tinh')
-        ->leftJoin('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
-        ->select('tbl_sanluong.HopDong_Id', 'tbl_sanluong.SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y') as SanLuong_Ngay"), 
+    ->leftJoin('tbl_tinh', DB::raw("LEFT(tbl_sanluong.SanLuong_Tram, 3)"), '=', 'tbl_tinh.ma_tinh')
+    ->leftJoin('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+    ->select(
+        'tbl_sanluong.HopDong_Id',
+        'tbl_sanluong.SanLuong_Tram',
+        'tbl_sanluong.SanLuong_TenHangMuc',
+        DB::raw("DATE_FORMAT(STR_TO_DATE(MIN(tbl_sanluong.SanLuong_Ngay), '%d%m%Y'), '%d/%m/%Y') as SanLuong_Ngay"),
         DB::raw("
             CASE 
                 WHEN $userRole IN (0, 1) THEN 0
-                ELSE CASE 
-                    WHEN tbl_sanluong.SanLuong_Gia IS NULL OR tbl_sanluong.SanLuong_Gia = '' 
-                    THEN 0 
-                    ELSE tbl_sanluong.SanLuong_Gia 
-                END 
+                ELSE COALESCE(MAX(tbl_sanluong.SanLuong_Gia), 0)
             END as SanLuong_Gia
-        "), 
-        'tbl_sanluong.SanLuong_TenHangMuc', 
+        "),
         DB::raw("MAX(CASE WHEN tbl_sanluong.ten_hinh_anh_da_xong <> '' THEN 1 ELSE 0 END) as SoLuong"),
         DB::raw("MAX(CASE WHEN tbl_sanluong.ten_hinh_anh_da_xong <> '' THEN 'Đã thi công' ELSE 'Đã khảo sát' END) as TrangThai")
-        )
-        ->where('tbl_sanluong.SanLuong_Tram', $ma_tram)
-        ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d%m%Y')"), $days)
-        ->groupBy('tbl_sanluong.SanLuong_Tram', DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d/%m/%Y')"), 'tbl_sanluong.SanLuong_TenHangMuc', 'SanLuong_Gia', 'HopDong_Id');
+    )
+    ->where('tbl_sanluong.SanLuong_Tram', $ma_tram)
+    ->whereIn(DB::raw("DATE_FORMAT(STR_TO_DATE(tbl_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d%m%Y')"), $days)
+    ->groupBy('tbl_sanluong.SanLuong_Tram', 'tbl_sanluong.SanLuong_TenHangMuc', 'tbl_sanluong.HopDong_Id');
 
     // Fetching and transforming paginated data from tbl_sanluong_thaolap
     $sanluongThaolapDataQuery = DB::table('tbl_sanluong_thaolap')

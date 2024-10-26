@@ -67,27 +67,23 @@ class TinhSanLuongFilterController extends Controller
                 FROM (
                     SELECT 
                         UPPER(SanLuong_Tram) as SanLuong_Tram,
-                        SanLuong_Ngay,
-                        SanLuong_Gia,
+                        MAX(SanLuong_Gia) as SanLuong_Gia,  -- Chỉ lấy 1 giá trị SanLuong_Gia cho mỗi trạm và hạng mục
                         HopDong_Id
                     FROM 
                         tbl_sanluong
                     WHERE ten_hinh_anh_da_xong <> ''
+                        $dayCondition
                     GROUP BY 
                         SanLuong_Tram,
-                        SanLuong_Ngay,
-                        SanLuong_Gia,
-                        SanLuong_TenHangMuc,
-                        tbl_sanluong.HopDong_Id
+                        SanLuong_TenHangMuc,  -- Nhóm theo trạm và hạng mục
+                        HopDong_Id
                     ORDER BY 
                         SanLuong_Tram,
-                        SanLuong_Ngay,
                         SanLuong_TenHangMuc
                 ) AS subquery_sanluong
                 JOIN tbl_tinh ON LEFT(subquery_sanluong.SanLuong_Tram, 3) = tbl_tinh.ma_tinh
                 LEFT JOIN tbl_hopdong ON subquery_sanluong.HopDong_Id = tbl_hopdong.HopDong_Id
                 WHERE 1
-                    $dayCondition
                     $searchCondition
                     $searchConditionHopDong
                     $searchConditionKhuVuc
@@ -99,6 +95,7 @@ class TinhSanLuongFilterController extends Controller
         ->groupBy('ma_tinh', 'SanLuong_Tram', 'ten_khu_vuc', 'HopDong_SoHopDong')
         ->orderBy('SanLuong_Tram', 'asc')
         ->get();
+
         $thaoLapKiemDinhData = DB::table(DB::raw("
             (
                 SELECT 
