@@ -21,53 +21,53 @@ class TableUpdateController extends Controller
         foreach ($years as $year) {
             foreach ($months as $month) {
                 $formattedMonth = str_pad($month, 2, '0', STR_PAD_LEFT);
-                $sanluongData = DB::table(DB::raw("(SELECT 
-                                        UPPER(LEFT(SanLuong_Tram, 3)) as ma_tinh,
-                                        SanLuong_Ngay,
-                                        SanLuong_Gia,
-                                        HopDong_Id
-                                    FROM 
-                                        tbl_sanluong
-                                    WHERE 
-                                        ten_hinh_anh_da_xong <> ''
-                                    GROUP BY 
-                                        SanLuong_Tram,
-                                        SanLuong_Ngay,
-                                        SanLuong_Gia,
-                                        SanLuong_TenHangMuc,
-                                        tbl_sanluong.HopDong_Id
-                                    ORDER BY 
-                                        UPPER(LEFT(SanLuong_Tram, 3)),
-                                        SanLuong_Ngay,
-                                        SanLuong_TenHangMuc) AS subquery_sanluong"))
-                ->select(
-                    'subquery_sanluong.ma_tinh',
-                    DB::raw("DATE_FORMAT(STR_TO_DATE(subquery_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d') as day"),
-                    DB::raw("SUM(subquery_sanluong.SanLuong_Gia) as total_sanluong"),
-                    'tbl_tinh.ten_khu_vuc as khu_vuc'
-                )
-                ->leftJoin('tbl_tinh', 'subquery_sanluong.ma_tinh', '=', 'tbl_tinh.ma_tinh')
-                ->whereYear(DB::raw("STR_TO_DATE(subquery_sanluong.SanLuong_Ngay, '%d%m%Y')"), $year)
-                ->whereMonth(DB::raw("STR_TO_DATE(subquery_sanluong.SanLuong_Ngay, '%d%m%Y')"), $month)
-                    ->groupBy(
-                        'subquery_sanluong.ma_tinh',
-                        'tbl_tinh.ten_khu_vuc',
-                        'subquery_sanluong.SanLuong_Ngay'
-                    )
-                    ->get();
+                $sanluongData = DB::table(DB::raw("(
+                    SELECT 
+                        SanLuong_Tram,
+                        SanLuong_Ngay,
+                        SanLuong_Gia,
+                        tbl_sanluong.HopDong_Id,
+                        UPPER(LEFT(SanLuong_Tram, 3)) as ma_tinh
+                    FROM 
+                        tbl_sanluong
+                    WHERE 
+                        ten_hinh_anh_da_xong <> ''
+                    GROUP BY 
+                        SanLuong_Tram, 
+                        SanLuong_Ngay, 
+                        SanLuong_Gia, 
+                        SanLuong_TenHangMuc, 
+                        tbl_sanluong.HopDong_Id
+                    ORDER BY 
+                        ma_tinh,
+                        SanLuong_Ngay
+                    ) AS subquery_sanluong"))
+        ->select(
+            'subquery_sanluong.ma_tinh',
+            DB::raw("DATE_FORMAT(STR_TO_DATE(subquery_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d') as day"),
+            DB::raw("SUM(subquery_sanluong.SanLuong_Gia) as total_sanluong"),
+            'tbl_tram.khu_vuc'
+        )
+        ->leftJoin('tbl_tram', 'subquery_sanluong.SanLuong_Tram', '=', 'tbl_tram.ma_tram')
+        ->whereYear(DB::raw("STR_TO_DATE(subquery_sanluong.SanLuong_Ngay, '%d%m%Y')"), $year)
+        ->whereMonth(DB::raw("STR_TO_DATE(subquery_sanluong.SanLuong_Ngay, '%d%m%Y')"), $month)
+        ->whereNotNull('tbl_tram.khu_vuc')
+        ->where('tbl_tram.khu_vuc', '<>', '')
+        ->groupBy('subquery_sanluong.ma_tinh', 'tbl_tram.khu_vuc', 'subquery_sanluong.SanLuong_Ngay')
+        ->get();
 
                 $thaolapData = DB::table('tbl_sanluong_thaolap')
                 ->select(
                     DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3)) as ma_tinh"),
                     DB::raw("DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d') as day"),
                     DB::raw("SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as total_sanluong"),
-                    'tbl_tinh.ten_khu_vuc as khu_vuc'
+                    'tbl_tram.khu_vuc as khu_vuc'
                 )
-                ->leftJoin('tbl_tinh', DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh')
+                ->leftJoin('tbl_tram', 'ThaoLap_MaTram', '=', 'tbl_tram.ma_tram')
                 ->whereYear(DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')"), $year)
                 ->whereMonth(DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')"), $month)
                 // ->whereDate(DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')"), '=', $ngayChon)
-                ->groupBy(DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3))"), 'day', 'tbl_tinh.ten_khu_vuc')
+                ->groupBy(DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3))"), 'day', 'tbl_tram.khu_vuc')
                 ->get();
 
                 $kiemdinhData = DB::table('tbl_sanluong_kiemdinh')
@@ -76,12 +76,12 @@ class TableUpdateController extends Controller
                     DB::raw("DATE_FORMAT(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y'), '%d') as day"),
                     'KiemDinh_NoiDung as linh_vuc',
                     DB::raw("SUM(KiemDinh_DonGia) as total_sanluong"),
-                    'tbl_tinh.ten_khu_vuc as khu_vuc'
+                    'tbl_tram.khu_vuc as khu_vuc'
                 )
-                ->leftJoin('tbl_tinh', DB::raw("UPPER(LEFT(KiemDinh_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh')
+                ->leftJoin('tbl_tram', "KiemDinh_MaTram", '=', 'tbl_tram.ma_tram')
                 ->whereYear(DB::raw("STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')"), $year)
                 ->whereMonth(DB::raw("STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')"), $month)
-                ->groupBy(DB::raw("UPPER(LEFT(KiemDinh_MaTram, 3))"), 'day', 'tbl_tinh.ten_khu_vuc', 'KiemDinh_NoiDung')
+                ->groupBy(DB::raw("UPPER(LEFT(KiemDinh_MaTram, 3))"), 'day', 'tbl_tram.khu_vuc', 'KiemDinh_NoiDung')
                 ->get();
                 $sanluongKhacData = DB::table('tbl_sanluong_khac')
                 ->select(
@@ -335,13 +335,13 @@ class TableUpdateController extends Controller
             'subquery_sanluong.ma_tinh',
             DB::raw("DATE_FORMAT(STR_TO_DATE(subquery_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d') as day"),
             DB::raw("SUM(subquery_sanluong.SanLuong_Gia) as total_sanluong"),
-            'tbl_tinh.ten_khu_vuc as khu_vuc'
+            'tbl_tram.khu_vuc as khu_vuc'
         )
-        ->leftJoin('tbl_tinh', 'subquery_sanluong.ma_tinh', '=', 'tbl_tinh.ma_tinh')
+        ->leftJoin('tbl_tram', 'subquery_sanluong.ma_tinh', '=', 'tbl_tram.ma_tinh')
         ->whereDate(DB::raw("STR_TO_DATE(subquery_sanluong.SanLuong_Ngay, '%d%m%Y')"), $today)
         ->groupBy(
             'subquery_sanluong.ma_tinh',
-            'tbl_tinh.ten_khu_vuc',
+            'tbl_tram.khu_vuc',
             'subquery_sanluong.SanLuong_Ngay'
         )
         ->get();
@@ -352,11 +352,11 @@ class TableUpdateController extends Controller
             DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3)) as ma_tinh"),
             DB::raw("DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d') as day"),
             DB::raw("SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as total_sanluong"),
-            'tbl_tinh.ten_khu_vuc as khu_vuc'
+            'tbl_tram.khu_vuc as khu_vuc'
         )
-        ->leftJoin('tbl_tinh', DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh')
+        ->leftJoin('tbl_tram', "ThaoLap_MaTram", '=', 'tbl_tram.ma_tram')
         ->whereDate(DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')"), $today)
-        ->groupBy(DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3))"), 'day', 'tbl_tinh.ten_khu_vuc')
+        ->groupBy(DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3))"), 'day', 'tbl_tram.khu_vuc')
         ->get();
 
         // Dữ liệu từ bảng tbl_sanluong_kiemdinh
@@ -366,11 +366,11 @@ class TableUpdateController extends Controller
             DB::raw("DATE_FORMAT(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y'), '%d') as day"),
             'KiemDinh_NoiDung as linh_vuc',
             DB::raw("SUM(KiemDinh_DonGia) as total_sanluong"),
-            'tbl_tinh.ten_khu_vuc as khu_vuc'
+            'tbl_tram.khu_vuc as khu_vuc'
         )
-        ->leftJoin('tbl_tinh', DB::raw("UPPER(LEFT(KiemDinh_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh')
+        ->leftJoin('tbl_tram',"KiemDinh_MaTram", '=', 'tbl_tram.ma_tram')
         ->whereDate(DB::raw("STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')"), $today)
-        ->groupBy(DB::raw("UPPER(LEFT(KiemDinh_MaTram, 3))"), 'day', 'tbl_tinh.ten_khu_vuc', 'KiemDinh_NoiDung')
+        ->groupBy(DB::raw("UPPER(LEFT(KiemDinh_MaTram, 3))"), 'day', 'tbl_tram.khu_vuc', 'KiemDinh_NoiDung')
         ->get();
 
         // Dữ liệu từ bảng tbl_sanluong_khac
