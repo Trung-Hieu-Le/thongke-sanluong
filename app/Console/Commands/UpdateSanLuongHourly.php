@@ -62,13 +62,13 @@ class UpdateSanLuongHourly extends Command
             'subquery_sanluong.ma_tinh',
             DB::raw("DATE_FORMAT(STR_TO_DATE(subquery_sanluong.SanLuong_Ngay, '%d%m%Y'), '%d') as day"),
             DB::raw("SUM(subquery_sanluong.SanLuong_Gia) as total_sanluong"),
-            'tbl_tram.khu_vuc as khu_vuc'
+            'tbl_tinh.ten_khu_vuc as khu_vuc'
         )
-        ->leftJoin('tbl_tram', 'subquery_sanluong.ma_tinh', '=', 'tbl_tram.ma_tinh')
+        ->leftJoin('tbl_tinh', 'subquery_sanluong.ma_tinh', '=', 'tbl_tinh.ma_tinh')
         ->whereDate(DB::raw("STR_TO_DATE(subquery_sanluong.SanLuong_Ngay, '%d%m%Y')"), $today)
         ->groupBy(
             'subquery_sanluong.ma_tinh',
-            'tbl_tram.khu_vuc',
+            'tbl_tinh.ten_khu_vuc',
             'subquery_sanluong.SanLuong_Ngay'
         )
         ->get();
@@ -79,11 +79,11 @@ class UpdateSanLuongHourly extends Command
             DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3)) as ma_tinh"),
             DB::raw("DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d') as day"),
             DB::raw("SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as total_sanluong"),
-            'tbl_tram.khu_vuc as khu_vuc'
+            'tbl_tinh.ten_khu_vuc as khu_vuc'
         )
-        ->leftJoin('tbl_tram', "ThaoLap_MaTram", '=', 'tbl_tram.ma_tram')
+        ->leftJoin('tbl_tinh', DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh')
         ->whereDate(DB::raw("STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')"), $today)
-        ->groupBy(DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3))"), 'day', 'tbl_tram.khu_vuc')
+        ->groupBy(DB::raw("UPPER(LEFT(ThaoLap_MaTram, 3))"), 'day', 'tbl_tinh.ten_khu_vuc')
         ->get();
 
         // Dữ liệu từ bảng tbl_sanluong_kiemdinh
@@ -93,11 +93,11 @@ class UpdateSanLuongHourly extends Command
             DB::raw("DATE_FORMAT(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y'), '%d') as day"),
             'KiemDinh_NoiDung as linh_vuc',
             DB::raw("SUM(KiemDinh_DonGia) as total_sanluong"),
-            'tbl_tram.khu_vuc as khu_vuc'
+            'tbl_tinh.ten_khu_vuc as khu_vuc'
         )
-        ->leftJoin('tbl_tram', "KiemDinh_MaTram", '=', 'tbl_tram.ma_tram')
+        ->leftJoin('tbl_tinh', DB::raw("UPPER(LEFT(KiemDinh_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh')
         ->whereDate(DB::raw("STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')"), $today)
-        ->groupBy(DB::raw("UPPER(LEFT(KiemDinh_MaTram, 3))"), 'day', 'tbl_tram.khu_vuc', 'KiemDinh_NoiDung')
+        ->groupBy(DB::raw("UPPER(LEFT(KiemDinh_MaTram, 3))"), 'day', 'tbl_tinh.ten_khu_vuc', 'KiemDinh_NoiDung')
         ->get();
 
         // Dữ liệu từ bảng tbl_sanluong_khac

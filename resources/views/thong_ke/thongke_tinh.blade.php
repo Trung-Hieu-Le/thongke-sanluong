@@ -19,7 +19,7 @@
                 <span>Theo khu vực </span>
                 <select class="form-control" id="khu-vuc-chon">
                     @foreach($khuVucList as $khuVuc)
-                        <option value="{{ $khuVuc->khu_vuc }}">{{ $khuVuc->khu_vuc }}</option>
+                        <option value="{{ $khuVuc->ten_khu_vuc }}">{{ $khuVuc->ten_khu_vuc }}</option>
                     @endforeach
                 </select>
                 {{-- <span>Theo thời gian </span>

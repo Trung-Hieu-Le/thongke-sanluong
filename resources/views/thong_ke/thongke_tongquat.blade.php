@@ -108,7 +108,7 @@
                 </div>
             </div>
                 
-            <div class="container-fluid first-canvas row mb-2 px-xl-5 d-flex justify-content-center">
+            <div class="container-fluid first-canvas row mb-2 px-xl-5">
                 @foreach ($khuVucs as $khuVuc)
                     <div class="col-lg-3 col-md-6">
                         <div class="">
@@ -653,7 +653,7 @@
             $.ajax({
                 url: `/thongke/tong-thang-nam`,
                 method: 'GET',
-                data: { ngay_chon: ngay_chon, time_format: time_format, start_date: start_date, end_date:end_date },                
+                data: { ngay_chon: ngay_chon, time_format: time_format, start_date: start_date, end_date:end_date },
                 success: function(data) {
                     const totalYear = data.totalYear;
                     const totalMonth = data.totalMonth;
@@ -669,7 +669,6 @@
                     document.getElementById('totalKpiYear').textContent = "Tổng KPI: " + number_format(totalKpiYear, 2, ',', '.') + " tỉ đồng";
                     document.getElementById('totalKpiMonth').textContent = "Tổng KPI: " + number_format(totalKpiMonth, 2, ',', '.') + " tỉ đồng";
 
-                    
                     data.details.forEach(detail => {
                         document.getElementById(`total-${detail.khuVuc}`).textContent = number_format(detail.total, 0, ',', '.');
                         document.getElementById(`kpi-${detail.khuVuc}`).textContent = detail.kpi + "%";

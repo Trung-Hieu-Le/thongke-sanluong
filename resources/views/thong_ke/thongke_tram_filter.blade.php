@@ -62,7 +62,7 @@
                             <td>
                                 {{ $row->HopDong_SoHopDong ?? 'Không có' }}
                             </td>
-                            <td>{{ $row->khu_vuc }}</td>
+                            <td>{{ $row->ten_khu_vuc }}</td>
                             <td>{{ number_format($row->SanLuong_Gia, 3) }}</td>
                             <td>{{ $row->ma_tinh }}</td>
                             <td><a class="simple-link" href="{{ url('/viewsanluong/'.$row->SanLuong_Tram.'?sohopdong='.$row->HopDong_SoHopDong.'&days='.implode(',', $days)) }}">Xem</a></td>
