@@ -23,7 +23,8 @@ class ThongKeController extends Controller
                 ->value('user_khuvuc');
         }
         $khuVucs = DB::table('tbl_tinh')
-            ->distinct()
+        ->distinct()
+        ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
             ->orderBy('ten_khu_vuc')
             ->pluck('ten_khu_vuc');
         $hopDongs = DB::table('tbl_hopdong')->select('HopDong_Id', 'HopDong_SoHopDong')->get();
@@ -44,6 +45,7 @@ class ThongKeController extends Controller
             ->distinct()
             // ->where('ten_khu_vuc', $userKhuVuc)
             ->select('ten_khu_vuc')
+            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
             ->orderBy('ten_khu_vuc');
         if ($role != 3) {
             $userKhuVuc = DB::table('tbl_user')
@@ -85,6 +87,7 @@ class ThongKeController extends Controller
         }
         $khuVucs = DB::table('tbl_tinh')
             ->distinct()
+            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
             ->orderBy('ten_khu_vuc')
             ->pluck('ten_khu_vuc');
         //TODO: khi đổi timeFormat thì đổi lại KPI
@@ -102,6 +105,7 @@ class ThongKeController extends Controller
             }
             $maTinhs = DB::table('tbl_tinh')
                 ->where('ten_khu_vuc', $khuVuc)
+                ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
                 ->pluck('ma_tinh')
                 ->toArray();
 
@@ -165,6 +169,7 @@ class ThongKeController extends Controller
 
         $khuVucs = DB::table('tbl_tinh')
             ->distinct()
+            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
             ->orderBy('ten_khu_vuc')
             ->pluck('ten_khu_vuc');
         $currentMonth = intval(date('m', strtotime($ngayChon)));
@@ -178,7 +183,8 @@ class ThongKeController extends Controller
             }
 
             $maTinhs = DB::table('tbl_tinh')
-                ->where('ten_khu_vuc', $khuVuc)
+            ->where('ten_khu_vuc', $khuVuc)
+            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
                 ->pluck('ma_tinh')
                 ->toArray();
 
@@ -476,7 +482,9 @@ class ThongKeController extends Controller
         $role = session('role');
         $userKhuVuc = ($role != 3) ? DB::table('tbl_user')->where('user_id', session('userid'))->value('user_khuvuc') : null;
 
-        $khuVucs = DB::table('tbl_tinh')->distinct()->orderBy('ten_khu_vuc')->pluck('ten_khu_vuc');
+        $khuVucs = DB::table('tbl_tinh')->distinct()
+        ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+        ->orderBy('ten_khu_vuc')->pluck('ten_khu_vuc');
 
         $results = [];
 
@@ -485,7 +493,9 @@ class ThongKeController extends Controller
                 continue;
             }
 
-            $maTinhs = DB::table('tbl_tinh')->where('ten_khu_vuc', $khuVuc)->pluck('ma_tinh')->toArray();
+            $maTinhs = DB::table('tbl_tinh')->where('ten_khu_vuc', $khuVuc)
+            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+            ->pluck('ma_tinh')->toArray();
 
             // Khởi tạo mảng lưu kết quả chi tiết
             $detailedResults = [];
@@ -707,6 +717,7 @@ class ThongKeController extends Controller
         $khuVuc = $role == 3 ? $request->input('khu_vuc') : $userKhuVuc;
         $maTinhs = DB::table('tbl_tinh')
             ->where('ten_khu_vuc', $khuVuc)
+            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
             ->pluck('ma_tinh');
         $results = [];
         if ($role != 3 && $request->input('khu_vuc') != $userKhuVuc) {
@@ -835,6 +846,7 @@ class ThongKeController extends Controller
 
         $maTinhs = DB::table('tbl_tinh')
             ->where('ten_khu_vuc', $khuVuc)
+            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
             ->pluck('ma_tinh');
 
         $results = [];
@@ -974,6 +986,7 @@ class ThongKeController extends Controller
 
         $khuVucs = DB::table('tbl_tinh')
             ->distinct()
+            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
             ->pluck('ten_khu_vuc');
 
         $results = [];
@@ -985,6 +998,7 @@ class ThongKeController extends Controller
 
             $maTinhs = DB::table('tbl_tinh')
                 ->where('ten_khu_vuc', $khuVuc)
+                ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
                 ->pluck('ma_tinh');
 
             $sanluongDataQuery = DB::table('tbl_sanluong')
