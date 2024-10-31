@@ -41,7 +41,7 @@ class TinhSanLuongFilterController extends Controller
         $searchCondition3 = !empty($searchMaTram) ? "AND KiemDinh_MaTram LIKE '%$searchMaTram%'" : "";
         $searchCondition4 = !empty($searchMaTram) ? "AND tbl_hinhanh.ma_tram LIKE '%$searchMaTram%'" : '';
         $searchConditionHopDong = !empty($searchHopDong) ? "AND tbl_hopdong.HopDong_SoHopDong LIKE '%$searchHopDong%'" : "";
-        $searchConditionKhuVuc = !empty($searchKhuVuc) ? "AND tbl_tram.khu_vuc LIKE '%$searchKhuVuc%'" : "";
+        $searchConditionKhuVuc = !empty($searchKhuVuc) ? "AND FirstTram.khu_vuc LIKE '%$searchKhuVuc%'" : "";
         $userKhuVucCondition = '';
         // if ($userRole !== 3) {
         //     $userKhuVucCondition = "AND tbl_tram.khu_vuc = '$userKhuVuc'";
