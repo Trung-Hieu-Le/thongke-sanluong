@@ -80,6 +80,7 @@ class TinhSanLuongFilterController extends Controller
                 FROM tbl_tram
             ) AS FirstTram ON subquery_sanluong.SanLuong_Tram = FirstTram.ma_tram AND FirstTram.rn = 1
             LEFT JOIN tbl_hopdong ON subquery_sanluong.HopDong_Id = tbl_hopdong.HopDong_Id
+            LEFT JOIN tbl_hinhanh ON tbl_hinhanh.ma_tram = subquery_sanluong.SanLuong_Tram
             WHERE 1
                 $searchCondition
                 $searchConditionHopDong
@@ -89,6 +90,7 @@ class TinhSanLuongFilterController extends Controller
                 SanLuong_Tram, 
                 FirstTram.khu_vuc, 
                 tbl_hopdong.HopDong_SoHopDong
+            HAVING COUNT(tbl_hinhanh.ma_tram) > 0
             ) AS sanluong_subquery
         "))
             ->select('ma_tinh', 'SanLuong_Tram', 'HopDong_SoHopDong', DB::raw('SUM(SanLuong_Gia) as SanLuong_Gia'), 'khu_vuc')
