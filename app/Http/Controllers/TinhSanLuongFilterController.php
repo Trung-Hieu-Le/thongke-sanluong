@@ -41,7 +41,8 @@ class TinhSanLuongFilterController extends Controller
         $searchCondition3 = !empty($searchMaTram) ? "AND KiemDinh_MaTram LIKE '%$searchMaTram%'" : "";
         $searchCondition4 = !empty($searchMaTram) ? "AND tbl_hinhanh.ma_tram LIKE '%$searchMaTram%'" : '';
         $searchConditionHopDong = !empty($searchHopDong) ? "AND tbl_hopdong.HopDong_SoHopDong LIKE '%$searchHopDong%'" : "";
-        $searchConditionKhuVuc = !empty($searchKhuVuc) ? "AND FirstTram.khu_vuc LIKE '%$searchKhuVuc%'" : "";
+        $searchConditionKhuVuc = !empty($searchKhuVuc) ? "AND tbl_tram.khu_vuc LIKE '%$searchKhuVuc%'" : "";
+        $searchConditionKhuVuc2 = !empty($searchKhuVuc) ? "AND FirstTram.khu_vuc LIKE '%$searchKhuVuc%'" : "";
         $userKhuVucCondition = '';
         // if ($userRole !== 3) {
         //     $userKhuVucCondition = "AND tbl_tram.khu_vuc = '$userKhuVuc'";
@@ -52,51 +53,69 @@ class TinhSanLuongFilterController extends Controller
 
         // Truy vấn dữ liệu chi tiết từ ba bảng
         $sanluongData = DB::table(DB::raw("
-            (SELECT 
-                LEFT(SanLuong_Tram, 3) as ma_tinh,
+    (
+        SELECT 
+            LEFT(sanluong.SanLuong_Tram, 3) as ma_tinh,
+            sanluong.SanLuong_Tram,
+            hopdong.HopDong_SoHopDong,
+            SUM(sanluong.SanLuong_Gia) as SanLuong_Gia,
+            tram.khu_vuc
+        FROM (
+            SELECT 
                 SanLuong_Tram,
-                tbl_hopdong.HopDong_SoHopDong,
-                SUM(DISTINCT CASE WHEN $userRole IN (0, 1) THEN 0 ELSE SanLuong_Gia END) as SanLuong_Gia,
-                FirstTram.khu_vuc
+                HopDong_Id,
+                SanLuong_TenHangMuc,
+                SanLuong_Gia,
+                SanLuong_Ngay
             FROM (
                 SELECT 
-                    UPPER(SanLuong_Tram) as SanLuong_Tram,
-                    MAX(SanLuong_Gia) as SanLuong_Gia,
-                    HopDong_Id,
-                    SanLuong_TenHangMuc
-                FROM tbl_sanluong
-                WHERE ten_hinh_anh_da_xong <> ''
-                    $dayCondition
-                GROUP BY 
+                    SanLuong_Id,
                     SanLuong_Tram,
+                    tbl_sanluong.HopDong_Id,
                     SanLuong_TenHangMuc,
-                    HopDong_Id
-            ) AS subquery_sanluong
-            JOIN (
-                SELECT 
-                    ma_tram,
-                    khu_vuc,
-                    ROW_NUMBER() OVER (PARTITION BY ma_tram) as rn
-                FROM tbl_tram
-            ) AS FirstTram ON subquery_sanluong.SanLuong_Tram = FirstTram.ma_tram AND FirstTram.rn = 1
-            LEFT JOIN tbl_hopdong ON subquery_sanluong.HopDong_Id = tbl_hopdong.HopDong_Id
-            LEFT JOIN tbl_hinhanh ON tbl_hinhanh.ma_tram = subquery_sanluong.SanLuong_Tram
-            WHERE 1
+                    SanLuong_Gia,
+                    SanLuong_Ngay,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY SanLuong_Tram, HopDong_Id, SanLuong_TenHangMuc 
+                        ORDER BY STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')
+                    ) AS row_num
+                FROM tbl_sanluong
+                JOIN tbl_tram ON tbl_sanluong.SanLuong_Tram = tbl_tram.ma_tram
+                LEFT JOIN tbl_hopdong ON tbl_sanluong.HopDong_Id = tbl_hopdong.HopDong_Id
+                WHERE ten_hinh_anh_da_xong <> ''
+                AND EXISTS (
+                    SELECT 1 
+                    FROM tbl_hinhanh 
+                    WHERE tbl_hinhanh.ma_tram = tbl_sanluong.SanLuong_Tram
+                )
                 $searchCondition
-                $searchConditionHopDong
                 $searchConditionKhuVuc
+                $searchConditionHopDong
                 $userKhuVucCondition
-            GROUP BY 
-                SanLuong_Tram, 
-                FirstTram.khu_vuc, 
-                tbl_hopdong.HopDong_SoHopDong
-            HAVING COUNT(tbl_hinhanh.ma_tram) > 0
-            ) AS sanluong_subquery
-        "))
-            ->select('ma_tinh', 'SanLuong_Tram', 'HopDong_SoHopDong', DB::raw('SUM(SanLuong_Gia) as SanLuong_Gia'), 'khu_vuc')
-            ->groupBy('ma_tinh', 'SanLuong_Tram', 'khu_vuc', 'HopDong_SoHopDong')
-            ->orderBy('SanLuong_Tram', 'asc')
-            ->get();
+            ) AS ranked_sanluong
+            WHERE row_num = 1
+                $dayCondition
+        ) AS sanluong
+        JOIN (
+            SELECT 
+                ma_tram,
+                khu_vuc,
+                ROW_NUMBER() OVER (PARTITION BY ma_tram ORDER BY ma_tram) as rn
+            FROM tbl_tram
+        ) AS tram ON sanluong.SanLuong_Tram = tram.ma_tram AND tram.rn = 1
+        LEFT JOIN tbl_hopdong AS hopdong ON sanluong.HopDong_Id = hopdong.HopDong_Id
+        GROUP BY 
+            sanluong.SanLuong_Tram,
+            tram.khu_vuc, 
+            hopdong.HopDong_SoHopDong
+        HAVING COUNT(sanluong.SanLuong_Tram) > 0
+    ) AS sanluong_subquery
+"))
+->select('ma_tinh', 'SanLuong_Tram', 'HopDong_SoHopDong', DB::raw('SUM(SanLuong_Gia) as SanLuong_Gia'), 'khu_vuc')
+->groupBy('ma_tinh', 'SanLuong_Tram', 'khu_vuc', 'HopDong_SoHopDong')
+->orderBy('SanLuong_Tram', 'asc')
+->get();
+
 
         $thaoLapKiemDinhData = DB::table(DB::raw("
             (
@@ -124,7 +143,7 @@ class TinhSanLuongFilterController extends Controller
                     $thaoLapDayCondition
                     $searchCondition2
                     $searchConditionHopDong
-                    $searchConditionKhuVuc
+                    $searchConditionKhuVuc2
                     $userKhuVucCondition
                 GROUP BY ThaoLap_MaTram, FirstTram.khu_vuc, tbl_hopdong.HopDong_SoHopDong
 
@@ -154,7 +173,7 @@ class TinhSanLuongFilterController extends Controller
                     $kiemDinhDayCondition
                     $searchCondition3
                     $searchConditionHopDong
-                    $searchConditionKhuVuc
+                    $searchConditionKhuVuc2
                     $userKhuVucCondition
                 GROUP BY KiemDinh_MaTram, FirstTram.khu_vuc, tbl_hopdong.HopDong_SoHopDong
             ) as thaolap_kiemdinh_subquery
@@ -174,7 +193,7 @@ class TinhSanLuongFilterController extends Controller
                 0 as SanLuong_Gia,
                 FirstTram.khu_vuc
             '))
-            ->whereRaw("1 $hinhAnhDayCondition $searchCondition4 $searchConditionHopDong $searchConditionKhuVuc $userKhuVucCondition")
+            ->whereRaw("1 $hinhAnhDayCondition $searchCondition4 $searchConditionHopDong $searchConditionKhuVuc2 $userKhuVucCondition")
             ->whereNotIn('tbl_hinhanh.ma_tram', $sanluongData->pluck('SanLuong_Tram'))
             ->join(DB::raw('(
                 SELECT 
