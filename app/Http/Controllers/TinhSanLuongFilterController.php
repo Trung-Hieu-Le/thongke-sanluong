@@ -51,8 +51,8 @@ class TinhSanLuongFilterController extends Controller
         $page = request()->get('page', 1);
         $perPage = 100; // Number of items per page
 
-        // Truy vấn dữ liệu chi tiết từ ba bảng
-        $sanluongData = DB::table(DB::raw("
+        // TODO: Nếu cùng mt, hđ, hm nhưng khác giá thì sao??
+        $sanluongData = DB::table(DB::raw(" 
     (
         SELECT 
             LEFT(sanluong.SanLuong_Tram, 3) as ma_tinh,
@@ -69,7 +69,6 @@ class TinhSanLuongFilterController extends Controller
                 SanLuong_Ngay
             FROM (
                 SELECT 
-                    SanLuong_Id,
                     SanLuong_Tram,
                     tbl_sanluong.HopDong_Id,
                     SanLuong_TenHangMuc,
@@ -100,6 +99,7 @@ class TinhSanLuongFilterController extends Controller
             SELECT 
                 ma_tram,
                 khu_vuc,
+                hopdong_id,
                 ROW_NUMBER() OVER (PARTITION BY ma_tram ORDER BY ma_tram) as rn
             FROM tbl_tram
         ) AS tram ON sanluong.SanLuong_Tram = tram.ma_tram AND tram.rn = 1
@@ -115,6 +115,7 @@ class TinhSanLuongFilterController extends Controller
 ->groupBy('ma_tinh', 'SanLuong_Tram', 'khu_vuc', 'HopDong_SoHopDong')
 ->orderBy('SanLuong_Tram', 'asc')
 ->get();
+
 
 
         $thaoLapKiemDinhData = DB::table(DB::raw("
@@ -135,9 +136,10 @@ class TinhSanLuongFilterController extends Controller
                     SELECT 
                         ma_tram,
                         khu_vuc,
-                        ROW_NUMBER() OVER (PARTITION BY ma_tram) as rn
+                        hopdong_id
                     FROM tbl_tram
-                ) AS FirstTram ON tbl_sanluong_thaolap.ThaoLap_MaTram = FirstTram.ma_tram AND FirstTram.rn = 1
+                ) AS FirstTram ON tbl_sanluong_thaolap.ThaoLap_MaTram = FirstTram.ma_tram 
+                AND FirstTram.hopdong_id = tbl_sanluong_thaolap.HopDong_Id
                 LEFT JOIN tbl_hopdong ON tbl_sanluong_thaolap.HopDong_Id = tbl_hopdong.HopDong_Id
                 WHERE 1
                     $thaoLapDayCondition
@@ -165,9 +167,10 @@ class TinhSanLuongFilterController extends Controller
                     SELECT 
                         ma_tram,
                         khu_vuc,
-                        ROW_NUMBER() OVER (PARTITION BY ma_tram) as rn
+                        hopdong_id
                     FROM tbl_tram
-                ) AS FirstTram ON tbl_sanluong_kiemdinh.KiemDinh_MaTram = FirstTram.ma_tram AND FirstTram.rn = 1
+                ) AS FirstTram ON tbl_sanluong_kiemdinh.KiemDinh_MaTram = FirstTram.ma_tram 
+                AND FirstTram.hopdong_id = tbl_sanluong_kiemdinh.HopDong_Id
                 LEFT JOIN tbl_hopdong ON tbl_sanluong_kiemdinh.HopDong_Id = tbl_hopdong.HopDong_Id
                 WHERE 1
                     $kiemDinhDayCondition
