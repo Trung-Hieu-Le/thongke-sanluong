@@ -33,6 +33,7 @@
                         <input type="text" class="form-control" name="searchHopDong" placeholder="Tìm hợp đồng" value="{{ $searchHopDong }}">
                         <input type="text" class="form-control" name="searchKhuVuc" placeholder="Tìm khu vực" value="{{ $searchKhuVuc }}">
                         <button class="btn btn-primary mb-1" type="submit">Lọc</button>
+                        <button id="filterRedirect" class="btn btn-secondary mb-1" type="button">Xem kết quả</button>
                     </div>
                 </div>
             </form>
@@ -123,6 +124,16 @@
                 const selectedDates = $(this).datepicker('getFormattedDate');
                 $('input[name="days"]').val(selectedDates);
             });
+
+            $('#filterRedirect').click(function() {
+            const days = $('input[name="days"]').val();
+            const searchMaTram = $('input[name="searchMaTram"]').val();
+            const searchHopDong = $('input[name="searchHopDong"]').val();
+            const searchKhuVuc = $('input[name="searchKhuVuc"]').val();
+
+            const url = `{{ url('/table-update/tonghop-sanluong-daily') }}?days=${days}&searchMaTram=${searchMaTram}&searchHopDong=${searchHopDong}&searchKhuVuc=${searchKhuVuc}`;
+            window.location.href = url;
+        });
         });
     </script>
     <style>

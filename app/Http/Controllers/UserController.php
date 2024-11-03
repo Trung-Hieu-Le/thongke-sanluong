@@ -33,7 +33,7 @@ class UserController extends Controller
                 $request->session()->put('userid', $user[0]->user_id);
                 $request->session()->put('username', $user[0]->user_name);
                 $request->session()->put('role', $user[0]->user_permission);
-                return redirect('/');
+                return redirect('/thongke/filter');
             } else {
                 $err = "Sai tài khoản hoặc mật khẩu";
                 return view('users.login', compact('err'));

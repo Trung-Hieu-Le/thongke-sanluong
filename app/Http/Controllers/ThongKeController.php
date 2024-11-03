@@ -85,11 +85,11 @@ class ThongKeController extends Controller
                 ->where('user_id', session('userid'))
                 ->value('user_khuvuc');
         }
-        $khuVucs = DB::table('tbl_tram')
+        $khuVucs = DB::table('tbl_tinh')
             ->distinct()
-            ->whereIn('khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
-            ->orderBy('khu_vuc')
-            ->pluck('khu_vuc');
+            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+            ->orderBy('ten_khu_vuc')
+            ->pluck('ten_khu_vuc');
         //TODO: khi đổi timeFormat thì đổi lại KPI
         $currentMonth = intval(date('m', strtotime($ngayChon)));
         $currentYear = date('Y', strtotime($ngayChon));
@@ -103,17 +103,21 @@ class ThongKeController extends Controller
             if ($role != 3 && $khuVuc != $userKhuVuc) {
                 continue;
             }
+            $maTinhs = DB::table('tbl_tinh')
+                ->where('ten_khu_vuc', $khuVuc)
+                ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+                ->pluck('ma_tinh')
+                ->toArray();
 
             $kpiDataNam = $this->getKpiNgay($khuVuc, $currentYear, $currentMonth, 'nam');
             $kpiDataThang = $this->getKpiNgay($khuVuc, $currentYear, $currentMonth, 'thang');
             // $kpi_ngay = $kpiData['kpi_ngay'];
-            $daysInMonth = $this->getDistinctDays($khuVuc, $ngayChon, 'thang', null, null);
-            $daysInYear = $this->getDistinctDays($khuVuc, $ngayChon, 'nam', null, null);
+            $daysInMonth = $this->getDistinctDays($maTinhs, $khuVuc, $ngayChon, 'thang', null, null);
+            $daysInYear = $this->getDistinctDays($maTinhs, $khuVuc, $ngayChon, 'nam', null, null);
             $kpi_thang = $kpiDataThang['kpi_ngay'] * $daysInMonth;
             $kpi_nam = $kpiDataNam['kpi_ngay'] * $daysInYear;
-            $totalThang = $this->getTotalSanLuong($khuVuc, $ngayChon, null, null, null, 'thang', null, null);
-            $totalNam = $this->getTotalSanLuong($khuVuc, $ngayChon, null, null, null, 'nam', null, null);
-
+            $totalThang = $this->getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, null, null, null, 'thang', null, null);
+            $totalNam = $this->getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, null, null, null, 'nam', null, null);
             // Cộng dồn tổng tháng, tổng năm, KPI tháng, KPI năm
             $totalMonth += $totalThang;
             $totalYear += $totalNam;
@@ -121,9 +125,9 @@ class ThongKeController extends Controller
             $kpiYear += $kpi_nam;
 
             $kpiData = $this->getKpiNgay($khuVuc, $currentYear, $currentMonth, $timeFormat);
-            $daysDetail = $this->getDistinctDays($khuVuc, $ngayChon, $timeFormat, $startDate, $endDate);
+            $daysDetail = $this->getDistinctDays($maTinhs, $khuVuc, $ngayChon, $timeFormat, $startDate, $endDate);
             $kpiDetail = $kpiData['kpi_ngay'] * $daysDetail;
-            $totalDetail = $this->getTotalSanLuong($khuVuc, $ngayChon, null, null, null, $timeFormat, $startDate, $endDate);
+            $totalDetail = $this->getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, null, null, null, $timeFormat, $startDate, $endDate);
             $details[] = [
                 'khuVuc' => $khuVuc,
                 'total' => round($totalDetail),
@@ -162,11 +166,11 @@ class ThongKeController extends Controller
                 ->value('user_khuvuc');
         }
 
-        $khuVucs = DB::table('tbl_tram')
+        $khuVucs = DB::table('tbl_tinh')
             ->distinct()
-            ->whereIn('khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
-            ->orderBy('khu_vuc')
-            ->pluck('khu_vuc');
+            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+            ->orderBy('ten_khu_vuc')
+            ->pluck('ten_khu_vuc');
         $currentMonth = intval(date('m', strtotime($ngayChon)));
         $currentYear = date('Y', strtotime($ngayChon));
         $currentQuarter = ceil($currentMonth / 3);
@@ -177,18 +181,19 @@ class ThongKeController extends Controller
                 continue;
             }
 
-            // $maTinhs = DB::table('tbl_tram')
-            // ->where('khu_vuc', $khuVuc)
-            // ->whereIn('khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
-            //     ->pluck('ma_tinh')
-            //     ->toArray();
+            $maTinhs = DB::table('tbl_tinh')
+                ->where('ten_khu_vuc', $khuVuc)
+                ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+                ->pluck('ma_tinh')
+                ->toArray();
 
             $kpiData = $this->getKpiNgay($khuVuc, $currentYear, $currentMonth, $timeFormat);
 
-            $distinctDays = $this->getDistinctDays($khuVuc, $ngayChon, $timeFormat, $startDate, $endDate);
+            $distinctDays = $this->getDistinctDays($maTinhs, $khuVuc, $ngayChon, $timeFormat, $startDate, $endDate);
             $kpi = $kpiData['kpi_ngay'] * $distinctDays;
 
-            $totalSanLuong = $this->getTotalSanLuong($khuVuc, $ngayChon, $hopDongId, $userId, $linhVuc, $timeFormat, $startDate, $endDate);
+            $totalSanLuong = $this->getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, $hopDongId, $userId, $linhVuc, $timeFormat, $startDate, $endDate);
+
             $results[] = [
                 'ten_khu_vuc' => $khuVuc,
                 'total' => round($totalSanLuong / 1e9, 2),
@@ -276,13 +281,8 @@ class ThongKeController extends Controller
         return [$whereClauseSanLuong, $whereClauseThaoLap, $whereClauseKiemDinh];
     }
 
-    private function getDistinctDays($khuVuc, $ngayChon, $timeFormat, $startDate, $endDate)
+    private function getDistinctDays($maTinhs, $khuVuc, $ngayChon, $timeFormat, $startDate, $endDate)
     {
-        $maTinhs = DB::table('tbl_tram')
-            ->where('khu_vuc', $khuVuc)
-            ->whereIn('khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
-            ->pluck('ma_tinh')
-            ->toArray();
         [$whereClauseSanLuong, $whereClauseThaoLap, $whereClauseKiemDinh] = $this->whereClauseTimeFormat($ngayChon, $timeFormat, $startDate, $endDate);
         $distinctQuery = DB::table('tbl_sanluong')
             ->select(DB::raw("DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) AS distinct_date"))
@@ -314,7 +314,7 @@ class ThongKeController extends Controller
 
         return $distinctDays;
     }
-    private function getTotalSanLuong($khuVuc, $ngayChon, $hopDongId = null, $userId = null, $linhVuc = null, $timeFormat, $startDate, $endDate, $whereClauseSanLuong = null, $whereClauseThaoLap = null, $whereClauseKiemDinh = null)
+    private function getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, $hopDongId = null, $userId = null, $linhVuc = null, $timeFormat, $startDate, $endDate, $whereClauseSanLuong = null, $whereClauseThaoLap = null, $whereClauseKiemDinh = null)
     {
         if (empty($whereClauseSanLuong) || empty($whereClauseThaoLap)) {
             [$whereClauseSanLuong, $whereClauseThaoLap, $whereClauseKiemDinh] = $this->whereClauseTimeFormat($ngayChon, $timeFormat, $startDate, $endDate);
@@ -337,7 +337,7 @@ class ThongKeController extends Controller
                 for ($month = $startMonthLoop; $month <= $endMonthLoop; $month++) {
                     $formattedMonth = str_pad($month, 2, '0', STR_PAD_LEFT);
                     $query = DB::table('tbl_tonghop_sanluong')
-                        ->select('ma_tinh', 'SanLuong_Ngay_01', 'SanLuong_Ngay_02', 'SanLuong_Ngay_03', 'SanLuong_Ngay_04', 'SanLuong_Ngay_05', 'SanLuong_Ngay_06', 'SanLuong_Ngay_07', 'SanLuong_Ngay_08', 'SanLuong_Ngay_09', 'SanLuong_Ngay_10', 'SanLuong_Ngay_11', 'SanLuong_Ngay_12', 'SanLuong_Ngay_13', 'SanLuong_Ngay_14', 'SanLuong_Ngay_15', 'SanLuong_Ngay_16', 'SanLuong_Ngay_17', 'SanLuong_Ngay_18', 'SanLuong_Ngay_19', 'SanLuong_Ngay_20', 'SanLuong_Ngay_21', 'SanLuong_Ngay_22', 'SanLuong_Ngay_23', 'SanLuong_Ngay_24', 'SanLuong_Ngay_25', 'SanLuong_Ngay_26', 'SanLuong_Ngay_27', 'SanLuong_Ngay_28', 'SanLuong_Ngay_29', 'SanLuong_Ngay_30', 'SanLuong_Ngay_31')
+                        ->select('SanLuong_Ngay_01', 'SanLuong_Ngay_02', 'SanLuong_Ngay_03', 'SanLuong_Ngay_04', 'SanLuong_Ngay_05', 'SanLuong_Ngay_06', 'SanLuong_Ngay_07', 'SanLuong_Ngay_08', 'SanLuong_Ngay_09', 'SanLuong_Ngay_10', 'SanLuong_Ngay_11', 'SanLuong_Ngay_12', 'SanLuong_Ngay_13', 'SanLuong_Ngay_14', 'SanLuong_Ngay_15', 'SanLuong_Ngay_16', 'SanLuong_Ngay_17', 'SanLuong_Ngay_18', 'SanLuong_Ngay_19', 'SanLuong_Ngay_20', 'SanLuong_Ngay_21', 'SanLuong_Ngay_22', 'SanLuong_Ngay_23', 'SanLuong_Ngay_24', 'SanLuong_Ngay_25', 'SanLuong_Ngay_26', 'SanLuong_Ngay_27', 'SanLuong_Ngay_28', 'SanLuong_Ngay_29', 'SanLuong_Ngay_30', 'SanLuong_Ngay_31')
                         ->where('khu_vuc', $khuVuc)
                         ->where('year', $year)
                         ->where('month', $formattedMonth)
@@ -365,91 +365,36 @@ class ThongKeController extends Controller
                     }
                 }
             }
-            
             return $totalSanLuong;
         }
-        $sanluongDataQuery = DB::select("
-        SELECT 
-            ma_tinh,
-            SanLuong_Tram,
-            HopDong_SoHopDong,
-            SanLuong_Ngay,
-            SUM(SanLuong_Gia) AS SanLuong_Gia,
-            khu_vuc 
-        FROM (
-            SELECT 
-                LEFT(sanluong.SanLuong_Tram, 3) AS ma_tinh,
-                sanluong.SanLuong_Tram,
-                hopdong.HopDong_SoHopDong,
-                sanluong.SanLuong_Ngay, -- Thêm cột SanLuong_Ngay để nhóm theo ngày
-                SUM(sanluong.SanLuong_Gia) AS SanLuong_Gia,
-                tram.khu_vuc
-            FROM (
-                SELECT 
-                    SanLuong_Tram,
-                    HopDong_Id,
-                    SanLuong_TenHangMuc,
-                    SanLuong_Gia,
-                    SanLuong_Ngay
-                FROM (
-                    SELECT 
-                        SanLuong_Tram,
-                        tbl_sanluong.HopDong_Id,
-                        SanLuong_TenHangMuc,
-                        SanLuong_Gia,
-                        SanLuong_Ngay,
-                        ROW_NUMBER() OVER (
-                            PARTITION BY SanLuong_Tram, HopDong_Id, SanLuong_TenHangMuc 
-                            ORDER BY STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')
-                        ) AS row_num
-                    FROM tbl_sanluong
-                    JOIN tbl_tram ON tbl_sanluong.SanLuong_Tram = tbl_tram.ma_tram
-                    LEFT JOIN tbl_hopdong ON tbl_sanluong.HopDong_Id = tbl_hopdong.HopDong_Id
-                    WHERE ten_hinh_anh_da_xong <> ''
-                    AND EXISTS (
-                        SELECT 1 
-                        FROM tbl_hinhanh 
-                        WHERE tbl_hinhanh.ma_tram = tbl_sanluong.SanLuong_Tram
-                    )
-                ) AS ranked_sanluong
-                WHERE row_num = 1
-            ) AS sanluong
-            JOIN (
-                SELECT 
-                    ma_tram,
-                    khu_vuc,
-                    hopdong_id,
-                    ROW_NUMBER() OVER (PARTITION BY ma_tram ORDER BY ma_tram) AS rn
-                FROM tbl_tram
-            ) AS tram ON sanluong.SanLuong_Tram = tram.ma_tram AND tram.rn = 1
-            LEFT JOIN tbl_hopdong AS hopdong ON sanluong.HopDong_Id = hopdong.HopDong_Id
-            GROUP BY 
-                sanluong.SanLuong_Tram,
-                tram.khu_vuc, 
-                hopdong.HopDong_SoHopDong,
-                sanluong.SanLuong_Ngay -- Nhóm thêm theo SanLuong_Ngay để chia theo ngày
-            HAVING COUNT(sanluong.SanLuong_Tram) > 0
-        ) AS sanluong_subquery
-        WHERE $whereClauseSanLuong AND khu_vuc = '$khuVuc'
-        GROUP BY 
-            ma_tinh, 
-            SanLuong_Tram, 
-            khu_vuc, 
-            HopDong_SoHopDong, 
-            SanLuong_Ngay -- Nhóm theo ngày để chia số tiền cho từng ngày
-        ORDER BY 
-            SanLuong_Tram ASC, 
-            SanLuong_Ngay ASC;
-        ");
-
-        $sanluongData = collect($sanluongDataQuery);
+        $sanluongQuery = DB::table('tbl_sanluong')
+            ->join('tbl_tram', function ($join) {
+                $join->on('tbl_sanluong.SanLuong_Tram', '=', 'tbl_tram.ma_tram')
+                    ->on('tbl_sanluong.HopDong_Id', '=', 'tbl_tram.hopdong_id')
+                    ->whereExists(function ($query) {
+                        $query->select(DB::raw(1))
+                            ->from('tbl_hinhanh')
+                            ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
+                    });
+            })
+            ->join('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+            ->select(
+                DB::raw('COALESCE(tbl_tram.khu_vuc, (SELECT khu_vuc FROM tbl_tram WHERE tbl_sanluong.SanLuong_Tram = tbl_tram.ma_tram LIMIT 1)) AS khu_vuc'),
+                DB::raw('SUM(tbl_sanluong.SanLuong_Gia) as SanLuong_Gia')
+            )
+            ->whereNot('ten_hinh_anh_da_xong', "")
+            ->where("khu_vuc", $khuVuc)
+            ->whereRaw($whereClauseSanLuong)
+            ->groupBy('tbl_tram.khu_vuc', 'SanLuong_Tram');
+        if (!empty($hopDongId)) {
+            $sanluongQuery->where('tbl_sanluong.HopDong_Id', $hopDongId);
+        }
         if (!empty($linhVuc) && $linhVuc != "EC") {
             $sanluongData = collect();
         } else {
-            if (!empty($hopDongId)) {
-                $sanluongData = $sanluongData->where('HopDong_Id', $hopDongId);
-            }
+            $sanluongData = $sanluongQuery->get();
         }
+
 
         $sanluongKhacData = collect();
         if (empty($hopDongId)) {
@@ -466,116 +411,53 @@ class ThongKeController extends Controller
             $sanluongKhacData = $sanluongKhacQuery->get();
         }
 
-        $thaolapQuery = DB::select("
-            SELECT 
-                ma_tinh, 
-                SanLuong_Tram, 
-                HopDong_SoHopDong, 
-                ThaoLap_Ngay,
-                SUM(SanLuong_Gia) AS SanLuong_Gia, 
-                khu_vuc 
-            FROM (
-                SELECT 
-                    LEFT(ThaoLap_MaTram, 3) AS ma_tinh,
-                    ThaoLap_MaTram AS SanLuong_Tram,
-                    tbl_hopdong.HopDong_SoHopDong,
-                    ThaoLap_Ngay,
-                    MAX(
-                        ThaoLap_Anten * DonGia_Anten 
-                        + ThaoLap_RRU * DonGia_RRU 
-                        + ThaoLap_TuThietBi * DonGia_TuThietBi 
-                        + ThaoLap_CapNguon * DonGia_CapNguon
-                    ) AS SanLuong_Gia,
-                    FirstTram.khu_vuc
-                FROM tbl_sanluong_thaolap
-                JOIN (
-                    SELECT 
-                        ma_tram,
-                        khu_vuc,
-                        hopdong_id
-                    FROM tbl_tram
-                ) AS FirstTram ON tbl_sanluong_thaolap.ThaoLap_MaTram = FirstTram.ma_tram 
-                AND FirstTram.hopdong_id = tbl_sanluong_thaolap.HopDong_Id
-                LEFT JOIN tbl_hopdong ON tbl_sanluong_thaolap.HopDong_Id = tbl_hopdong.HopDong_Id
-                GROUP BY 
-                    ThaoLap_MaTram, 
-                    FirstTram.khu_vuc, 
-                    tbl_hopdong.HopDong_SoHopDong, 
-                    ThaoLap_Ngay 
-            ) AS thaolap_kiemdinh_subquery
-            WHERE $whereClauseThaoLap AND khu_vuc = '$khuVuc'
-            GROUP BY 
-                ma_tinh, 
-                SanLuong_Tram, 
-                khu_vuc, 
-                HopDong_SoHopDong, 
-                ThaoLap_Ngay
-            ORDER BY 
-                SanLuong_Tram ASC, 
-                ThaoLap_Ngay ASC;
-        ");
-        $thaolapData = collect($thaolapQuery);
-        if (!empty($linhVuc) && $linhVuc == "EC") {
-            $thaolapData = collect();
-        } else {
-            if (!empty($hopDongId)) {
-                $thaolapData = $thaolapData->where('HopDong_Id', $hopDongId);
-            }
+        $thaolapQuery = DB::table('tbl_sanluong_thaolap')
+            ->join('tbl_tram', function ($join) {
+                $join->on('tbl_sanluong_thaolap.ThaoLap_MaTram', '=', 'tbl_tram.ma_tram')
+                    ->on('tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_tram.hopdong_id');
+            })
+            ->join('tbl_hopdong', 'tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+            ->select(
+                'tbl_tram.khu_vuc',
+                DB::raw('SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU 
+            + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) 
+            as SanLuong_Gia')
+            )
+            ->whereRaw($whereClauseThaoLap)
+            ->where('khu_vuc', $khuVuc)
+            ->groupBy('tbl_tram.khu_vuc');
+        if (!empty($hopDongId)) {
+            $thaolapQuery->where('HopDong_Id', $hopDongId);
         }
-        $kiemdinhQuery = DB::select("
-            SELECT 
-                ma_tinh,
-                SanLuong_Tram,
-                HopDong_SoHopDong,
-                KiemDinh_Ngay,
-                SUM(SanLuong_Gia) AS SanLuong_Gia,
-                khu_vuc
-            FROM (
-                SELECT 
-                    LEFT(KiemDinh_MaTram, 3) AS ma_tinh,
-                    KiemDinh_MaTram AS SanLuong_Tram,
-                    tbl_hopdong.HopDong_SoHopDong,
-                    KiemDinh_Ngay,
-                    MAX(KiemDinh_DonGia ) AS SanLuong_Gia,
-                    FirstTram.khu_vuc
-                FROM tbl_sanluong_kiemdinh
-                JOIN (
-                    SELECT 
-                        ma_tram,
-                        khu_vuc,
-                        hopdong_id
-                    FROM tbl_tram
-                ) AS FirstTram ON tbl_sanluong_kiemdinh.KiemDinh_MaTram = FirstTram.ma_tram 
-                AND FirstTram.hopdong_id = tbl_sanluong_kiemdinh.HopDong_Id
-                LEFT JOIN tbl_hopdong ON tbl_sanluong_kiemdinh.HopDong_Id = tbl_hopdong.HopDong_Id
-                GROUP BY 
-                    KiemDinh_MaTram, 
-                    KiemDinh_Ngay, 
-                    FirstTram.khu_vuc, 
-                    tbl_hopdong.HopDong_SoHopDong
-            ) AS thaolap_kiemdinh_subquery
-            WHERE $whereClauseKiemDinh AND khu_vuc = '$khuVuc'
-            GROUP BY 
-                ma_tinh, 
-                SanLuong_Tram, 
-                khu_vuc, 
-                HopDong_SoHopDong, 
-                KiemDinh_Ngay
-            ORDER BY 
-                SanLuong_Tram ASC, 
-                KiemDinh_Ngay ASC;
-
-        ");
-        $kiemdinhData = collect($kiemdinhQuery);
-        if (!empty($linhVuc) && $linhVuc == "EC") {
-            $kiemdinhData = collect();
+        if (!empty($linhVuc) && $linhVuc != "EC") {
+            $sanluongThaolapData = collect();
         } else {
-            if (!empty($hopDongId)) {
-                $kiemdinhData = $kiemdinhData->where('HopDong_Id', $hopDongId);
-            }
+            $sanluongThaolapData = $thaolapQuery->get();
         }
 
-        $combinedData = $sanluongData->merge($sanluongKhacData)->merge($thaolapData)->merge($kiemdinhData);
+        $kiemdinhQuery = DB::table('tbl_sanluong_kiemdinh')
+            ->join('tbl_tram', function ($join) {
+                $join->on('tbl_sanluong_kiemdinh.KiemDinh_MaTram', '=', 'tbl_tram.ma_tram')
+                    ->on('tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_tram.hopdong_id');
+            })
+            ->join('tbl_hopdong', 'tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+            ->select(
+                'tbl_tram.khu_vuc',
+                DB::raw('SUM(KiemDinh_DonGia) as SanLuong_Gia')
+            )
+            ->whereRaw($whereClauseKiemDinh)
+            ->where('khu_vuc', $khuVuc)
+            ->groupBy('tbl_tram.khu_vuc');
+        if (!empty($hopDongId)) {
+            $kiemdinhQuery->where('HopDong_Id', $hopDongId);
+        }
+        if (!empty($linhVuc) && $linhVuc != "EC") {
+            $sanluongKiemdinhData = collect();
+        } else {
+            $sanluongKiemdinhData = $kiemdinhQuery->get();
+        }
+
+        $combinedData = $sanluongData->merge($sanluongKhacData)->merge($sanluongThaolapData)->merge($sanluongKiemdinhData);
         $combinedData = $combinedData->map(function ($item) {
             $item->SanLuong_Gia = floatval($item->SanLuong_Gia);
             return $item;
@@ -597,9 +479,9 @@ class ThongKeController extends Controller
         $role = session('role');
         $userKhuVuc = ($role != 3) ? DB::table('tbl_user')->where('user_id', session('userid'))->value('user_khuvuc') : null;
 
-        $khuVucs = DB::table('tbl_tram')->distinct()
-            ->whereIn('khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
-            ->orderBy('khu_vuc')->pluck('khu_vuc');
+        $khuVucs = DB::table('tbl_tinh')->distinct()
+            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+            ->orderBy('ten_khu_vuc')->pluck('ten_khu_vuc');
 
         $results = [];
 
@@ -608,9 +490,9 @@ class ThongKeController extends Controller
                 continue;
             }
 
-            // $maTinhs = DB::table('tbl_tinh')->where('ten_khu_vuc', $khuVuc)
-            //     ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
-            //     ->pluck('ma_tinh')->toArray();
+            $maTinhs = DB::table('tbl_tinh')->where('ten_khu_vuc', $khuVuc)
+                ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+                ->pluck('ma_tinh')->toArray();
 
             // Khởi tạo mảng lưu kết quả chi tiết
             $detailedResults = [];
@@ -650,7 +532,7 @@ class ThongKeController extends Controller
                 $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') BETWEEN '{$period['start']}' AND '{$period['end']}'";
                 $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') BETWEEN '{$period['start']}' AND '{$period['end']}'";
                 $whereClauseKiemDinh = "STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y') BETWEEN '{$period['start']}' AND '{$period['end']}'";
-                $totalSanLuong = $this->getTotalSanLuong($khuVuc, null, $hopDongId, $userId, $linhVuc, $timeFormat, $period['start'], $period['end'], $whereClauseSanLuong, $whereClauseThaoLap, $whereClauseKiemDinh);
+                $totalSanLuong = $this->getTotalSanLuong($maTinhs, $khuVuc, null, $hopDongId, $userId, $linhVuc, $timeFormat, $period['start'], $period['end'], $whereClauseSanLuong, $whereClauseThaoLap, $whereClauseKiemDinh);
                 $detailedResults[] = [
                     'total' => round($totalSanLuong / 1e9, 2),
                     'time_period' => $period['label']
@@ -1073,31 +955,26 @@ class ThongKeController extends Controller
         }
 
         $whereClauseSanLuong = "";
-        $whereClauseThaoLap = "";
+        $whereClauseKiemDinh = "";
         switch ($timeFormat) {
             case 'ngay':
                 $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = CURRENT_DATE()";
-                $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') = CURRENT_DATE()";
                 $whereClauseKiemDinh = "STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y') = CURRENT_DATE()";
                 break;
             case 'tuan':
                 $whereClauseSanLuong = "WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), 1) = WEEK(CURRENT_DATE(), 1)";
-                $whereClauseThaoLap = "WEEK(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), 1) = WEEK(CURRENT_DATE(), 1)";
                 $whereClauseKiemDinh = "WEEK(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y'), 1) = WEEK(CURRENT_DATE(), 1)";
                 break;
             case 'thang':
                 $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentMonth";
-                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentMonth";
                 $whereClauseKiemDinh = "YEAR(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = $currentYear AND MONTH(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = $currentMonth";
                 break;
             case 'quy':
                 $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentQuarter";
-                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentQuarter";
                 $whereClauseKiemDinh = "YEAR(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = $currentYear AND QUARTER(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = $currentQuarter";
                 break;
             case 'nam':
                 $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear";
-                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear";
                 $whereClauseKiemDinh = "YEAR(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = $currentYear";
                 break;
             default:
@@ -1116,44 +993,55 @@ class ThongKeController extends Controller
                 continue;
             }
 
-            $maTinhs = DB::table('tbl_tinh')
-                ->where('ten_khu_vuc', $khuVuc)
-                ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
-                ->pluck('ma_tinh');
+            // $maTinhs = DB::table('tbl_tinh')
+            //     ->where('ten_khu_vuc', $khuVuc)
+            //     ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+            //     ->pluck('ma_tinh');
 
-            $sanluongDataQuery = DB::table('tbl_sanluong')
-                ->join('tbl_tinh', 'tbl_sanluong.SanLuong_Tram', 'LIKE', DB::raw("CONCAT(tbl_tinh.ma_tinh, '%')"))
-                ->select(DB::raw("IFNULL(CAST(SanLuong_Gia AS UNSIGNED), 0) as SanLuong_Gia"))
-                ->whereRaw($whereClauseSanLuong)
-                ->where('ten_hinh_anh_da_xong', '<>', '')
-                ->whereIn('tbl_tinh.ma_tinh', $maTinhs);
-            $sanluongData = $sanluongDataQuery->get();
-
-            $sanluongThaolapDataQuery = DB::table('tbl_sanluong_thaolap')
-                ->join('tbl_tinh', 'tbl_sanluong_thaolap.ThaoLap_MaTram', 'LIKE', DB::raw("CONCAT(tbl_tinh.ma_tinh, '%')"))
+            // $sanluongDataQuery = DB::table('tbl_sanluong')
+            //     ->join('tbl_tinh', 'tbl_sanluong.SanLuong_Tram', 'LIKE', DB::raw("CONCAT(tbl_tinh.ma_tinh, '%')"))
+            //     ->select(DB::raw("IFNULL(CAST(SanLuong_Gia AS UNSIGNED), 0) as SanLuong_Gia"))
+            //     ->whereRaw($whereClauseSanLuong)
+            //     ->where('ten_hinh_anh_da_xong', '<>', '')
+            //     ->whereIn('tbl_tinh.ma_tinh', $maTinhs);
+            // $sanluongData = $sanluongDataQuery->get();
+            $sanluongData = DB::table('tbl_sanluong')
+                ->join('tbl_tram', function ($join) {
+                    $join->on('tbl_sanluong.SanLuong_Tram', '=', 'tbl_tram.ma_tram')
+                        ->on('tbl_sanluong.HopDong_Id', '=', 'tbl_tram.hopdong_id')
+                        ->whereExists(function ($query) {
+                            $query->select(DB::raw(1))
+                                ->from('tbl_hinhanh')
+                                ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
+                        });
+                })
+                ->join('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
                 ->select(
-                    DB::raw("
-                IFNULL(
-                    ThaoLap_Anten * DonGia_Anten +
-                    ThaoLap_RRU * DonGia_RRU +
-                    ThaoLap_TuThietBi * DonGia_TuThietBi +
-                    ThaoLap_CapNguon * DonGia_CapNguon, 0
-                ) as SanLuong_Gia
-            ")
+                    DB::raw('COALESCE(tbl_tram.khu_vuc, (SELECT khu_vuc FROM tbl_tram WHERE tbl_sanluong.SanLuong_Tram = tbl_tram.ma_tram LIMIT 1)) AS khu_vuc'),
+                    DB::raw('SUM(tbl_sanluong.SanLuong_Gia) as SanLuong_Gia')
                 )
-                ->whereRaw($whereClauseThaoLap)
-                ->whereIn('tbl_tinh.ma_tinh', $maTinhs);
-            $sanluongThaolapData = $sanluongThaolapDataQuery->get();
+                ->whereNot('ten_hinh_anh_da_xong', "")
+                ->where("khu_vuc", $khuVuc)
+                ->whereRaw($whereClauseSanLuong)
+                ->groupBy('tbl_tram.khu_vuc', 'SanLuong_Tram')->get();
 
-            $totalEC = $sanluongData->sum('SanLuong_Gia') + $sanluongThaolapData->sum('SanLuong_Gia');
 
-            $sanluongKiemdinhDataQuery = DB::table('tbl_sanluong_kiemdinh')
-                ->join('tbl_tinh', 'tbl_sanluong_kiemdinh.KiemDinh_MaTram', 'LIKE', DB::raw("CONCAT(tbl_tinh.ma_tinh, '%')"))
-                ->select('KiemDinh_NoiDung', DB::raw('IFNULL(SUM(CAST(KiemDinh_DonGia AS UNSIGNED)), 0) as SanLuong_Gia'))
-                ->whereRaw($whereClauseKiemDinh)
-                ->whereIn('tbl_tinh.ma_tinh', $maTinhs)
-                ->groupBy('KiemDinh_NoiDung');
-            $sanluongKiemdinhData = $sanluongKiemdinhDataQuery->get();
+            $totalEC = $sanluongData->sum('SanLuong_Gia');
+
+            $sanluongKiemdinhData = DB::table('tbl_sanluong_kiemdinh')
+            ->join('tbl_tram', function ($join) {
+                $join->on('tbl_sanluong_kiemdinh.KiemDinh_MaTram', '=', 'tbl_tram.ma_tram')
+                    ->on('tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_tram.hopdong_id');
+            })
+            ->join('tbl_hopdong', 'tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+            ->select(
+                'tbl_tram.khu_vuc',
+                'KiemDinh_NoiDung',
+                DB::raw('SUM(KiemDinh_DonGia) as SanLuong_Gia')
+            )
+            ->whereRaw($whereClauseKiemDinh)
+            ->where('khu_vuc', $khuVuc)
+            ->groupBy('tbl_tram.khu_vuc', 'KiemDinh_NoiDung')->get();
 
             $sanluongKhacDataQuery = DB::table('tbl_sanluong_khac')
                 ->select('SanLuong_TenHangMuc', DB::raw('SUM(SanLuong_Gia) as total'))
@@ -1164,21 +1052,21 @@ class ThongKeController extends Controller
 
             $results[$khuVuc]['EC'] = [
                 'ten_linh_vuc' => 'EC',
-                'total' => round($totalEC / 1e9, 1),
+                'total' => round($totalEC / 1e9, 2),
                 'kpi' => 0
             ];
 
             foreach ($sanluongKhacData as $row) {
                 $results[$khuVuc][$row->SanLuong_TenHangMuc] = [
                     'ten_linh_vuc' => $row->SanLuong_TenHangMuc,
-                    'total' => round($row->total / 1e9, 1),
+                    'total' => round($row->total / 1e9, 2),
                     'kpi' => 0
                 ];
             }
             foreach ($sanluongKiemdinhData as $row) {
                 $results[$khuVuc][$row->KiemDinh_NoiDung] = [
                     'ten_linh_vuc' => 'Kiểm định',
-                    'total' => round($row->SanLuong_Gia / 1e9, 1),
+                    'total' => round($row->SanLuong_Gia / 1e9, 2),
                     'kpi' => 0
                 ];
             }
@@ -1196,13 +1084,13 @@ class ThongKeController extends Controller
             $kpiValue = 0;
             switch ($timeFormat) {
                 case 'thang':
-                    $kpiValue = round(($kpi->{'kpi_quy_' . $currentQuarter} / 3), 1);
+                    $kpiValue = round(($kpi->{'kpi_quy_' . $currentQuarter} / 3), 2);
                     break;
                 case 'quy':
-                    $kpiValue = round($kpi->{'kpi_quy_' . $currentQuarter}, 1);
+                    $kpiValue = round($kpi->{'kpi_quy_' . $currentQuarter}, 2);
                     break;
                 case 'nam':
-                    $kpiValue = round($kpi->kpi_quy_1 + $kpi->kpi_quy_2 + $kpi->kpi_quy_3 + $kpi->kpi_quy_4, 1);
+                    $kpiValue = round($kpi->kpi_quy_1 + $kpi->kpi_quy_2 + $kpi->kpi_quy_3 + $kpi->kpi_quy_4, 2);
                     break;
             }
 

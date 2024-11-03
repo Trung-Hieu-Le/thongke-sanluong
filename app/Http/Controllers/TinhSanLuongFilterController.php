@@ -32,8 +32,8 @@ class TinhSanLuongFilterController extends Controller
         $searchKhuVuc = $request->input('searchKhuVuc', '');
 
         // Biến điều kiện
-        $dayCondition = count($days) > 0 ? "AND SanLuong_Ngay IN (" . implode(',', $days) . ")" : "";
         $hinhAnhDayCondition = count($days) > 0 ? "AND thoi_gian_chup IN ('" . implode("','", $days) . "')" : '';
+        $dayCondition = count($days) > 0 ? "AND SanLuong_Ngay IN (" . implode(',', $days) . ")" : "";
         $thaoLapDayCondition = count($days) > 0 ? "AND DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y') IN (" . implode(',', $days) . ")" : "";
         $kiemDinhDayCondition = count($days) > 0 ? "AND DATE_FORMAT(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y'), '%d%m%Y') IN (" . implode(',', $days) . ")" : "";
         $searchCondition = !empty($searchMaTram) ? "AND SanLuong_Tram LIKE '%$searchMaTram%'" : "";
@@ -43,7 +43,7 @@ class TinhSanLuongFilterController extends Controller
         $searchConditionHopDong = !empty($searchHopDong) ? "AND tbl_hopdong.HopDong_SoHopDong LIKE '%$searchHopDong%'" : "";
         $searchConditionKhuVuc = !empty($searchKhuVuc) ? "AND tbl_tram.khu_vuc LIKE '%$searchKhuVuc%'" : "";
         $searchConditionKhuVuc2 = !empty($searchKhuVuc) ? "AND FirstTram.khu_vuc LIKE '%$searchKhuVuc%'" : "";
-        $userKhuVucCondition = '';
+        // $userKhuVucCondition = '';
         // if ($userRole !== 3) {
         //     $userKhuVucCondition = "AND tbl_tram.khu_vuc = '$userKhuVuc'";
         // }
@@ -51,179 +51,133 @@ class TinhSanLuongFilterController extends Controller
         $page = request()->get('page', 1);
         $perPage = 100; // Number of items per page
 
-        // TODO: Nếu cùng mt, hđ, hm nhưng khác giá thì sao?? some sl đã có từ trc nhưng cột +1, giá +0
-        $sanluongData = DB::table(DB::raw("
-    (
-        SELECT 
-            LEFT(sanluong.SanLuong_Tram, 3) as ma_tinh,
-            sanluong.SanLuong_Tram,
-            hopdong.HopDong_SoHopDong,
-            sanluong.SanLuong_Ngay,
-            SUM(sanluong.SanLuong_Gia) as SanLuong_Gia,
-            tram.khu_vuc
-        FROM (
-            SELECT 
-                SanLuong_Tram,
-                HopDong_Id,
-                SanLuong_TenHangMuc,
-                SanLuong_Gia,
-                SanLuong_Ngay
-            FROM (
-                SELECT 
-                    SanLuong_Tram,
-                    tbl_sanluong.HopDong_Id,
-                    SanLuong_TenHangMuc,
-                    SanLuong_Gia,
-                    SanLuong_Ngay,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY SanLuong_Tram, HopDong_Id, SanLuong_TenHangMuc 
-                        ORDER BY STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')
-                    ) AS row_num
-                FROM tbl_sanluong
-                JOIN tbl_tram ON tbl_sanluong.SanLuong_Tram = tbl_tram.ma_tram
-                LEFT JOIN tbl_hopdong ON tbl_sanluong.HopDong_Id = tbl_hopdong.HopDong_Id
-                WHERE ten_hinh_anh_da_xong <> ''
-                AND EXISTS (
-                    SELECT 1 
-                    FROM tbl_hinhanh 
-                    WHERE tbl_hinhanh.ma_tram = tbl_sanluong.SanLuong_Tram
-                )
-                $searchCondition
-                $searchConditionKhuVuc
-                $searchConditionHopDong
-                $userKhuVucCondition
-            ) AS ranked_sanluong
-            WHERE row_num = 1
-                $dayCondition
-        ) AS sanluong
-        JOIN (
-            SELECT 
-                ma_tram,
-                khu_vuc,
-                hopdong_id,
-                ROW_NUMBER() OVER (PARTITION BY ma_tram ORDER BY ma_tram) as rn
-            FROM tbl_tram
-        ) AS tram ON sanluong.SanLuong_Tram = tram.ma_tram AND tram.rn = 1
-        LEFT JOIN tbl_hopdong AS hopdong ON sanluong.HopDong_Id = hopdong.HopDong_Id
-        GROUP BY 
-            sanluong.SanLuong_Tram,
-            tram.khu_vuc, 
-            hopdong.HopDong_SoHopDong,
-            sanluong.SanLuong_Ngay
-        HAVING COUNT(sanluong.SanLuong_Tram) > 0
-    ) AS sanluong_subquery
-"))
-->select('ma_tinh', 'SanLuong_Tram', 'HopDong_SoHopDong', 'SanLuong_Ngay', DB::raw('SUM(SanLuong_Gia) as SanLuong_Gia'), 'khu_vuc')
-->groupBy('ma_tinh', 'SanLuong_Tram', 'khu_vuc', 'HopDong_SoHopDong', 'SanLuong_Ngay')
-->orderBy('SanLuong_Tram', 'asc')
-->get();
-
-
-        $thaoLapKiemDinhData = DB::table(DB::raw("
-            (
-                SELECT 
-                    LEFT(ThaoLap_MaTram, 3) as ma_tinh,
-                    ThaoLap_MaTram as SanLuong_Tram,
-                    tbl_hopdong.HopDong_SoHopDong,
-                    MAX(
-                        CASE 
-                            WHEN $userRole IN (0, 1) THEN 0 
-                            ELSE ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon 
-                        END
-                    ) as SanLuong_Gia,
-                    FirstTram.khu_vuc
-                FROM tbl_sanluong_thaolap
-                JOIN (
-                    SELECT 
-                        ma_tram,
-                        khu_vuc,
-                        hopdong_id
-                    FROM tbl_tram
-                ) AS FirstTram ON tbl_sanluong_thaolap.ThaoLap_MaTram = FirstTram.ma_tram 
-                AND FirstTram.hopdong_id = tbl_sanluong_thaolap.HopDong_Id
-                LEFT JOIN tbl_hopdong ON tbl_sanluong_thaolap.HopDong_Id = tbl_hopdong.HopDong_Id
-                WHERE 1
-                    $thaoLapDayCondition
-                    $searchCondition2
-                    $searchConditionHopDong
-                    $searchConditionKhuVuc2
-                    $userKhuVucCondition
-                GROUP BY ThaoLap_MaTram, FirstTram.khu_vuc, tbl_hopdong.HopDong_SoHopDong
-
-                UNION ALL
-
-                SELECT 
-                    LEFT(KiemDinh_MaTram, 3) as ma_tinh,
-                    KiemDinh_MaTram as SanLuong_Tram,
-                    tbl_hopdong.HopDong_SoHopDong,
-                    MAX(
-                        CASE 
-                            WHEN $userRole IN (0, 1) THEN 0 
-                            ELSE KiemDinh_DonGia 
-                        END
-                    ) as SanLuong_Gia,
-                    FirstTram.khu_vuc
-                FROM tbl_sanluong_kiemdinh
-                JOIN (
-                    SELECT 
-                        ma_tram,
-                        khu_vuc,
-                        hopdong_id
-                    FROM tbl_tram
-                ) AS FirstTram ON tbl_sanluong_kiemdinh.KiemDinh_MaTram = FirstTram.ma_tram 
-                AND FirstTram.hopdong_id = tbl_sanluong_kiemdinh.HopDong_Id
-                LEFT JOIN tbl_hopdong ON tbl_sanluong_kiemdinh.HopDong_Id = tbl_hopdong.HopDong_Id
-                WHERE 1
-                    $kiemDinhDayCondition
-                    $searchCondition3
-                    $searchConditionHopDong
-                    $searchConditionKhuVuc2
-                    $userKhuVucCondition
-                GROUP BY KiemDinh_MaTram, FirstTram.khu_vuc, tbl_hopdong.HopDong_SoHopDong
-            ) as thaolap_kiemdinh_subquery
-        "))
-            ->select('ma_tinh', 'SanLuong_Tram', 'HopDong_SoHopDong', DB::raw('SUM(SanLuong_Gia) as SanLuong_Gia'), 'khu_vuc')
-            ->groupBy('ma_tinh', 'SanLuong_Tram', 'khu_vuc', 'HopDong_SoHopDong')
-            ->orderBy('SanLuong_Tram', 'asc')
-            ->get();
-
-
-        $hinhanhLeftData = DB::table('tbl_hinhanh')
-            ->distinct()
-            ->select(DB::raw('
-                LEFT(tbl_hinhanh.ma_tram, 3) as ma_tinh,
-                UPPER(tbl_hinhanh.ma_tram) as SanLuong_Tram,
-                HopDong_SoHopDong,
-                0 as SanLuong_Gia,
-                FirstTram.khu_vuc
-            '))
-            ->whereRaw("1 $hinhAnhDayCondition $searchCondition4 $searchConditionHopDong $searchConditionKhuVuc2 $userKhuVucCondition")
-            ->whereNotIn('tbl_hinhanh.ma_tram', $sanluongData->pluck('SanLuong_Tram'))
-            ->join(DB::raw('(
-                SELECT 
-                    ma_tram,
-                    khu_vuc,
-                    ROW_NUMBER() OVER (PARTITION BY ma_tram) as rn
-                FROM tbl_tram
-            ) AS FirstTram'), function ($join) {
-                $join->on('tbl_hinhanh.ma_tram', '=', 'FirstTram.ma_tram')
-                    ->where('FirstTram.rn', '=', 1);
+        // TODO: Nếu cùng mt, hđ, hm nhưng khác giá thì sao?? some sl đã có từ trc nhưng cột +1, giá+0
+        if ($userRole != 0 && $userRole != 1) {
+            $sanluongData = DB::table('tbl_sanluong')
+            ->leftJoin('tbl_tram', function ($join) {
+                $join->on('tbl_sanluong.SanLuong_Tram', '=', 'tbl_tram.ma_tram')
+                    ->on('tbl_sanluong.HopDong_Id', '=', 'tbl_tram.hopdong_id')
+                    ->whereExists(function ($query) {
+                        $query->select(DB::raw(1))
+                            ->from('tbl_hinhanh')
+                            ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
+                    });
             })
-            ->leftJoin('tbl_sanluong', 'tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram')
-            ->leftJoin('tbl_hopdong', 'tbl_sanluong.HopDong_Id', 'tbl_hopdong.HopDong_Id')
-            ->orderBy('SanLuong_Tram')
+            ->join('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+            ->select(
+                'tbl_sanluong.SanLuong_Tram',
+                DB::raw('COALESCE(tbl_tram.khu_vuc, (SELECT khu_vuc FROM tbl_tram WHERE tbl_sanluong.SanLuong_Tram = tbl_tram.ma_tram LIMIT 1)) AS khu_vuc'),
+                'tbl_tram.ma_tinh',
+                'tbl_hopdong.HopDong_SoHopDong',
+                DB::raw('SUM(tbl_sanluong.SanLuong_Gia) as SanLuong_Gia')
+            )
+            ->whereNot('ten_hinh_anh_da_xong', "")
+            ->whereRaw("1 $dayCondition $searchCondition $searchConditionHopDong $searchConditionKhuVuc")
+            ->groupBy('tbl_sanluong.SanLuong_Tram', 'khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong')
+            // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
             ->get();
 
+            $thaolapData = DB::table('tbl_sanluong_thaolap')
+            ->join('tbl_tram', function ($join) {
+                $join->on('tbl_sanluong_thaolap.ThaoLap_MaTram', '=', 'tbl_tram.ma_tram')
+                    ->on('tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_tram.hopdong_id');
+            })
+            ->join('tbl_hopdong', 'tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+            ->select(
+                'tbl_sanluong_thaolap.ThaoLap_MaTram as SanLuong_Tram',
+                'tbl_tram.khu_vuc',
+                'tbl_tram.ma_tinh',
+                'tbl_hopdong.HopDong_SoHopDong',
+                DB::raw('SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as SanLuong_Gia')
+            )
+            ->whereRaw("1 $thaoLapDayCondition $searchCondition2 $searchConditionHopDong $searchConditionKhuVuc")
+            ->groupBy('tbl_sanluong_thaolap.ThaoLap_MaTram', 'tbl_tram.khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong')
+            // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
+            ->get();
 
-        $mergedData = $sanluongData->merge($thaoLapKiemDinhData)->merge($hinhanhLeftData)->sortBy('SanLuong_Tram');
-        if ($userRole == 0 || $userRole == 1) {
-            $mergedData = $mergedData->filter(function ($item) use ($userId) {
-                return DB::table('tbl_hinhanh')
-                    ->where('ma_tram', $item->SanLuong_Tram)
-                    ->where('user_id', $userId)
-                    ->exists();
-            });
+            $kiemdinhData = DB::table('tbl_sanluong_kiemdinh')
+            ->join('tbl_tram', function ($join) {
+                $join->on('tbl_sanluong_kiemdinh.KiemDinh_MaTram', '=', 'tbl_tram.ma_tram')
+                    ->on('tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_tram.hopdong_id');
+            })
+            ->join('tbl_hopdong', 'tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+            ->select(
+                'tbl_sanluong_kiemdinh.KiemDinh_MaTram as SanLuong_Tram',
+                'tbl_tram.khu_vuc',
+                'tbl_tram.ma_tinh',
+                'tbl_hopdong.HopDong_SoHopDong',
+                DB::raw('SUM(KiemDinh_DonGia) as SanLuong_Gia')
+            )
+            ->whereRaw("1 $kiemDinhDayCondition $searchCondition3 $searchConditionHopDong $searchConditionKhuVuc")
+            ->groupBy('tbl_sanluong_kiemdinh.KiemDinh_MaTram', 'tbl_tram.khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong')
+            // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
+            ->get();
+            //TODO: thêm userRole
+
+            $hinhanhLeftData = DB::table('tbl_hinhanh')
+                ->distinct()
+                ->select(DB::raw('
+                    LEFT(tbl_hinhanh.ma_tram, 3) as ma_tinh,
+                    UPPER(tbl_hinhanh.ma_tram) as SanLuong_Tram,
+                    HopDong_SoHopDong,
+                    0 as SanLuong_Gia,
+                    FirstTram.khu_vuc
+                '))
+                ->whereRaw("1 $hinhAnhDayCondition $searchCondition4 $searchConditionHopDong $searchConditionKhuVuc2")
+                ->whereNotIn('tbl_hinhanh.ma_tram', $sanluongData->pluck('SanLuong_Tram'))
+                ->join(DB::raw('(
+                    SELECT 
+                        ma_tram,
+                        khu_vuc,
+                        ROW_NUMBER() OVER (PARTITION BY ma_tram) as rn
+                    FROM tbl_tram
+                ) AS FirstTram'), function ($join) {
+                    $join->on('tbl_hinhanh.ma_tram', '=', 'FirstTram.ma_tram')
+                        ->where('FirstTram.rn', '=', 1);
+                })
+                ->leftJoin('tbl_sanluong', 'tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram')
+                ->leftJoin('tbl_hopdong', 'tbl_sanluong.HopDong_Id', 'tbl_hopdong.HopDong_Id')
+                ->orderBy('SanLuong_Tram')
+                ->get();
+
+
+            $mergedData = $sanluongData->merge($thaolapData)->merge($kiemdinhData)->merge($hinhanhLeftData)->sortBy('SanLuong_Tram');
+        } else {
+            $mergedData = DB::table('tbl_sanluong')
+            ->leftJoin('tbl_tram', function ($join) {
+                $join->on('tbl_sanluong.SanLuong_Tram', '=', 'tbl_tram.ma_tram')
+                     ->on('tbl_sanluong.HopDong_Id', '=', 'tbl_tram.hopdong_id')
+                     ->whereExists(function ($query) {
+                         $query->select(DB::raw(1))
+                               ->from('tbl_hinhanh')
+                               ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
+                               //TODO: loc cho nay
+                     });
+            })
+            ->join('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+            ->select(
+                'tbl_sanluong.SanLuong_Tram',
+                DB::raw('COALESCE(tbl_tram.khu_vuc, (SELECT khu_vuc FROM tbl_tram WHERE tbl_sanluong.SanLuong_Tram = tbl_tram.ma_tram LIMIT 1)) AS khu_vuc'),
+                'tbl_tram.ma_tinh',
+                'tbl_hopdong.HopDong_SoHopDong',
+                DB::raw('0 as SanLuong_Gia')
+            )
+            ->whereNot('ten_hinh_anh_da_xong', "")
+            ->whereRaw("1 $dayCondition $searchCondition $searchConditionHopDong $searchConditionKhuVuc")
+            ->groupBy('tbl_sanluong.SanLuong_Tram', 'khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong')
+            ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
+            ->get();
         }
+        
+        
+        // if ($userRole == 0 || $userRole == 1) {
+        //     $mergedData = $mergedData->filter(function ($item) use ($userId) {
+        //         return DB::table('tbl_hinhanh')
+        //             ->where('ma_tram', $item->SanLuong_Tram)
+        //             ->where('user_id', $userId)
+        //             ->exists();
+        //     });
+        // }
 
         $khuVucData = $mergedData->groupBy('khu_vuc')->map(function ($items, $khu_vuc) {
             return [
