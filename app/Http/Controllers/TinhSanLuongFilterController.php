@@ -51,13 +51,14 @@ class TinhSanLuongFilterController extends Controller
         $page = request()->get('page', 1);
         $perPage = 100; // Number of items per page
 
-        // TODO: Nếu cùng mt, hđ, hm nhưng khác giá thì sao??
-        $sanluongData = DB::table(DB::raw(" 
+        // TODO: Nếu cùng mt, hđ, hm nhưng khác giá thì sao?? some sl đã có từ trc nhưng cột +1, giá +0
+        $sanluongData = DB::table(DB::raw("
     (
         SELECT 
             LEFT(sanluong.SanLuong_Tram, 3) as ma_tinh,
             sanluong.SanLuong_Tram,
             hopdong.HopDong_SoHopDong,
+            sanluong.SanLuong_Ngay,
             SUM(sanluong.SanLuong_Gia) as SanLuong_Gia,
             tram.khu_vuc
         FROM (
@@ -107,15 +108,15 @@ class TinhSanLuongFilterController extends Controller
         GROUP BY 
             sanluong.SanLuong_Tram,
             tram.khu_vuc, 
-            hopdong.HopDong_SoHopDong
+            hopdong.HopDong_SoHopDong,
+            sanluong.SanLuong_Ngay
         HAVING COUNT(sanluong.SanLuong_Tram) > 0
     ) AS sanluong_subquery
 "))
-->select('ma_tinh', 'SanLuong_Tram', 'HopDong_SoHopDong', DB::raw('SUM(SanLuong_Gia) as SanLuong_Gia'), 'khu_vuc')
-->groupBy('ma_tinh', 'SanLuong_Tram', 'khu_vuc', 'HopDong_SoHopDong')
+->select('ma_tinh', 'SanLuong_Tram', 'HopDong_SoHopDong', 'SanLuong_Ngay', DB::raw('SUM(SanLuong_Gia) as SanLuong_Gia'), 'khu_vuc')
+->groupBy('ma_tinh', 'SanLuong_Tram', 'khu_vuc', 'HopDong_SoHopDong', 'SanLuong_Ngay')
 ->orderBy('SanLuong_Tram', 'asc')
 ->get();
-
 
 
         $thaoLapKiemDinhData = DB::table(DB::raw("

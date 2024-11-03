@@ -359,7 +359,7 @@ class TableUpdateController extends Controller
                     ->groupBy('ma_tinh', 'day', 'SanLuong_TenHangMuc', 'SanLuong_KhuVuc')
                     ->get();
                 foreach ($thaolapData as $data) {
-                    $key = "{$data->ma_tinh}-EC-{$year}-{$formattedMonth}";
+                    $key = "{$data->ma_tinh}-TL-{$year}-{$formattedMonth}";
                     if (!isset($combinedData[$key])) {
                         $combinedData[$key] = [
                             'khu_vuc' => $data->khu_vuc ?? '',
@@ -506,7 +506,7 @@ class TableUpdateController extends Controller
             khu_vuc 
         FROM (
             SELECT 
-                LEFT(sanluong.SanLuong_Tram, 3) AS ma_tinh,
+                UPPER(LEFT(sanluong.SanLuong_Tram, 3)) AS ma_tinh,
                 sanluong.SanLuong_Tram,
                 hopdong.HopDong_SoHopDong,
                 sanluong.SanLuong_Ngay, -- Thêm cột SanLuong_Ngay để nhóm theo ngày
