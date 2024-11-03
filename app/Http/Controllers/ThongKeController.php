@@ -120,6 +120,7 @@ class ThongKeController extends Controller
             $totalNam = $this->getTotalSanLuong($maTinhs, $khuVuc, $ngayChon, null, null, null, 'nam', null, null);
             // Cộng dồn tổng tháng, tổng năm, KPI tháng, KPI năm
             $totalMonth += $totalThang;
+
             $totalYear += $totalNam;
             $kpiMonth += $kpi_thang;
             $kpiYear += $kpi_nam;
@@ -135,7 +136,6 @@ class ThongKeController extends Controller
                 'kpi' => ($kpiDetail > 0) ? round($totalDetail / 1e7 / $kpiDetail, 2) : 0
             ];
         }
-
         $results = [
             'totalMonth' => round($totalMonth), // Tổng tháng
             'totalYear' => round($totalYear), // Tổng năm
@@ -368,24 +368,27 @@ class ThongKeController extends Controller
             return $totalSanLuong;
         }
         $sanluongQuery = DB::table('tbl_sanluong')
-            ->join('tbl_tram', function ($join) {
-                $join->on('tbl_sanluong.SanLuong_Tram', '=', 'tbl_tram.ma_tram')
-                    ->on('tbl_sanluong.HopDong_Id', '=', 'tbl_tram.hopdong_id')
-                    ->whereExists(function ($query) {
-                        $query->select(DB::raw(1))
-                            ->from('tbl_hinhanh')
-                            ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
-                    });
-            })
-            ->join('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
-            ->select(
-                DB::raw('COALESCE(tbl_tram.khu_vuc, (SELECT khu_vuc FROM tbl_tram WHERE tbl_sanluong.SanLuong_Tram = tbl_tram.ma_tram LIMIT 1)) AS khu_vuc'),
-                DB::raw('SUM(tbl_sanluong.SanLuong_Gia) as SanLuong_Gia')
-            )
+        ->leftJoin('tbl_tram', function ($join) {
+            $join->on('tbl_sanluong.SanLuong_Tram', '=', 'tbl_tram.ma_tram')
+                ->on('tbl_sanluong.HopDong_Id', '=', 'tbl_tram.hopdong_id');
+        })
+        ->leftJoin('tbl_tinh', function ($join) {
+            $join->on(DB::raw("UPPER(LEFT(tbl_sanluong.SanLuong_Tram, 3))"), '=', 'tbl_tinh.ma_tinh');
+        })
+        ->join('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+        ->select(
+            DB::raw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) as khu_vuc"),
+            DB::raw('SUM(tbl_sanluong.SanLuong_Gia) as SanLuong_Gia')
+        )
+        ->whereExists(function ($query) {
+            $query->select(DB::raw(1))
+                ->from('tbl_hinhanh')
+                ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
+        })
             ->whereNot('ten_hinh_anh_da_xong', "")
-            ->where("khu_vuc", $khuVuc)
+            ->whereRaw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) LIKE '$khuVuc'")
             ->whereRaw($whereClauseSanLuong)
-            ->groupBy('tbl_tram.khu_vuc', 'SanLuong_Tram');
+            ->groupBy('tbl_tram.khu_vuc', 'tbl_tinh.ten_khu_vuc');
         if (!empty($hopDongId)) {
             $sanluongQuery->where('tbl_sanluong.HopDong_Id', $hopDongId);
         }
@@ -412,20 +415,22 @@ class ThongKeController extends Controller
         }
 
         $thaolapQuery = DB::table('tbl_sanluong_thaolap')
-            ->join('tbl_tram', function ($join) {
-                $join->on('tbl_sanluong_thaolap.ThaoLap_MaTram', '=', 'tbl_tram.ma_tram')
-                    ->on('tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_tram.hopdong_id');
-            })
-            ->join('tbl_hopdong', 'tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
-            ->select(
-                'tbl_tram.khu_vuc',
-                DB::raw('SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU 
-            + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) 
-            as SanLuong_Gia')
-            )
+        ->leftJoin('tbl_tram', function ($join) {
+            $join->on('tbl_sanluong_thaolap.ThaoLap_MaTram', '=', 'tbl_tram.ma_tram')
+                ->on('tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_tram.hopdong_id');
+        })
+        ->leftJoin('tbl_tinh', function ($join) {
+            $join->on(DB::raw("UPPER(LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh');
+        })
+        ->whereNot('ThaoLap_Ngay', "")
+        ->join('tbl_hopdong', 'tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+        ->select(
+            DB::raw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) as khu_vuc"),
+            DB::raw('SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as SanLuong_Gia')
+        )
             ->whereRaw($whereClauseThaoLap)
-            ->where('khu_vuc', $khuVuc)
-            ->groupBy('tbl_tram.khu_vuc');
+            ->whereRaw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) LIKE '$khuVuc'")
+            ->groupBy('tbl_tram.khu_vuc', 'tbl_tinh.ten_khu_vuc');
         if (!empty($hopDongId)) {
             $thaolapQuery->where('HopDong_Id', $hopDongId);
         }
@@ -436,18 +441,21 @@ class ThongKeController extends Controller
         }
 
         $kiemdinhQuery = DB::table('tbl_sanluong_kiemdinh')
-            ->join('tbl_tram', function ($join) {
-                $join->on('tbl_sanluong_kiemdinh.KiemDinh_MaTram', '=', 'tbl_tram.ma_tram')
-                    ->on('tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_tram.hopdong_id');
-            })
-            ->join('tbl_hopdong', 'tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
-            ->select(
-                'tbl_tram.khu_vuc',
-                DB::raw('SUM(KiemDinh_DonGia) as SanLuong_Gia')
-            )
+        ->leftJoin('tbl_tram', function ($join) {
+            $join->on('tbl_sanluong_kiemdinh.KiemDinh_MaTram', '=', 'tbl_tram.ma_tram')
+                ->on('tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_tram.hopdong_id');
+        })
+        ->leftJoin('tbl_tinh', function ($join) {
+            $join->on(DB::raw("UPPER(LEFT(tbl_sanluong_kiemdinh.KiemDinh_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh');
+        })
+        ->join('tbl_hopdong', 'tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+        ->select(
+            DB::raw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) as khu_vuc"),
+            DB::raw('SUM(KiemDinh_DonGia) as SanLuong_Gia')
+        )
             ->whereRaw($whereClauseKiemDinh)
-            ->where('khu_vuc', $khuVuc)
-            ->groupBy('tbl_tram.khu_vuc');
+            ->whereRaw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) LIKE '$khuVuc'")
+            ->groupBy('tbl_tram.khu_vuc', 'tbl_tinh.ten_khu_vuc');
         if (!empty($hopDongId)) {
             $kiemdinhQuery->where('HopDong_Id', $hopDongId);
         }
@@ -1006,42 +1014,48 @@ class ThongKeController extends Controller
             //     ->whereIn('tbl_tinh.ma_tinh', $maTinhs);
             // $sanluongData = $sanluongDataQuery->get();
             $sanluongData = DB::table('tbl_sanluong')
-                ->join('tbl_tram', function ($join) {
-                    $join->on('tbl_sanluong.SanLuong_Tram', '=', 'tbl_tram.ma_tram')
-                        ->on('tbl_sanluong.HopDong_Id', '=', 'tbl_tram.hopdong_id')
-                        ->whereExists(function ($query) {
-                            $query->select(DB::raw(1))
-                                ->from('tbl_hinhanh')
-                                ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
-                        });
-                })
-                ->join('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
-                ->select(
-                    DB::raw('COALESCE(tbl_tram.khu_vuc, (SELECT khu_vuc FROM tbl_tram WHERE tbl_sanluong.SanLuong_Tram = tbl_tram.ma_tram LIMIT 1)) AS khu_vuc'),
-                    DB::raw('SUM(tbl_sanluong.SanLuong_Gia) as SanLuong_Gia')
-                )
+            ->leftJoin('tbl_tram', function ($join) {
+                $join->on('tbl_sanluong.SanLuong_Tram', '=', 'tbl_tram.ma_tram')
+                    ->on('tbl_sanluong.HopDong_Id', '=', 'tbl_tram.hopdong_id');
+            })
+            ->leftJoin('tbl_tinh', function ($join) {
+                $join->on(DB::raw("UPPER(LEFT(tbl_sanluong.SanLuong_Tram, 3))"), '=', 'tbl_tinh.ma_tinh');
+            })
+            ->join('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+            ->select(
+                DB::raw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) as khu_vuc"),
+                DB::raw('SUM(tbl_sanluong.SanLuong_Gia) as SanLuong_Gia')
+            )
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('tbl_hinhanh')
+                    ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
+            })
                 ->whereNot('ten_hinh_anh_da_xong', "")
-                ->where("khu_vuc", $khuVuc)
+                ->whereRaw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) LIKE '$khuVuc'")
                 ->whereRaw($whereClauseSanLuong)
-                ->groupBy('tbl_tram.khu_vuc', 'SanLuong_Tram')->get();
+                ->groupBy('tbl_tram.khu_vuc', 'SanLuong_Tram', 'tbl_tinh.ten_khu_vuc')->get();
 
 
             $totalEC = $sanluongData->sum('SanLuong_Gia');
 
             $sanluongKiemdinhData = DB::table('tbl_sanluong_kiemdinh')
-            ->join('tbl_tram', function ($join) {
+            ->leftJoin('tbl_tram', function ($join) {
                 $join->on('tbl_sanluong_kiemdinh.KiemDinh_MaTram', '=', 'tbl_tram.ma_tram')
                     ->on('tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_tram.hopdong_id');
             })
+            ->leftJoin('tbl_tinh', function ($join) {
+                $join->on(DB::raw("UPPER(LEFT(tbl_sanluong_kiemdinh.KiemDinh_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh');
+            })
             ->join('tbl_hopdong', 'tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
             ->select(
-                'tbl_tram.khu_vuc',
+                DB::raw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) as khu_vuc"),
                 'KiemDinh_NoiDung',
                 DB::raw('SUM(KiemDinh_DonGia) as SanLuong_Gia')
             )
             ->whereRaw($whereClauseKiemDinh)
-            ->where('khu_vuc', $khuVuc)
-            ->groupBy('tbl_tram.khu_vuc', 'KiemDinh_NoiDung')->get();
+            ->whereRaw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) LIKE '$khuVuc'")
+            ->groupBy('tbl_tram.khu_vuc', 'KiemDinh_NoiDung', 'tbl_tinh.ten_khu_vuc')->get();
 
             $sanluongKhacDataQuery = DB::table('tbl_sanluong_khac')
                 ->select('SanLuong_TenHangMuc', DB::raw('SUM(SanLuong_Gia) as total'))
