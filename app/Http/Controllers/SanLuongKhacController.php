@@ -68,7 +68,6 @@ class SanLuongKhacController extends Controller
             : date('dmY');
         // dd($request);
         $userid = session('userid');
-        dd($request->request);
         DB::table('tbl_sanluong_khac')->insert([
             // 'SanLuong_Tram' => $request->SanLuong_Tram,
             'SanLuong_Ngay' => $date,
