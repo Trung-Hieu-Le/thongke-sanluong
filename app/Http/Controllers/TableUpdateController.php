@@ -43,6 +43,7 @@ class TableUpdateController extends Controller
                     ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
             })
             ->whereNot('ten_hinh_anh_da_xong', "")
+            ->whereNot("ma_tinh", null)
             ->groupBy('SanLuong_Ngay', 'tbl_sanluong.SanLuong_Tram', 'khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong', 'tbl_tinh.ten_khu_vuc')
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
             ->get();
@@ -56,7 +57,6 @@ class TableUpdateController extends Controller
             ->leftJoin('tbl_tinh', function ($join) {
                 $join->on(DB::raw("UPPER(LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh');
             })
-            ->whereNot('ThaoLap_Ngay', "")
             ->join('tbl_hopdong', 'tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
             ->select(
                 'tbl_sanluong_thaolap.ThaoLap_MaTram as SanLuong_Tram',
@@ -66,6 +66,8 @@ class TableUpdateController extends Controller
                 'ThaoLap_Ngay',
                 DB::raw('SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as SanLuong_Gia')
             )
+            ->whereNot('ThaoLap_Ngay', "")
+            ->whereNot("ma_tinh", null)
             ->groupBy('ThaoLap_Ngay', 'tbl_sanluong_thaolap.ThaoLap_MaTram', 'tbl_tram.khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong', "tbl_tinh.ten_khu_vuc")
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
             ->get();
@@ -88,6 +90,7 @@ class TableUpdateController extends Controller
                 'KiemDinh_Ngay',
                 DB::raw('SUM(KiemDinh_DonGia) as SanLuong_Gia')
             )
+            ->whereNot("ma_tinh", null)
             ->groupBy('KiemDinh_Ngay', 'tbl_sanluong_kiemdinh.KiemDinh_MaTram', 'tbl_tram.khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong', 'tbl_tinh.ten_khu_vuc')
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
             ->get();
@@ -100,6 +103,7 @@ class TableUpdateController extends Controller
                 DB::raw("SUM(SanLuong_Gia) as SanLuong_Gia"),
                 'SanLuong_KhuVuc as khu_vuc',
             )
+            ->whereNot("ma_tinh", null)
             // ->whereDate(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), '=', $ngayChon)
             ->groupBy('ma_tinh', 'SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_KhuVuc')
             ->get();
@@ -431,6 +435,7 @@ class TableUpdateController extends Controller
                     ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
             })
             ->whereNot('ten_hinh_anh_da_xong', "")
+            ->whereNot("ma_tinh", null)
             ->whereRaw("1 $dayCondition $searchCondition $searchConditionHopDong $searchConditionKhuVuc")
             ->groupBy('SanLuong_Ngay', 'tbl_sanluong.SanLuong_Tram', 'khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong', 'tbl_tinh.ten_khu_vuc')
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
@@ -444,7 +449,6 @@ class TableUpdateController extends Controller
             ->leftJoin('tbl_tinh', function ($join) {
                 $join->on(DB::raw("UPPER(LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh');
             })
-            ->whereNot('ThaoLap_Ngay', "")
             ->join('tbl_hopdong', 'tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
             ->select(
                 'tbl_sanluong_thaolap.ThaoLap_MaTram as SanLuong_Tram',
@@ -453,7 +457,9 @@ class TableUpdateController extends Controller
                 'tbl_hopdong.HopDong_SoHopDong',
                 'ThaoLap_Ngay',
                 DB::raw('SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as SanLuong_Gia')
-            )
+                )
+            ->whereNot('ThaoLap_Ngay', "")
+            ->whereNot("ma_tinh", null)
             ->whereRaw("1 $thaoLapDayCondition $searchCondition2 $searchConditionHopDong $searchConditionKhuVuc")
             ->groupBy('ThaoLap_Ngay', 'tbl_sanluong_thaolap.ThaoLap_MaTram', 'tbl_tram.khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong', "tbl_tinh.ten_khu_vuc")
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
@@ -476,6 +482,7 @@ class TableUpdateController extends Controller
                 'KiemDinh_Ngay',
                 DB::raw('SUM(KiemDinh_DonGia) as SanLuong_Gia')
             )
+            ->whereNot("ma_tinh", null)
             ->whereRaw("1 $kiemDinhDayCondition $searchCondition3 $searchConditionHopDong $searchConditionKhuVuc")
             ->groupBy('KiemDinh_Ngay', 'tbl_sanluong_kiemdinh.KiemDinh_MaTram', 'tbl_tram.khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong', 'tbl_tinh.ten_khu_vuc')
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
@@ -490,6 +497,7 @@ class TableUpdateController extends Controller
                 'SanLuong_KhuVuc as khu_vuc',
             )
             // ->whereDate(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), '=', $ngayChon)
+            ->whereNot("ma_tinh", null)
             ->groupBy('ma_tinh', 'SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_KhuVuc')
             ->get();
 

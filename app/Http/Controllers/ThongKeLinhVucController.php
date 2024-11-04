@@ -18,12 +18,12 @@ class ThongKeLinhVucController extends Controller
     }
 
 
-    private function getKpiNgay($khuVuc, $currentYear, $currentMonth, $timeFormat)
+    private function getKpiNgay($khuVuc, $linhVuc, $currentYear, $currentMonth, $timeFormat)
     {
         $kpiSelect = DB::table('tbl_kpi_quy')
             ->where('ten_khu_vuc', $khuVuc)
             ->where('year', $currentYear)
-            ->where('noi_dung', 'Tổng sản lượng')
+            ->where('noi_dung', $linhVuc)
             ->first();
 
         if ($kpiSelect) {
@@ -55,70 +55,64 @@ class ThongKeLinhVucController extends Controller
         $currentYear = date('Y', strtotime($ngayChon));
         $currentQuarter = ceil($currentMonth / 3);
 
-        $whereClauseSanLuong = $whereClauseThaoLap = $whereClauseKiemDinh = "";
+        $whereClauseSanLuong = $whereClauseKiemDinh = "";
         switch ($timeFormat) {
             case 'ngay':
                 $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') = DATE('$ngayChon')";
-                $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') = DATE('$ngayChon')";
                 $whereClauseKiemDinh = "STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y') = DATE('$ngayChon')";
                 break;
             case 'tuan':
                 $weekNumber = date('W', strtotime($ngayChon));
                 $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND WEEK(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y'), 1) = $weekNumber";
-                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND WEEK(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), 1) = $weekNumber";
                 $whereClauseKiemDinh = "YEAR(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = $currentYear AND WEEK(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y'), 1) = $weekNumber";
                 break;
             case 'thang':
                 $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentMonth";
-                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentMonth";
                 $whereClauseKiemDinh = "YEAR(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = $currentYear AND MONTH(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = $currentMonth";
                 break;
             case 'quy':
                 $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear AND QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentQuarter";
-                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear AND QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentQuarter";
                 $whereClauseKiemDinh = "YEAR(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = $currentYear AND QUARTER(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = $currentQuarter";
                 break;
             case 'nam':
                 $whereClauseSanLuong = "YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = $currentYear";
-                $whereClauseThaoLap = "YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = $currentYear";
                 $whereClauseKiemDinh = "YEAR(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = $currentYear";
                 break;
         }
 
         if (!empty($startDate) && !empty($endDate)) {
             $whereClauseSanLuong = "STR_TO_DATE(SanLuong_Ngay, '%d%m%Y') BETWEEN DATE('$startDate') AND DATE('$endDate')";
-            $whereClauseThaoLap = "STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y') BETWEEN DATE('$startDate') AND DATE('$endDate')";
             $whereClauseKiemDinh = "STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y') BETWEEN DATE('$startDate') AND DATE('$endDate')";
         }
 
-        return [$whereClauseSanLuong, $whereClauseThaoLap, $whereClauseKiemDinh];
+        return [$whereClauseSanLuong, $whereClauseKiemDinh];
     }
 
-    private function getDistinctDays($maTinhs, $khuVuc, $ngayChon, $timeFormat, $startDate, $endDate)
+    private function getDistinctDays($khuVuc, $linhVuc, $ngayChon, $timeFormat, $startDate, $endDate)
     {
-        [$whereClauseSanLuong, $whereClauseThaoLap, $whereClauseKiemDinh] = $this->whereClauseTimeFormat($ngayChon, $timeFormat, $startDate, $endDate);
-        $distinctQuery = DB::table('tbl_sanluong')
+        $maTinhs = DB::table('tbl_tinh')
+                ->where('ten_khu_vuc', $khuVuc)
+                ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+                ->pluck('ma_tinh')
+                ->toArray();
+        [$whereClauseSanLuong, $whereClauseKiemDinh] = $this->whereClauseTimeFormat($ngayChon, $timeFormat, $startDate, $endDate);
+        if ($linhVuc=="EC"){
+            $distinctQuery = DB::table('tbl_sanluong')
             ->select(DB::raw("DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) AS distinct_date"))
             ->whereRaw($whereClauseSanLuong)
-            ->whereIn(DB::raw("LEFT(SanLuong_Tram, 3)"), $maTinhs)
-            ->union(
-                DB::table('tbl_sanluong_thaolap')
-                    ->select(DB::raw("DATE(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) AS distinct_date"))
-                    ->whereRaw($whereClauseThaoLap)
-                    ->whereIn(DB::raw("LEFT(ThaoLap_MaTram, 3)"), $maTinhs)
-            )
-            ->union(
-                DB::table('tbl_sanluong_khac')
-                    ->select(DB::raw("DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) AS distinct_date"))
-                    ->whereRaw($whereClauseSanLuong)
-                    ->where('SanLuong_KhuVuc', $khuVuc)
-            )
-            ->union(
-                DB::table('tbl_sanluong_kiemdinh')
+            ->whereIn(DB::raw("LEFT(SanLuong_Tram, 3)"), $maTinhs);
+        } elseif ($linhVuc=="Kiểm định") {
+            $distinctQuery = DB::table('tbl_sanluong_kiemdinh')
                     ->select(DB::raw("DATE(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) AS distinct_date"))
                     ->whereRaw($whereClauseKiemDinh) // Tạo where clause tương tự như SanLuong
-                    ->whereIn(DB::raw("LEFT(KiemDinh_MaTram, 3)"), $maTinhs)
-            );
+                    ->whereIn(DB::raw("LEFT(KiemDinh_MaTram, 3)"), $maTinhs);
+        } else {
+            $distinctQuery = DB::table('tbl_sanluong_khac')
+                    ->select(DB::raw("DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) AS distinct_date"))
+                    ->whereRaw($whereClauseSanLuong)
+                    ->where('SanLuong_TenHangMuc', $linhVuc)
+                    ->where('SanLuong_KhuVuc', $khuVuc);
+        }
 
         $distinctDays = DB::table(DB::raw("({$distinctQuery->toSql()}) as subquery"))
             ->mergeBindings($distinctQuery)
@@ -142,6 +136,7 @@ class ThongKeLinhVucController extends Controller
         $timeFormat = $request->input('time_format');
         $currentYear = $request->input('nam', date('Y'));
         $currentMonth = $request->input('thang', date('n'));
+        $ngayChon = date("Y-m-d", strtotime("$currentYear-$currentMonth-01"));
         $currentQuarter = ceil($currentMonth / 3);
         $userRole = session('role');
         $userId = session('userid');
@@ -247,60 +242,34 @@ class ThongKeLinhVucController extends Controller
                 ->groupBy('SanLuong_TenHangMuc');
             $sanluongKhacData = $sanluongKhacDataQuery->get();
 
+            $kpiDataEC = $this->getKpiNgay($khuVuc, "EC", $currentYear, $currentMonth, $timeFormat);
+            $daysEC = $this->getDistinctDays($khuVuc, "EC", $ngayChon, $timeFormat, null, null);
             $results[$khuVuc]['EC'] = [
                 'ten_linh_vuc' => 'EC',
                 'total' => round($totalEC / 1e9, 2),
-                'kpi' => 0
+                'kpi' => $kpiDataEC['kpi_ngay'] * $daysEC
             ];
 
             foreach ($sanluongKhacData as $row) {
+                $kpiDataKhac = $this->getKpiNgay($khuVuc, $row->SanLuong_TenHangMuc, $currentYear, $currentMonth, $timeFormat);
+                $daysKhac = $this->getDistinctDays($khuVuc, $row->SanLuong_TenHangMuc, $ngayChon, $timeFormat, null, null);
                 $results[$khuVuc][$row->SanLuong_TenHangMuc] = [
                     'ten_linh_vuc' => $row->SanLuong_TenHangMuc,
                     'total' => round($row->total / 1e9, 2),
-                    'kpi' => 0
+                    'kpi' => $kpiDataKhac['kpi_ngay'] * $daysKhac
                 ];
             }
             foreach ($sanluongKiemdinhData as $row) {
+                $kpiDataKiemDinh = $this->getKpiNgay($khuVuc, "Kiểm định", $currentYear, $currentMonth, $timeFormat);
+                $daysKiemDinh = $this->getDistinctDays($khuVuc, "Kiểm định", $ngayChon, $timeFormat, null, null);
                 $results[$khuVuc][$row->KiemDinh_NoiDung] = [
                     'ten_linh_vuc' => 'Kiểm định',
                     'total' => round($row->SanLuong_Gia / 1e9, 2),
-                    'kpi' => 0
+                    'kpi' => $kpiDataKiemDinh['kpi_ngay'] * $daysKiemDinh
                 ];
             }
         }
 
-        $kpiDataQuery = DB::table('tbl_kpi_quy')
-            ->select('ten_khu_vuc', 'noi_dung', 'kpi_quy_1', 'kpi_quy_2', 'kpi_quy_3', 'kpi_quy_4')
-            ->where('year', $currentYear);
-        if ($userRole != 3) {
-            $kpiDataQuery->where('ten_khu_vuc', $userKhuVuc);
-        }
-        $kpiData = $kpiDataQuery->get();
-
-        foreach ($kpiData as $kpi) {
-            $kpiValue = 0;
-            switch ($timeFormat) {
-                case 'thang':
-                    $kpiValue = round(($kpi->{'kpi_quy_' . $currentQuarter} / 3), 2);
-                    break;
-                case 'quy':
-                    $kpiValue = round($kpi->{'kpi_quy_' . $currentQuarter}, 2);
-                    break;
-                case 'nam':
-                    $kpiValue = round($kpi->kpi_quy_1 + $kpi->kpi_quy_2 + $kpi->kpi_quy_3 + $kpi->kpi_quy_4, 2);
-                    break;
-            }
-
-            if (isset($results[$kpi->ten_khu_vuc][$kpi->noi_dung])) {
-                $results[$kpi->ten_khu_vuc][$kpi->noi_dung]['kpi'] += $kpiValue;
-            }
-        }
-
-        foreach ($results as &$khuVucData) {
-            foreach ($khuVucData as &$result) {
-                $result['kpi'] = round($result['kpi'], 1);
-            }
-        }
 
         $finalResults = [];
         foreach ($results as $khuVuc => $data) {
