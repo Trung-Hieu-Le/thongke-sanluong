@@ -103,7 +103,6 @@ class TableUpdateController extends Controller
                 DB::raw("SUM(SanLuong_Gia) as SanLuong_Gia"),
                 'SanLuong_KhuVuc as khu_vuc',
             )
-            ->whereNot("ma_tinh", null)
             // ->whereDate(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), '=', $ngayChon)
             ->groupBy('ma_tinh', 'SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_KhuVuc')
             ->get();
@@ -497,7 +496,6 @@ class TableUpdateController extends Controller
                 'SanLuong_KhuVuc as khu_vuc',
             )
             // ->whereDate(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), '=', $ngayChon)
-            ->whereNot("ma_tinh", null)
             ->groupBy('ma_tinh', 'SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_KhuVuc')
             ->get();
 

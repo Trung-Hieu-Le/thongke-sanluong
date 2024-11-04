@@ -169,11 +169,11 @@ class TinhSanLuongFilterController extends Controller
                 'tbl_hopdong.HopDong_SoHopDong',
                 DB::raw('SUM(tbl_sanluong.SanLuong_Gia) as SanLuong_Gia')
             )
-            ->whereExists(function ($query) use ($userRole) {
+            ->whereExists(function ($query) use ($userId) {
                 $query->select(DB::raw(1))
                     ->from('tbl_hinhanh')
                     ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram')
-                    ->where('tbl_hinhanh.user_id', $userRole);
+                    ->where('tbl_hinhanh.user_id', $userId);
             })
             ->whereNot('ten_hinh_anh_da_xong', "")
             ->whereRaw("1 $dayCondition $searchCondition $searchConditionHopDong $searchConditionKhuVuc")
