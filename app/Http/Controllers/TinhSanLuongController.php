@@ -9,7 +9,6 @@ class TinhSanLuongController extends Controller
 {
     public function viewSanLuongTram(Request $request)
 {
-    //TODO: Sản lượng cùng hợp đồng, khác hạng mục (VD: bgg0007 ngày 16/7, 15/7)
     if (!$request->session()->has('username')) {
         return redirect('login');
     }
@@ -32,7 +31,6 @@ class TinhSanLuongController extends Controller
     $userRole = $request->session()->get('role');
     $userKhuVuc = DB::table('tbl_user')->where('user_id', $userId)->value('user_khuvuc');
 
-    //TODO: Hiện không lấy ngày đầu tiên (do SanLuong_Ngay dạng text)
     $sanluongDataQuery = DB::table('tbl_sanluong')
     ->leftJoin('tbl_tinh', DB::raw("LEFT(tbl_sanluong.SanLuong_Tram, 3)"), '=', 'tbl_tinh.ma_tinh')
     ->leftJoin('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')

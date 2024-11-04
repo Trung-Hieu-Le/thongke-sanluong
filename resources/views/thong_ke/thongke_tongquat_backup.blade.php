@@ -56,21 +56,21 @@
             <div class="row">
                 <div class="col-lg-4 col-md-12">
                     <h5 class="d-flex justify-content-between align-items-center">Thống kê theo Tháng <br>(đơn vị tính: tỉ đồng)
-                        <i class="fa fa-search-plus ml-2" aria-hidden="true" onclick="viewDetail('thang')"></i>
+                        <i class="fa fa-search-plus ml-2" aria-hidden="true"></i>
                     </h5>
                     <canvas id="barChartThang"></canvas>
                     <div class="table-container mt-lg-3" id="thangTable"></div>
                 </div>
                 <div class="col-lg-4 col-md-12">
                     <h5 class="d-flex justify-content-between align-items-center">Thống kê theo Quý <br>(đơn vị tính: tỉ đồng)
-                        <i class="fa fa-search-plus ml-2" aria-hidden="true" onclick="viewDetail('quy')"></i>
+                        <i class="fa fa-search-plus ml-2" aria-hidden="true"></i>
                     </h5>
                     <canvas id="barChartQuy"></canvas>
                     <div class="table-container mt-lg-3" id="quyTable"></div>
                 </div>
                 <div class="col-lg-4 col-md-12">
                     <h5 class="d-flex justify-content-between align-items-center">Thống kê theo Năm <br>(đơn vị tính: tỉ đồng)
-                        <i class="fa fa-search-plus ml-2" aria-hidden="true" onclick="viewDetail('nam')"></i>
+                        <i class="fa fa-search-plus ml-2" aria-hidden="true"></i>
                     </h5>
                     <canvas id="barChartNam"></canvas>
                     <div class="table-container mt-lg-3" id="namTable"></div>
@@ -248,12 +248,6 @@
             barChartThang = createBarChart(document.getElementById('barChartThang').getContext('2d'), labelsThang, kpiThang, totalThang, 'thangTable');
             barChartQuy = createBarChart(document.getElementById('barChartQuy').getContext('2d'), labelsQuy, kpiQuy, totalQuy, 'quyTable');
             barChartNam = createBarChart(document.getElementById('barChartNam').getContext('2d'), labelsNam, kpiNam, totalNam, 'namTable');
-        }
-        function viewDetail(thoiGian) {
-            const month = document.getElementById('selectMonth').value;
-            const year = document.getElementById('selectYear').value;
-            const hopDongId = document.getElementById('selectHopDong').value;
-            window.location.href = `/chi-tiet-chart?type=tongquat&time-format=${thoiGian}&thang=${month}&nam=${year}&hop_dong=${hopDongId}`;
         }
     
         document.getElementById('selectMonth').addEventListener('change', renderCharts);

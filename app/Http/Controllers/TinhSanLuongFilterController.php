@@ -51,7 +51,6 @@ class TinhSanLuongFilterController extends Controller
         $page = request()->get('page', 1);
         $perPage = 100; // Number of items per page
 
-        // TODO: Nếu cùng mt, hđ, hm nhưng khác giá thì sao?? some sl đã có từ trc nhưng cột +1, giá+0
         if ($userRole != 0 && $userRole != 1) {
             $sanluongData = DB::table('tbl_sanluong')
             ->leftJoin('tbl_tram', function ($join) {
@@ -124,7 +123,6 @@ class TinhSanLuongFilterController extends Controller
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
             ->get();
 
-            //TODO: thêm userRole
 
             $hinhanhLeftData = DB::table('tbl_hinhanh')
                 ->distinct()
@@ -171,10 +169,11 @@ class TinhSanLuongFilterController extends Controller
                 'tbl_hopdong.HopDong_SoHopDong',
                 DB::raw('SUM(tbl_sanluong.SanLuong_Gia) as SanLuong_Gia')
             )
-            ->whereExists(function ($query) {
+            ->whereExists(function ($query) use ($userRole) {
                 $query->select(DB::raw(1))
                     ->from('tbl_hinhanh')
-                    ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
+                    ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram')
+                    ->where('tbl_hinhanh.user_id', $userRole);
             })
             ->whereNot('ten_hinh_anh_da_xong', "")
             ->whereRaw("1 $dayCondition $searchCondition $searchConditionHopDong $searchConditionKhuVuc")

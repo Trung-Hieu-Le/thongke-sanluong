@@ -250,7 +250,6 @@
                 end = new Date(selectedYear, selectedMonth - 1, selectedDay);
             }
             if (start > end) {
-            //TODO: sửa phần alert này
                 alert('Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc');
                 return;
             }

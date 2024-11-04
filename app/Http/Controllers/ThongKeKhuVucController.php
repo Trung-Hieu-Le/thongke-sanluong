@@ -34,37 +34,7 @@ class ThongKeKhuVucController extends Controller
         return view('thong_ke.thongke_tinh', compact('khuVucList'));
     }
 
-
-    public function getMonthsInRange($startDate, $endDate)
-    {
-        $start = Carbon::parse($startDate);
-        $end = Carbon::parse($endDate);
-
-        $months = [];
-
-        while ($start <= $end) {
-            $monthStart = $start->copy()->startOfMonth();
-            $monthEnd = $start->copy()->endOfMonth();
-
-            if ($monthStart < new DateTime($startDate)) {
-                $monthStart = new DateTime($startDate);
-            }
-
-            if ($monthEnd > new DateTime($endDate)) {
-                $monthEnd = new DateTime($endDate);
-            }
-
-            $months[] = [
-                'start' => $monthStart->format('Y-m-d'),
-                'end' => $monthEnd->format('Y-m-d'),
-            ];
-
-            $start->modify('first day of next month');
-        }
-
-        return $months;
-    }
-    //TODO: Lọc hợp đồng, đối tác, lĩnh vực???
+    
     private function getTotalSanLuongWithMaTram($maTinh, $startDate, $endDate)
     {
         $start = Carbon::parse($startDate);
@@ -357,13 +327,5 @@ class ThongKeKhuVucController extends Controller
         }
 
         return response()->json($results);
-    }
-
-    public function indexChiTietChart(Request $request)
-    {
-        if (!$request->session()->has('username')) {
-            return redirect('/login');
-        }
-        return view('thong_ke.chitiet_bieudo');
     }
 }

@@ -23,7 +23,6 @@ class ChatController extends Controller
 
     public function search(Request $request)
     {
-        //TODO: nếu role!=3 thì ko hiện user không gửi tin cho mình, ko cho chat
         $query = $request->input('query');
         $currentUserId = session('userid');
         $userRole = session('role');

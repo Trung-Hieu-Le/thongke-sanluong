@@ -53,7 +53,7 @@
                                 </div>
                             </div>
                         @else
-                            {{-- TODO: Sửa lại link đường dẫn img --}}
+                            {{-- TODO: Sửa lại link đường dẫn img phù hợp --}}
                             @foreach ($item['anh_chuan_bi'] as $image)
                                 <div class="item">
                                     <div class="card">

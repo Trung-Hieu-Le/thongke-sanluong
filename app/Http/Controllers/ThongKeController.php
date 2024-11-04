@@ -90,7 +90,6 @@ class ThongKeController extends Controller
             ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
             ->orderBy('ten_khu_vuc')
             ->pluck('ten_khu_vuc');
-        //TODO: khi đổi timeFormat thì đổi lại KPI
         $currentMonth = intval(date('m', strtotime($ngayChon)));
         $currentYear = date('Y', strtotime($ngayChon));
         $totalMonth = 0;
@@ -211,7 +210,6 @@ class ThongKeController extends Controller
         return response()->json($results);
     }
 
-    //TODO: KPI năm luôn đổi??? do kpi_thang, cần fix funct này (dùng timeFormat)
     private function getKpiNgay($khuVuc, $currentYear, $currentMonth, $timeFormat)
     {
         $kpiSelect = DB::table('tbl_kpi_quy')
@@ -581,7 +579,6 @@ class ThongKeController extends Controller
 
         return $days;
     }
-    //TODO: sai ngày bắt đầu
     private function getWeeksInRange($startDate, $endDate)
     {
         $start = Carbon::parse($startDate);
@@ -651,7 +648,6 @@ class ThongKeController extends Controller
 
         return $months;
     }
-    //TODO: Lọc hợp đồng, đối tác, lĩnh vực???
     private function getTotalSanLuongWithMaTram($maTinh, $startDate, $endDate)
     {
         $start = Carbon::parse($startDate);

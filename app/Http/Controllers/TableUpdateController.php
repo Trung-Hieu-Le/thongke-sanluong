@@ -92,7 +92,6 @@ class TableUpdateController extends Controller
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
             ->get();
 
-        //TODO: SL khác có join theo trạm không?
         $sanluongKhacData = DB::table('tbl_sanluong_khac')
             ->select(
                 DB::raw("UPPER(LEFT(SanLuong_Tram, 3)) as ma_tinh"),
@@ -482,7 +481,6 @@ class TableUpdateController extends Controller
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
             ->get();
 
-        //TODO: SL khác có join theo trạm không?
         $sanluongKhacData = DB::table('tbl_sanluong_khac')
             ->select(
                 DB::raw("UPPER(LEFT(SanLuong_Tram, 3)) as ma_tinh"),
