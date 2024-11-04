@@ -33,7 +33,9 @@
                         <input type="text" class="form-control" name="searchHopDong" placeholder="Tìm hợp đồng" value="{{ $searchHopDong }}">
                         <input type="text" class="form-control" name="searchKhuVuc" placeholder="Tìm khu vực" value="{{ $searchKhuVuc }}">
                         <button class="btn btn-primary mb-1" type="submit">Lọc</button>
+                        @if (session('role') == 3 || session('role') == 2 )
                         <button id="filterRedirect" class="btn btn-success mb-1" type="button">Cập nhật bảng TH</button>
+                        @endif
                     </div>
                 </div>
             </form>
