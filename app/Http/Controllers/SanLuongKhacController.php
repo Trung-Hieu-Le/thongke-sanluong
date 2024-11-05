@@ -145,16 +145,18 @@ class SanLuongKhacController extends Controller
 
     private function updateSanLuongKhacTableTongHopSanLuong()
     {
+        DB::table('tbl_tonghop_sanluong')
+            ->where('ma_tinh', '')
+            ->delete();
         $sanluongKhacData = DB::table('tbl_sanluong_khac')
             ->select(
-                DB::raw("UPPER(LEFT(SanLuong_Tram, 3)) as ma_tinh"),
                 'SanLuong_Ngay',
                 'SanLuong_TenHangMuc as linh_vuc',
                 DB::raw("SUM(SanLuong_Gia) as SanLuong_Gia"),
                 'SanLuong_KhuVuc as khu_vuc',
             )
             // ->whereDate(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), '=', $ngayChon)
-            ->groupBy('ma_tinh', 'SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_KhuVuc')
+            ->groupBy('SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_KhuVuc')
             ->get();
         $combinedData=[];
         foreach ($sanluongKhacData as $data) {
@@ -169,10 +171,10 @@ class SanLuongKhacController extends Controller
                 dd("Invalid date format in SanLuong_Ngay: " . $data->SanLuong_Ngay);
             }
 
-            $key = "{$data->ma_tinh}-Khac-{$data->khu_vuc}-{$year}-{$month}";
+            $key = "Khac-{$data->khu_vuc}-{$year}-{$month}";
             if (!isset($combinedData[$key])) {
                 $combinedData[$key] = [
-                    'ma_tinh' => $data->ma_tinh,
+                    'ma_tinh' => "",
                     'linh_vuc' => $data->linh_vuc,
                     'khu_vuc' => $data->khu_vuc,
                     'year' => $year,

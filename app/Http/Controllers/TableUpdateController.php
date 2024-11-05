@@ -14,8 +14,7 @@ class TableUpdateController extends Controller
     {
         // Step 1: Delete all records where linh_vuc is not 'EC'
         DB::table('tbl_tonghop_sanluong')
-            ->where('linh_vuc', '<>', 'EC')
-            ->where('linh_vuc', '<>', 'Kiểm định')
+            ->where('ma_tinh', '')
             ->delete();
         $combinedData = [];
 
@@ -97,14 +96,13 @@ class TableUpdateController extends Controller
 
         $sanluongKhacData = DB::table('tbl_sanluong_khac')
             ->select(
-                DB::raw("UPPER(LEFT(SanLuong_Tram, 3)) as ma_tinh"),
                 'SanLuong_Ngay',
                 'SanLuong_TenHangMuc as linh_vuc',
                 DB::raw("SUM(SanLuong_Gia) as SanLuong_Gia"),
                 'SanLuong_KhuVuc as khu_vuc',
             )
             // ->whereDate(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), '=', $ngayChon)
-            ->groupBy('ma_tinh', 'SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_KhuVuc')
+            ->groupBy('SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_KhuVuc')
             ->get();
 
         foreach ($sanluongData as $data) {
@@ -302,10 +300,10 @@ class TableUpdateController extends Controller
                 dd("Invalid date format in SanLuong_Ngay: " . $data->SanLuong_Ngay);
             }
 
-            $key = "{$data->ma_tinh}-Khac-{$data->khu_vuc}-{$year}-{$month}";
+            $key = "Khac-{$data->khu_vuc}-{$year}-{$month}";
             if (!isset($combinedData[$key])) {
                 $combinedData[$key] = [
-                    'ma_tinh' => $data->ma_tinh,
+                    'ma_tinh' => "",
                     'linh_vuc' => $data->linh_vuc,
                     'khu_vuc' => $data->khu_vuc,
                     'year' => $year,
@@ -343,7 +341,6 @@ class TableUpdateController extends Controller
                     'SanLuong_Ngay_31' => 0,
                 ];
             }
-
 
             if (isset($combinedData[$key])) {
                 $combinedData[$key][$dayField] += $data->SanLuong_Gia;
@@ -405,8 +402,7 @@ class TableUpdateController extends Controller
         // $formattedMonth = str_pad($month, 2, '0', STR_PAD_LEFT);
         // Step 1: Delete all records where linh_vuc is not 'EC'
         DB::table('tbl_tonghop_sanluong')
-            ->where('linh_vuc', '<>', 'EC')
-            ->where('linh_vuc', '<>', 'Kiểm định')
+            ->where('ma_tinh', '')
             ->delete();
         $combinedData = [];
 
@@ -489,14 +485,13 @@ class TableUpdateController extends Controller
 
         $sanluongKhacData = DB::table('tbl_sanluong_khac')
             ->select(
-                DB::raw("UPPER(LEFT(SanLuong_Tram, 3)) as ma_tinh"),
                 'SanLuong_Ngay',
                 'SanLuong_TenHangMuc as linh_vuc',
                 DB::raw("SUM(SanLuong_Gia) as SanLuong_Gia"),
                 'SanLuong_KhuVuc as khu_vuc',
             )
-            // ->whereDate(DB::raw("STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')"), '=', $ngayChon)
-            ->groupBy('ma_tinh', 'SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_KhuVuc')
+            // ->whereRaw("1 $dayCondition")
+            ->groupBy('SanLuong_Ngay', 'SanLuong_TenHangMuc', 'SanLuong_KhuVuc')
             ->get();
 
         foreach ($sanluongData as $data) {
@@ -694,10 +689,10 @@ class TableUpdateController extends Controller
                 dd("Invalid date format in SanLuong_Ngay: " . $data->SanLuong_Ngay);
             }
 
-            $key = "{$data->ma_tinh}-Khac-{$data->khu_vuc}-{$year}-{$month}";
+            $key = "Khac-{$data->khu_vuc}-{$year}-{$month}";
             if (!isset($combinedData[$key])) {
                 $combinedData[$key] = [
-                    'ma_tinh' => $data->ma_tinh,
+                    'ma_tinh' => "",
                     'linh_vuc' => $data->linh_vuc,
                     'khu_vuc' => $data->khu_vuc,
                     'year' => $year,
