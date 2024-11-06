@@ -95,12 +95,14 @@
                             <td>{{ $row->kpi_thang_11 ?? '-' }}</td>
                             <td>{{ $row->kpi_thang_12 ?? '-' }}</td>
                             <td>
+                                @if($row->noi_dung !== 'Tổng sản lượng')
                                 <a href="{{ url('/kpi-quy/edit/' . $row->id) }}">
                                 <button class="btn btn-primary">Sửa</button>
                                 </a>
                                 <a href="{{ url('/kpi-quy/delete/' . $row->id) }}" onclick="return confirm('Bạn có muốn xóa KPI này?');">
                                     <button class="btn btn-danger">Xóa</button>
                                 </a>
+                                @endif
                             </td>
                         </tr>
                         @endforeach

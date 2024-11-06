@@ -33,6 +33,7 @@
                                 <option value="{{ $khuvuc->khu_vuc }}" {{ $khuvuc->khu_vuc == $kpiData->ten_khu_vuc ? 'selected' : '' }}>{{ $khuvuc->khu_vuc }}</option>
                             @endforeach
                         </select>
+                        <input type="hidden" name="khu_vuc" value="{{ $kpiData->ten_khu_vuc }}">
                     </div>
                     <div class="form-group my-2 col-lg-5 col-md-12">
                         <label for="noi_dung">Lĩnh vực:</label>
@@ -44,6 +45,7 @@
                                 <option value="{{ $noidung->noi_dung }}" {{ $noidung->noi_dung == $kpiData->noi_dung ? 'selected' : '' }}>{{ $noidung->noi_dung }}</option>
                             @endforeach
                         </select>
+                        <input type="hidden" name="noi_dung" value="{{ $kpiData->noi_dung }}">
                     </div>
                     <div class="form-group my-2 col-lg-2 col-md-12">
                         <label for="year">Năm:</label>
@@ -52,6 +54,7 @@
                                 <option value="{{ $i }}" {{ $i == $kpiData->year ? 'selected' : '' }}>{{ $i }}</option>
                             @endfor
                         </select>
+                        <input type="hidden" name="year" value="{{ $kpiData->year }}">
                     </div>
                 </div>
                 <hr>

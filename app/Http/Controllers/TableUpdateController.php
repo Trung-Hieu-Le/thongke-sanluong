@@ -42,7 +42,7 @@ class TableUpdateController extends Controller
                     ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
             })
             ->whereNot('ten_hinh_anh_da_xong', "")
-            ->whereNot("tbl_tram.ma_tinh", null)
+            // ->whereNot("tbl_tram.ma_tinh", null)
             ->groupBy('SanLuong_Ngay', 'tbl_sanluong.SanLuong_Tram', 'khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong', 'tbl_tinh.ten_khu_vuc')
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
             ->get();
@@ -66,7 +66,7 @@ class TableUpdateController extends Controller
                 DB::raw('SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as SanLuong_Gia')
             )
             ->whereNot('ThaoLap_Ngay', "")
-            ->whereNot("tbl_tram.ma_tinh", null)
+            // ->whereNot("tbl_tram.ma_tinh", null)
             ->groupBy('ThaoLap_Ngay', 'tbl_sanluong_thaolap.ThaoLap_MaTram', 'tbl_tram.khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong', "tbl_tinh.ten_khu_vuc")
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
             ->get();
@@ -89,7 +89,7 @@ class TableUpdateController extends Controller
                 'KiemDinh_Ngay',
                 DB::raw('SUM(KiemDinh_DonGia) as SanLuong_Gia')
             )
-            ->whereNot("tbl_tram.ma_tinh", null)
+            // ->whereNot("tbl_tram.ma_tinh", null)
             ->groupBy('KiemDinh_Ngay', 'tbl_sanluong_kiemdinh.KiemDinh_MaTram', 'tbl_tram.khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong', 'tbl_tinh.ten_khu_vuc')
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
             ->get();
@@ -401,9 +401,9 @@ class TableUpdateController extends Controller
         // $month = date('m', strtotime($today));
         // $formattedMonth = str_pad($month, 2, '0', STR_PAD_LEFT);
         // Step 1: Delete all records where linh_vuc is not 'EC'
-        DB::table('tbl_tonghop_sanluong')
-            ->where('ma_tinh', '')
-            ->delete();
+        // DB::table('tbl_tonghop_sanluong')
+        //     ->where('ma_tinh', '')
+        //     ->delete();
         $combinedData = [];
 
         // Step 2: Fetch the data
@@ -430,7 +430,7 @@ class TableUpdateController extends Controller
                     ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
             })
             ->whereNot('ten_hinh_anh_da_xong', "")
-            ->whereNot("tbl_tram.ma_tinh", null)
+            // ->whereNot("tbl_tram.ma_tinh", null)
             ->whereRaw("1 $dayCondition $searchCondition $searchConditionHopDong $searchConditionKhuVuc")
             ->groupBy('SanLuong_Ngay', 'tbl_sanluong.SanLuong_Tram', 'khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong', 'tbl_tinh.ten_khu_vuc')
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
@@ -454,7 +454,7 @@ class TableUpdateController extends Controller
                 DB::raw('SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as SanLuong_Gia')
                 )
             ->whereNot('ThaoLap_Ngay', "")
-            ->whereNot("tbl_tram.ma_tinh", null)
+            // ->whereNot("tbl_tram.ma_tinh", null)
             ->whereRaw("1 $thaoLapDayCondition $searchCondition2 $searchConditionHopDong $searchConditionKhuVuc")
             ->groupBy('ThaoLap_Ngay', 'tbl_sanluong_thaolap.ThaoLap_MaTram', 'tbl_tram.khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong', "tbl_tinh.ten_khu_vuc")
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')
@@ -477,7 +477,7 @@ class TableUpdateController extends Controller
                 'KiemDinh_Ngay',
                 DB::raw('SUM(KiemDinh_DonGia) as SanLuong_Gia')
             )
-            ->whereNot("tbl_tram.ma_tinh", null)
+            // ->whereNot("tbl_tram.ma_tinh", null)
             ->whereRaw("1 $kiemDinhDayCondition $searchCondition3 $searchConditionHopDong $searchConditionKhuVuc")
             ->groupBy('KiemDinh_Ngay', 'tbl_sanluong_kiemdinh.KiemDinh_MaTram', 'tbl_tram.khu_vuc', 'tbl_tram.ma_tinh', 'tbl_hopdong.HopDong_SoHopDong', 'tbl_tinh.ten_khu_vuc')
             // ->orderBy('tbl_sanluong.SanLuong_Tram', 'asc')

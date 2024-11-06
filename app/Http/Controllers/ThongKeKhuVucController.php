@@ -18,12 +18,12 @@ class ThongKeKhuVucController extends Controller
         $userId = session('userid');
         $userKhuVuc = null;
 
-        $khuVucListQuery = DB::table('tbl_tinh')
+        $khuVucListQuery = DB::table('tbl_tram')
             ->distinct()
             // ->where('ten_khu_vuc', $userKhuVuc)
-            ->select('ten_khu_vuc')
-            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
-            ->orderBy('ten_khu_vuc');
+            ->select('khu_vuc')
+            ->whereIn('khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+            ->orderBy('khu_vuc');
         if ($role != 3) {
             $userKhuVuc = DB::table('tbl_user')
                 ->where('user_id', $userId)
@@ -34,7 +34,7 @@ class ThongKeKhuVucController extends Controller
         return view('thong_ke.thongke_tinh', compact('khuVucList'));
     }
 
-    
+
     private function getTotalSanLuongWithMaTram($maTinh, $startDate, $endDate)
     {
         $start = Carbon::parse($startDate);
@@ -131,6 +131,10 @@ class ThongKeKhuVucController extends Controller
                 $month = (int)date('m', strtotime($ngayChon));
                 $year = (int)date('Y', strtotime($ngayChon));
 
+                // Tạo khoảng thời gian cho ngày
+                $startDay = $endDay = $ngayChon;
+
+                // Tạo khoảng thời gian cho tuần
                 if ($day >= 1 && $day <= 7) {
                     $startWeek = "$year-$month-01";
                     $endWeek = "$year-$month-07";
@@ -144,47 +148,31 @@ class ThongKeKhuVucController extends Controller
                     $startWeek = "$year-$month-22";
                     $endWeek = date('Y-m-t', strtotime($ngayChon)); // Ngày cuối tháng
                 }
-                $query = "
-                SELECT
-                    SUM(CASE WHEN DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = DATE('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as ngay,
-                    SUM(CASE WHEN DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) BETWEEN DATE('$startWeek') AND DATE('$endWeek') THEN SanLuong_Gia ELSE 0 END) as tuan,
-                    SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = MONTH('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as thang,
-                    SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = QUARTER('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as quy,
-                    SUM(CASE WHEN YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = YEAR('$ngayChon') THEN SanLuong_Gia ELSE 0 END) as nam
-                FROM (
-                    SELECT 
-                        LEFT(SanLuong_Tram, 3) as ma_tinh, SanLuong_Ngay, SanLuong_Gia, HopDong_Id
-                    FROM 
-                        tbl_sanluong
-                    WHERE ten_hinh_anh_da_xong NOT LIKE ''
-                    GROUP BY 
-                        SanLuong_Tram, SanLuong_Ngay, SanLuong_Gia, SanLuong_TenHangMuc, tbl_sanluong.HopDong_Id
-                    ORDER BY ma_tinh, SanLuong_Ngay, SanLuong_TenHangMuc
-                ) AS subquery_sanluong
-                LEFT JOIN tbl_tinh ON subquery_sanluong.ma_tinh = tbl_tinh.ma_tinh
-                WHERE subquery_sanluong.ma_tinh LIKE '$maTinh%'
-                UNION ALL
-                SELECT
-                    SUM(CASE WHEN DATE(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = DATE('$ngayChon') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as ngay,
-                    SUM(CASE WHEN DATE(STR_TO_DATE(ThaoLap_Ngay, '%d%m%Y')) BETWEEN DATE('$startWeek') AND DATE('$endWeek') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as tuan,               
-                    SUM(CASE WHEN MONTH(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = MONTH('$ngayChon') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as thang,
-                    SUM(CASE WHEN QUARTER(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = QUARTER('$ngayChon') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as quy,
-                    SUM(CASE WHEN YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = YEAR('$ngayChon') THEN ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon ELSE 0 END) as nam
-                FROM tbl_sanluong_thaolap
-                WHERE ThaoLap_MaTram LIKE '$maTinh%'
-                UNION ALL
-                SELECT
-                    SUM(CASE WHEN DATE(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = DATE('$ngayChon') THEN KiemDinh_DonGia ELSE 0 END) as ngay,
-                    SUM(CASE WHEN DATE(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) BETWEEN DATE('$startWeek') AND DATE('$endWeek') THEN KiemDinh_DonGia ELSE 0 END) as tuan,
-                    SUM(CASE WHEN MONTH(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = MONTH('$ngayChon') THEN KiemDinh_DonGia ELSE 0 END) as thang,
-                    SUM(CASE WHEN QUARTER(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = QUARTER('$ngayChon') THEN KiemDinh_DonGia ELSE 0 END) as quy,
-                    SUM(CASE WHEN YEAR(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = YEAR('$ngayChon') THEN KiemDinh_DonGia ELSE 0 END) as nam
-                FROM tbl_sanluong_kiemdinh
-                WHERE KiemDinh_MaTram LIKE '$maTinh%'
-            ";
-                $totals = DB::select($query);
-            }
 
+                // Tạo khoảng thời gian cho tháng
+                $startMonth = date('Y-m-01', strtotime($ngayChon));
+                $endMonth = date('Y-m-t', strtotime($ngayChon));
+
+                // Tạo khoảng thời gian cho quý
+                $quarter = ceil($month / 3);
+                $startQuarter = date('Y-m-d', strtotime("$year-" . (($quarter - 1) * 3 + 1) . "-01"));
+                $endQuarter = date('Y-m-t', strtotime("$year-" . ($quarter * 3) . "-01"));
+
+                // Tạo khoảng thời gian cho năm
+                $startYear = "$year-01-01";
+                $endYear = "$year-12-31";
+                // dd($startDay, $startWeek, $startMonth, $startQuarter, $startYear,
+                // $endDay, $endWeek, $endMonth, $endQuarter, $endYear);
+
+                // Lấy dữ liệu cho các khoảng thời gian
+                $totalsArr = [
+                    'ngay' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $startDay, $endDay)),
+                    'tuan' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $startWeek, $endWeek)),
+                    'thang' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $startMonth, $endMonth)),
+                    'quy' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $startQuarter, $endQuarter)),
+                    'nam' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $startYear, $endYear))
+                ];
+            }
 
             $combinedTotals = (object) [
                 'ngay' => 0,
@@ -194,22 +182,25 @@ class ThongKeKhuVucController extends Controller
                 'nam' => 0
             ];
 
-            foreach ($totals as $total) {
-                if (!empty($startDate) && !empty($endDate)) {
+            if (!empty($startDate) && !empty($endDate)) {
+                // If we're using a specific date range, add only once
+                foreach ($totals as $total) {
                     $combinedTotals->ngay += $total;
                     $combinedTotals->tuan += $total;
                     $combinedTotals->thang += $total;
                     $combinedTotals->quy += $total;
                     $combinedTotals->nam += $total;
-                } else {
-                    $combinedTotals->ngay += $total->ngay;
-                    $combinedTotals->tuan += $total->tuan;
-                    $combinedTotals->thang += $total->thang;
-                    $combinedTotals->quy += $total->quy;
-                    $combinedTotals->nam += $total->nam;
                 }
+            } else {
+                // Otherwise, accumulate totals for each specific period
+                $combinedTotals->ngay += $totalsArr['ngay'];
+                $combinedTotals->tuan += $totalsArr['tuan'];
+                $combinedTotals->thang += $totalsArr['thang'];
+                $combinedTotals->quy += $totalsArr['quy'];
+                $combinedTotals->nam += $totalsArr['nam'];
             }
 
+            // Add the rounded totals to results array
             $results[] = [
                 'ma_tinh' => $maTinh,
                 'totals' => [
@@ -249,81 +240,38 @@ class ThongKeKhuVucController extends Controller
         $results = [];
 
         foreach ($maTinhs as $maTinh) {
-            $query = "
-            SELECT
-                SUM(SanLuong_Gia) as total_nam,
-                SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 1 THEN SanLuong_Gia ELSE 0 END) as total_quy_1,
-                SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 2 THEN SanLuong_Gia ELSE 0 END) as total_quy_2,
-                SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 3 THEN SanLuong_Gia ELSE 0 END) as total_quy_3,
-                SUM(CASE WHEN QUARTER(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 4 THEN SanLuong_Gia ELSE 0 END) as total_quy_4,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 1 THEN SanLuong_Gia ELSE 0 END) as total_thang_1,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 2 THEN SanLuong_Gia ELSE 0 END) as total_thang_2,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 3 THEN SanLuong_Gia ELSE 0 END) as total_thang_3,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 4 THEN SanLuong_Gia ELSE 0 END) as total_thang_4,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 5 THEN SanLuong_Gia ELSE 0 END) as total_thang_5,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 6 THEN SanLuong_Gia ELSE 0 END) as total_thang_6,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 7 THEN SanLuong_Gia ELSE 0 END) as total_thang_7,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 8 THEN SanLuong_Gia ELSE 0 END) as total_thang_8,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 9 THEN SanLuong_Gia ELSE 0 END) as total_thang_9,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 10 THEN SanLuong_Gia ELSE 0 END) as total_thang_10,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 11 THEN SanLuong_Gia ELSE 0 END) as total_thang_11,
-                SUM(CASE WHEN MONTH(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = 12 THEN SanLuong_Gia ELSE 0 END) as total_thang_12
-            FROM (
-                SELECT
-                    SanLuong_Gia,
-                    SanLuong_Ngay
-                FROM tbl_sanluong
-                WHERE SanLuong_Tram LIKE ? AND YEAR(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) = ?
-                AND ten_hinh_anh_da_xong NOT LIKE ''
-                UNION ALL
-                SELECT
-                    ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon as SanLuong_Gia,
-                    ThaoLap_Ngay as SanLuong_Ngay
-                FROM tbl_sanluong_thaolap
-                WHERE ThaoLap_MaTram LIKE ? AND YEAR(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y')) = ?
-                UNION ALL
-                SELECT
-                    KiemDinh_DonGia as SanLuong_Gia,
-                    KiemDinh_Ngay as SanLuong_Ngay
-                FROM tbl_sanluong_kiemdinh
-                WHERE KiemDinh_MaTram LIKE ? AND YEAR(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y')) = ?
-            ) as subquery
-        ";
-            $bindings = [
-                "$maTinh%",
-                $namChon,
-                "$maTinh%",
-                $namChon,
-                "$maTinh%",
-                $namChon
-            ];
+            $yearTotal = 0;
+            $quarterTotals = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
+            $monthlyTotals = [];
 
-            $data = DB::select($query, $bindings);
+            // Loop through each month of the selected year
+            for ($month = 1; $month <= 12; $month++) {
+                // Format start and end date for the month
+                $startDate = "$namChon-" . str_pad($month, 2, '0', STR_PAD_LEFT) . "-01";
+                $endDate = date('Y-m-t', strtotime($startDate));
 
-            foreach ($data as $row) {
-                $results[] = [
-                    'ma_tinh' => $maTinh,
-                    'tong_san_luong' => [
-                        'nam' => round($row->total_nam),
-                        'quy_1' => round($row->total_quy_1),
-                        'quy_2' => round($row->total_quy_2),
-                        'quy_3' => round($row->total_quy_3),
-                        'quy_4' => round($row->total_quy_4),
-                        'thang_1' => round($row->total_thang_1),
-                        'thang_2' => round($row->total_thang_2),
-                        'thang_3' => round($row->total_thang_3),
-                        'thang_4' => round($row->total_thang_4),
-                        'thang_5' => round($row->total_thang_5),
-                        'thang_6' => round($row->total_thang_6),
-                        'thang_7' => round($row->total_thang_7),
-                        'thang_8' => round($row->total_thang_8),
-                        'thang_9' => round($row->total_thang_9),
-                        'thang_10' => round($row->total_thang_10),
-                        'thang_11' => round($row->total_thang_11),
-                        'thang_12' => round($row->total_thang_12),
-                    ],
-                ];
+                // Get total production for the given month
+                $monthlyData = $this->getTotalSanLuongWithMaTram($maTinh, $startDate, $endDate);
+                $monthlyTotal = array_sum($monthlyData);
+
+                // Add the monthly total to the yearly and quarterly totals
+                $yearTotal += $monthlyTotal;
+                $quarter = ceil($month / 3); // Determine the quarter (1, 2, 3, or 4)
+                $quarterTotals[$quarter] += $monthlyTotal;
+                $monthlyTotals["thang_$month"] = round($monthlyTotal);
             }
+
+            // Collect the data for each province
+            $results[] = [
+                'ma_tinh' => $maTinh,
+                'tong_san_luong' => [
+                    'nam' => round($yearTotal),
+                    'quy_1' => round($quarterTotals[1]),
+                    'quy_2' => round($quarterTotals[2]),
+                    'quy_3' => round($quarterTotals[3]),
+                    'quy_4' => round($quarterTotals[4]),
+                ] + $monthlyTotals, // Merge monthly totals into the result
+            ];
         }
 
         return response()->json($results);

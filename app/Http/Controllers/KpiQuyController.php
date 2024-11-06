@@ -13,7 +13,7 @@ class KpiQuyController extends Controller
         if (!$request->session()->has('username')) {
             return redirect('login');
         }
-        
+
         if ($request->has('khu_vuc') && $request->has('year')) {
             $this->checkAndInsertMissingKpi($request->khu_vuc, $request->year);
         }
@@ -42,8 +42,8 @@ class KpiQuyController extends Controller
             ->where('khu_vuc', $khuVuc)
             ->pluck('noi_dung')
             ->toArray();
-            
-            foreach ($noiDungs as $noiDung) {
+
+        foreach ($noiDungs as $noiDung) {
             $existingKpi = DB::table('tbl_kpi_quy')
                 ->where('ten_khu_vuc', $khuVuc)
                 ->where('year', $year)
@@ -75,6 +75,56 @@ class KpiQuyController extends Controller
                 ]);
             }
         }
+        $totals = DB::table('tbl_kpi_quy')
+            ->where('ten_khu_vuc', $khuVuc)
+            ->where('year', $year)
+            ->where('noi_dung', '!=', 'Tổng sản lượng')
+            ->selectRaw('
+                COALESCE(SUM(kpi_quy_1), 0) as total_kpi_quy_1,
+                COALESCE(SUM(kpi_quy_2), 0) as total_kpi_quy_2,
+                COALESCE(SUM(kpi_quy_3), 0) as total_kpi_quy_3,
+                COALESCE(SUM(kpi_quy_4), 0) as total_kpi_quy_4,
+                COALESCE(SUM(kpi_nam), 0) as total_kpi_nam,
+                COALESCE(SUM(kpi_thang_1), 0) as total_kpi_thang_1,
+                COALESCE(SUM(kpi_thang_2), 0) as total_kpi_thang_2,
+                COALESCE(SUM(kpi_thang_3), 0) as total_kpi_thang_3,
+                COALESCE(SUM(kpi_thang_4), 0) as total_kpi_thang_4,
+                COALESCE(SUM(kpi_thang_5), 0) as total_kpi_thang_5,
+                COALESCE(SUM(kpi_thang_6), 0) as total_kpi_thang_6,
+                COALESCE(SUM(kpi_thang_7), 0) as total_kpi_thang_7,
+                COALESCE(SUM(kpi_thang_8), 0) as total_kpi_thang_8,
+                COALESCE(SUM(kpi_thang_9), 0) as total_kpi_thang_9,
+                COALESCE(SUM(kpi_thang_10), 0) as total_kpi_thang_10,
+                COALESCE(SUM(kpi_thang_11), 0) as total_kpi_thang_11,
+                COALESCE(SUM(kpi_thang_12), 0) as total_kpi_thang_12
+        ')
+            ->first();
+        DB::table('tbl_kpi_quy')->updateOrInsert(
+            [
+                'ten_khu_vuc' => $khuVuc,
+                'year' => $year,
+                'noi_dung' => 'Tổng sản lượng'
+            ],
+            [
+                'kpi_quy_1' => $totals->total_kpi_quy_1,
+                'kpi_quy_2' => $totals->total_kpi_quy_2,
+                'kpi_quy_3' => $totals->total_kpi_quy_3,
+                'kpi_quy_4' => $totals->total_kpi_quy_4,
+                'kpi_nam' => $totals->total_kpi_nam,
+                'kpi_thang_1' => $totals->total_kpi_thang_1,
+                'kpi_thang_2' => $totals->total_kpi_thang_2,
+                'kpi_thang_3' => $totals->total_kpi_thang_3,
+                'kpi_thang_4' => $totals->total_kpi_thang_4,
+                'kpi_thang_5' => $totals->total_kpi_thang_5,
+                'kpi_thang_6' => $totals->total_kpi_thang_6,
+                'kpi_thang_7' => $totals->total_kpi_thang_7,
+                'kpi_thang_8' => $totals->total_kpi_thang_8,
+                'kpi_thang_9' => $totals->total_kpi_thang_9,
+                'kpi_thang_10' => $totals->total_kpi_thang_10,
+                'kpi_thang_11' => $totals->total_kpi_thang_11,
+                'kpi_thang_12' => $totals->total_kpi_thang_12
+            ]
+        );
     }
 
     public function addKpiQuy(Request $request)
@@ -104,6 +154,7 @@ class KpiQuyController extends Controller
             'kpi_quy_3' => $request->kpi_quy_3,
             'kpi_quy_4' => $request->kpi_quy_4,
         ]);
+        $this->checkAndInsertMissingKpi($request->khu_vuc, $request->year);
 
         return redirect()->route('kpiquy.add')->with('success', 'Thêm KPI thành công.');
     }
@@ -155,6 +206,7 @@ class KpiQuyController extends Controller
                 'kpi_thang_12' => $request->kpi_thang_12,
                 'kpi_nam' => $request->kpi_quy_1 + $request->kpi_quy_2 + $request->kpi_quy_3 + $request->kpi_quy_4
             ]);
+        $this->checkAndInsertMissingKpi($request->khu_vuc, $request->year);
         return redirect()->route('kpiquy.index')->with('success', 'KPI đã được cập nhật');
     }
     public function deleteKpiQuy(Request $request)
@@ -162,6 +214,11 @@ class KpiQuyController extends Controller
         if (!session()->has('username')) {
             return redirect('login');
         }
+        $existingKpi = DB::table('tbl_kpi_quy')
+            ->where('id', $request->id)
+            ->first();
+
+        $this->checkAndInsertMissingKpi($existingKpi->ten_khu_vuc, $existingKpi->year);
         DB::table('tbl_kpi_quy')
             ->where('id', $request->id)
             ->delete();

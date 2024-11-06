@@ -61,7 +61,7 @@
             }
 
             const backgroundColors = dataTotal.map((total, index) => {
-                const percentage = showKPI && dataKPI[index] ? (total / dataKPI[index] * 100).toFixed(1) : 'N/A';
+                const percentage = showKPI && dataKPI[index] ? (total / dataKPI[index] * 100).toFixed(2) : 'N/A';
                 if (percentage > 100) return '#5E1675'; // Purple
                 if (percentage > 70) return '#337357'; // Green
                 if (percentage > 40) return '#FFD23F'; // Yellow
@@ -114,10 +114,10 @@
                                 label: function (context) {
                                     if (context.dataset.label === 'Thực hiện') {
                                         const index = context.dataIndex;
-                                        const percentage = showKPI && dataKPI[index] ? ((dataTotal[index] / dataKPI[index]) * 100).toFixed(1) : 'N/A';
-                                        return `${context.dataset.label}: ${context.raw.toFixed(1)} (${percentage}%)`;
+                                        const percentage = showKPI && dataKPI[index] ? ((dataTotal[index] / dataKPI[index]) * 100).toFixed(2) : 'N/A';
+                                        return `${context.dataset.label}: ${context.raw.toFixed(2)} (${percentage}%)`;
                                     } else {
-                                        return `${context.dataset.label}: ${context.raw.toFixed(1)}`;
+                                        return `${context.dataset.label}: ${context.raw.toFixed(2)}`;
                                     }
                                 }
                             }
@@ -128,10 +128,10 @@
                             formatter: (value, context) => {
                                 if (context.dataset.label === 'Thực hiện') {
                                     const index = context.dataIndex;
-                                    const percentage = showKPI && dataKPI[index] ? ((value / dataKPI[index]) * 100).toFixed(1) : 'N/A';
-                                    return `${value.toFixed(1)} \n${percentage}%`;
+                                    const percentage = showKPI && dataKPI[index] ? ((value / dataKPI[index]) * 100).toFixed(2) : 'N/A';
+                                    return `${value.toFixed(2)} \n${percentage}%`;
                                 } else {
-                                    return value.toFixed(1);
+                                    return value.toFixed(2);
                                 }
                             },
                             color: '#000',
@@ -208,14 +208,14 @@
                 for (const khuVuc in groupedData) {
                     const khuVucData = groupedData[khuVuc];
                     khuVucData.forEach(item => {
-                        const percentage = item.kpi ? ((item.total / item.kpi) * 100).toFixed(1) : 'N/A';
+                        const percentage = item.kpi ? ((item.total / item.kpi) * 100).toFixed(2) : 'N/A';
                         tableRows += `
                             <tr>
                                 <td>${percentage}%</td>
                                 <td>${item.khu_vuc}</td>
                                 <td>${item.ten_linh_vuc}</td>
-                                <td>${item.kpi.toFixed(1)}</td>
-                                <td>${item.total.toFixed(1)}</td>
+                                <td>${item.kpi.toFixed(2)}</td>
+                                <td>${item.total.toFixed(2)}</td>
                             </tr>
                         `;
                         totalKPI += item.kpi;
@@ -224,29 +224,29 @@
                 }
             } else {
                 tableRows = data.map((item) => {
-                    const percentage = item.kpi ? ((item.total / item.kpi) * 100).toFixed(1) : 'N/A';
+                    const percentage = item.kpi ? ((item.total / item.kpi) * 100).toFixed(2) : 'N/A';
                     totalKPI += item.kpi;
                     totalTotal += item.total;
                     return `
                         <tr>
                             <td>${percentage}%</td>
                             <td>${item.ten_khu_vuc}</td>
-                            <td>${item.kpi.toFixed(1)}</td>
-                            <td>${item.total.toFixed(1)}</td>
+                            <td>${item.kpi.toFixed(2)}</td>
+                            <td>${item.total.toFixed(2)}</td>
                         </tr>
                     `;
                 }).join('');
             }
 
-            const totalPercentage = totalKPI ? ((totalTotal / totalKPI) * 100).toFixed(1) : 'N/A';
+            const totalPercentage = totalKPI ? ((totalTotal / totalKPI) * 100).toFixed(2) : 'N/A';
 
             const totalRow = `
                 <tr>
                     <td><strong>${totalPercentage}%</strong></td>
                     <td><strong>Tổng cộng</strong></td>
                     ${type === "linhvuc" ? '<td></td>' : ''}
-                    <td><strong>${totalKPI.toFixed(1)}</strong></td>
-                    <td><strong>${totalTotal.toFixed(1)}</strong></td>
+                    <td><strong>${totalKPI.toFixed(2)}</strong></td>
+                    <td><strong>${totalTotal.toFixed(2)}</strong></td>
                 </tr>
             `;
 
