@@ -164,7 +164,7 @@ class ThongKeTongQuatController extends Controller
 
             $results[] = [
                 'ten_khu_vuc' => $khuVuc,
-                'total' => round($totalSanLuong / 1e9, 2),
+                'total' => round($totalSanLuong, 2),
                 'kpi' => round($kpi, 2),
             ];
         }
@@ -250,11 +250,12 @@ class ThongKeTongQuatController extends Controller
 
     private function getDistinctDays($khuVuc, $ngayChon, $timeFormat, $startDate, $endDate)
     {
-        $maTinhs = DB::table('tbl_tinh')
-                ->where('ten_khu_vuc', $khuVuc)
-                ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
-                ->pluck('ma_tinh')
-                ->toArray();
+        $maTinhs = DB::table('tbl_tram')
+            ->where('khu_vuc', $khuVuc)
+            ->whereIn('khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+            ->distinct()
+            ->orderBy('ma_tinh')
+            ->pluck('ma_tinh')->toArray();
         [$whereClauseSanLuong, $whereClauseThaoLap, $whereClauseKiemDinh] = $this->whereClauseTimeFormat($ngayChon, $timeFormat, $startDate, $endDate);
         $distinctQuery = DB::table('tbl_sanluong')
             ->select(DB::raw("DATE(STR_TO_DATE(SanLuong_Ngay, '%d%m%Y')) AS distinct_date"))
@@ -339,34 +340,34 @@ class ThongKeTongQuatController extends Controller
             }
             return $totalSanLuong;
         }
-        $sanluongQuery = DB::table('tbl_sanluong')
-            ->leftJoin('tbl_tram', function ($join) {
-                $join->on('tbl_sanluong.SanLuong_Tram', '=', 'tbl_tram.ma_tram')
-                    ->on('tbl_sanluong.HopDong_Id', '=', 'tbl_tram.hopdong_id');
-            })
-            ->leftJoin('tbl_tinh', function ($join) {
-                $join->on(DB::raw("UPPER(LEFT(tbl_sanluong.SanLuong_Tram, 3))"), '=', 'tbl_tinh.ma_tinh');
-            })
-            ->join('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
-            ->select(
-                DB::raw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) as khu_vuc"),
-                DB::raw('SUM(tbl_sanluong.SanLuong_Gia) as SanLuong_Gia')
-            )
-            ->whereExists(function ($query) {
-                $query->select(DB::raw(1))
-                    ->from('tbl_hinhanh')
-                    ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
-            })
-            ->whereNot('ten_hinh_anh_da_xong', "")
-            ->whereRaw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) LIKE '$khuVuc'")
-            ->whereRaw($whereClauseSanLuong)
-            ->groupBy('tbl_tram.khu_vuc', 'tbl_tinh.ten_khu_vuc');
-        if (!empty($hopDongId)) {
-            $sanluongQuery->where('tbl_sanluong.HopDong_Id', $hopDongId);
-        }
+
         if (!empty($linhVuc) && $linhVuc != "EC") {
             $sanluongData = collect();
         } else {
+            $sanluongQuery = DB::table('tbl_sanluong')
+                ->leftJoin(DB::raw('(SELECT ma_tram, hopdong_id, MAX(tram_id) as max_tram_id FROM tbl_tram GROUP BY ma_tram, hopdong_id) as max_tram'), function ($join) {
+                    $join->on('tbl_sanluong.SanLuong_Tram', '=', 'max_tram.ma_tram')
+                        ->on('tbl_sanluong.HopDong_Id', '=', 'max_tram.hopdong_id');
+                })
+                ->leftJoin('tbl_tram', 'max_tram.max_tram_id', '=', 'tbl_tram.tram_id')
+                ->leftJoin('tbl_tinh', DB::raw("UPPER(LEFT(tbl_sanluong.SanLuong_Tram, 3))"), '=', 'tbl_tinh.ma_tinh')
+                ->join('tbl_hopdong', 'tbl_sanluong.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+                ->select(
+                    DB::raw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) as khu_vuc"),
+                    DB::raw('SUM(tbl_sanluong.SanLuong_Gia) as SanLuong_Gia')
+                )
+                ->whereExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('tbl_hinhanh')
+                        ->whereColumn('tbl_hinhanh.ma_tram', 'tbl_sanluong.SanLuong_Tram');
+                })
+                ->whereNot('ten_hinh_anh_da_xong', "")
+                ->whereRaw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) LIKE '$khuVuc'")
+                ->whereRaw($whereClauseSanLuong)
+                ->groupBy('tbl_tram.khu_vuc', 'tbl_tinh.ten_khu_vuc');
+            if (!empty($hopDongId)) {
+                $sanluongQuery->where('tbl_sanluong.HopDong_Id', $hopDongId);
+            }
             $sanluongData = $sanluongQuery->get();
         }
 
@@ -386,54 +387,52 @@ class ThongKeTongQuatController extends Controller
             $sanluongKhacData = $sanluongKhacQuery->get();
         }
 
-        $thaolapQuery = DB::table('tbl_sanluong_thaolap')
-            ->leftJoin('tbl_tram', function ($join) {
-                $join->on('tbl_sanluong_thaolap.ThaoLap_MaTram', '=', 'tbl_tram.ma_tram')
-                    ->on('tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_tram.hopdong_id');
-            })
-            ->leftJoin('tbl_tinh', function ($join) {
-                $join->on(DB::raw("UPPER(LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh');
-            })
-            ->whereNot('ThaoLap_Ngay', "")
-            ->join('tbl_hopdong', 'tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
-            ->select(
-                DB::raw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) as khu_vuc"),
-                DB::raw('SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as SanLuong_Gia')
-            )
-            ->whereRaw($whereClauseThaoLap)
-            ->whereRaw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) LIKE '$khuVuc'")
-            ->groupBy('tbl_tram.khu_vuc', 'tbl_tinh.ten_khu_vuc');
-        if (!empty($hopDongId)) {
-            $thaolapQuery->where('HopDong_Id', $hopDongId);
-        }
-        if (!empty($linhVuc) && $linhVuc != "EC") {
+        if (!empty($linhVuc) && $linhVuc != "Tháo lắp") {
             $sanluongThaolapData = collect();
         } else {
+            $thaolapQuery = DB::table('tbl_sanluong_thaolap')
+                ->leftJoin(DB::raw('(SELECT ma_tram, hopdong_id, MAX(tram_id) as max_tram_id FROM tbl_tram GROUP BY ma_tram, hopdong_id) as max_tram'), function ($join) {
+                    $join->on('tbl_sanluong_thaolap.ThaoLap_MaTram', '=', 'max_tram.ma_tram')
+                        ->on('tbl_sanluong_thaolap.HopDong_Id', '=', 'max_tram.hopdong_id');
+                })
+                ->leftJoin('tbl_tram', 'max_tram.max_tram_id', '=', 'tbl_tram.tram_id')
+                ->leftJoin('tbl_tinh', DB::raw("UPPER(LEFT(tbl_sanluong_thaolap.ThaoLap_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh')
+                ->whereNot('ThaoLap_Ngay', "")
+                ->join('tbl_hopdong', 'tbl_sanluong_thaolap.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+                ->select(
+                    DB::raw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) as khu_vuc"),
+                    DB::raw('SUM(ThaoLap_Anten * DonGia_Anten + ThaoLap_RRU * DonGia_RRU + ThaoLap_TuThietBi * DonGia_TuThietBi + ThaoLap_CapNguon * DonGia_CapNguon) as SanLuong_Gia')
+                )
+                ->whereRaw($whereClauseThaoLap)
+                ->whereRaw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) LIKE '$khuVuc'")
+                ->groupBy('tbl_tram.khu_vuc', 'tbl_tinh.ten_khu_vuc');
+            if (!empty($hopDongId)) {
+                $thaolapQuery->where('tbl_sanluong_thaolap.HopDong_Id', $hopDongId);
+            }
             $sanluongThaolapData = $thaolapQuery->get();
         }
 
-        $kiemdinhQuery = DB::table('tbl_sanluong_kiemdinh')
-            ->leftJoin('tbl_tram', function ($join) {
-                $join->on('tbl_sanluong_kiemdinh.KiemDinh_MaTram', '=', 'tbl_tram.ma_tram')
-                    ->on('tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_tram.hopdong_id');
-            })
-            ->leftJoin('tbl_tinh', function ($join) {
-                $join->on(DB::raw("UPPER(LEFT(tbl_sanluong_kiemdinh.KiemDinh_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh');
-            })
-            ->join('tbl_hopdong', 'tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
-            ->select(
-                DB::raw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) as khu_vuc"),
-                DB::raw('SUM(KiemDinh_DonGia) as SanLuong_Gia')
-            )
-            ->whereRaw($whereClauseKiemDinh)
-            ->whereRaw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) LIKE '$khuVuc'")
-            ->groupBy('tbl_tram.khu_vuc', 'tbl_tinh.ten_khu_vuc');
-        if (!empty($hopDongId)) {
-            $kiemdinhQuery->where('HopDong_Id', $hopDongId);
-        }
-        if (!empty($linhVuc) && $linhVuc != "EC") {
+        if (!empty($linhVuc) && $linhVuc != "Kiểm định") {
             $sanluongKiemdinhData = collect();
         } else {
+            $kiemdinhQuery = DB::table('tbl_sanluong_kiemdinh')
+                ->leftJoin(DB::raw('(SELECT ma_tram, hopdong_id, MAX(tram_id) as max_tram_id FROM tbl_tram GROUP BY ma_tram, hopdong_id) as max_tram'), function ($join) {
+                    $join->on('tbl_sanluong_kiemdinh.KiemDinh_MaTram', '=', 'max_tram.ma_tram')
+                        ->on('tbl_sanluong_kiemdinh.HopDong_Id', '=', 'max_tram.hopdong_id');
+                })
+                ->leftJoin('tbl_tram', 'max_tram.max_tram_id', '=', 'tbl_tram.tram_id')
+                ->leftJoin('tbl_tinh', DB::raw("UPPER(LEFT(tbl_sanluong_kiemdinh.KiemDinh_MaTram, 3))"), '=', 'tbl_tinh.ma_tinh')
+                ->join('tbl_hopdong', 'tbl_sanluong_kiemdinh.HopDong_Id', '=', 'tbl_hopdong.HopDong_Id')
+                ->select(
+                    DB::raw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) as khu_vuc"),
+                    DB::raw('SUM(KiemDinh_DonGia) as SanLuong_Gia')
+                )
+                ->whereRaw($whereClauseKiemDinh)
+                ->whereRaw("COALESCE(tbl_tram.khu_vuc, tbl_tinh.ten_khu_vuc) LIKE '$khuVuc'")
+                ->groupBy('tbl_tram.khu_vuc', 'tbl_tinh.ten_khu_vuc');
+            if (!empty($hopDongId)) {
+                $kiemdinhQuery->where('tbl_sanluong_kiemdinh.HopDong_Id', $hopDongId);
+            }
             $sanluongKiemdinhData = $kiemdinhQuery->get();
         }
 

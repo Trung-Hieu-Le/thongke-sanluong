@@ -558,11 +558,20 @@
                 success: function(data) {
                     const labels = data.map(item => item.ten_khu_vuc);
                     const dataKPI = data.map(item => item.kpi);
-                    const dataTotal = data.map(item => item.total);
+                    const dataTotal = data.map(item => parseFloat((item.total / 1e9).toFixed(2)));
 
                     const totalKPI = dataKPI.reduce((acc, curr) => acc + curr, 0);
                     const totalTotal = dataTotal.reduce((acc, curr) => acc + curr, 0);
                     const totalPercentage = totalKPI ? ((totalTotal / totalKPI) * 100).toFixed(2) : 'N/A';
+
+                    data.forEach(detail => {
+                        const khuVucId = detail.ten_khu_vuc; // Sử dụng `ten_khu_vuc` làm ID
+                        document.getElementById(`total-${khuVucId}`).textContent = number_format(detail.total, 0, ',', '.');
+                        document.getElementById(`kpi-${khuVucId}`).textContent = detail.kpi + "%";
+                        document.getElementById(`totalKpi-${khuVucId}`).textContent = number_format(detail.kpi, 2, ',', '.') + " tỉ đồng";
+                    });
+                    
+
                     labels.push('Tổng cộng');
                     dataKPI.push(parseFloat(totalKPI.toFixed(2)));  // Ensure number type
                     dataTotal.push(parseFloat(totalTotal.toFixed(2)));  // Ensure number type   
@@ -668,11 +677,11 @@
                     document.getElementById('totalKpiYear').textContent = "Tổng KPI: " + number_format(totalKpiYear, 2, ',', '.') + " tỉ đồng";
                     document.getElementById('totalKpiMonth').textContent = "Tổng KPI: " + number_format(totalKpiMonth, 2, ',', '.') + " tỉ đồng";
 
-                    data.details.forEach(detail => {
-                        document.getElementById(`total-${detail.khuVuc}`).textContent = number_format(detail.total, 0, ',', '.');
-                        document.getElementById(`kpi-${detail.khuVuc}`).textContent = detail.kpi + "%";
-                        document.getElementById(`totalKpi-${detail.khuVuc}`).textContent = number_format(detail.totalKpi, 2, ',', '.') + " tỉ đồng";
-                    });
+                    // data.details.forEach(detail => {
+                    //     document.getElementById(`total-${detail.khuVuc}`).textContent = number_format(detail.total, 0, ',', '.');
+                    //     document.getElementById(`kpi-${detail.khuVuc}`).textContent = detail.kpi + "%";
+                    //     document.getElementById(`totalKpi-${detail.khuVuc}`).textContent = number_format(detail.totalKpi, 2, ',', '.') + " tỉ đồng";
+                    // });
                 }
             });
         }

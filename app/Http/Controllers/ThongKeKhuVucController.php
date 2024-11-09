@@ -35,7 +35,7 @@ class ThongKeKhuVucController extends Controller
     }
 
 
-    private function getTotalSanLuongWithMaTram($maTinh, $startDate, $endDate)
+    private function getTotalSanLuongWithMaTram($maTinh, $khuVuc, $linhVuc, $startDate, $endDate)
     {
         $start = Carbon::parse($startDate);
         $end = Carbon::parse($endDate);
@@ -57,14 +57,17 @@ class ThongKeKhuVucController extends Controller
                 $month++
             ) {
                 $formattedMonth = str_pad($month, 2, '0', STR_PAD_LEFT);
-
                 $query = DB::table('tbl_tonghop_sanluong')
                     ->select('SanLuong_Ngay_01', 'SanLuong_Ngay_02', 'SanLuong_Ngay_03', 'SanLuong_Ngay_04', 'SanLuong_Ngay_05', 'SanLuong_Ngay_06', 'SanLuong_Ngay_07', 'SanLuong_Ngay_08', 'SanLuong_Ngay_09', 'SanLuong_Ngay_10', 'SanLuong_Ngay_11', 'SanLuong_Ngay_12', 'SanLuong_Ngay_13', 'SanLuong_Ngay_14', 'SanLuong_Ngay_15', 'SanLuong_Ngay_16', 'SanLuong_Ngay_17', 'SanLuong_Ngay_18', 'SanLuong_Ngay_19', 'SanLuong_Ngay_20', 'SanLuong_Ngay_21', 'SanLuong_Ngay_22', 'SanLuong_Ngay_23', 'SanLuong_Ngay_24', 'SanLuong_Ngay_25', 'SanLuong_Ngay_26', 'SanLuong_Ngay_27', 'SanLuong_Ngay_28', 'SanLuong_Ngay_29', 'SanLuong_Ngay_30', 'SanLuong_Ngay_31')
                     ->where('ma_tinh', $maTinh)
+                    ->where('khu_vuc', $khuVuc)
                     ->where('year', $year)
                     ->where('month', $formattedMonth)
+                    ->where('linh_vuc', 'like', '%' . $linhVuc . '%')
+                    // ->where('linh_vuc', "like", "%".$linhVuc."%")
                     ->get();
 
+               
                 if (
                     $year == $startYear && $month == $startMonth
                 ) {
@@ -97,7 +100,7 @@ class ThongKeKhuVucController extends Controller
         $ngayChon = $request->input('ngay_chon', date('Y-m-d'));
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
-        $linhVuc = $request->input('linh_vuc');
+        $linhVuc = $request->input('linh_vuc', '');
 
         // if (is_null($ngayChon) || $ngayChon === '') {
         //     $ngayChon = date('Y-m-d');
@@ -112,20 +115,23 @@ class ThongKeKhuVucController extends Controller
                 ->value('user_khuvuc');
         }
         $khuVuc = $role == 3 ? $request->input('khu_vuc') : $userKhuVuc;
-        $maTinhs = DB::table('tbl_tinh')
-            ->where('ten_khu_vuc', $khuVuc)
-            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+        $maTinhs = DB::table('tbl_tram')
+            ->where('khu_vuc', $khuVuc)
+            ->whereIn('khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+            ->distinct()
+            ->orderBy('ma_tinh')
             ->pluck('ma_tinh');
         $results = [];
         if ($role != 3 && $request->input('khu_vuc') != $userKhuVuc) {
             return response()->json($results);
         }
-        if (!empty($linhVuc) && $linhVuc != "EC") {
+        if (!empty($linhVuc) && ($linhVuc != "EC" && $linhVuc != "Kiểm định")) {
+
             return response()->json($results);
         }
         foreach ($maTinhs as $maTinh) {
             if (!empty($startDate) && !empty($endDate)) {
-                $totals = $this->getTotalSanLuongWithMaTram($maTinh, $startDate, $endDate);
+                $totals = $this->getTotalSanLuongWithMaTram($maTinh, $khuVuc, $linhVuc, $startDate, $endDate);
             } else {
                 $day = (int)date('d', strtotime($ngayChon));
                 $month = (int)date('m', strtotime($ngayChon));
@@ -166,11 +172,11 @@ class ThongKeKhuVucController extends Controller
 
                 // Lấy dữ liệu cho các khoảng thời gian
                 $totalsArr = [
-                    'ngay' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $startDay, $endDay)),
-                    'tuan' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $startWeek, $endWeek)),
-                    'thang' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $startMonth, $endMonth)),
-                    'quy' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $startQuarter, $endQuarter)),
-                    'nam' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $startYear, $endYear))
+                    'ngay' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $khuVuc, $linhVuc, $startDay, $endDay)),
+                    'tuan' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $khuVuc, $linhVuc, $startWeek, $endWeek)),
+                    'thang' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $khuVuc, $linhVuc, $startMonth, $endMonth)),
+                    'quy' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $khuVuc, $linhVuc, $startQuarter, $endQuarter)),
+                    'nam' => array_sum($this->getTotalSanLuongWithMaTram($maTinh, $khuVuc, $linhVuc, $startYear, $endYear))
                 ];
             }
 
@@ -232,9 +238,11 @@ class ThongKeKhuVucController extends Controller
         $ngayChon = $request->input('ngay_chon', date('Y-m-d'));
         $namChon = date('Y', strtotime($ngayChon));
 
-        $maTinhs = DB::table('tbl_tinh')
-            ->where('ten_khu_vuc', $khuVuc)
-            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+        $maTinhs = DB::table('tbl_tram')
+            ->where('khu_vuc', $khuVuc)
+            ->whereIn('khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+            ->distinct()
+            ->orderBy('ma_tinh')
             ->pluck('ma_tinh');
 
         $results = [];
@@ -251,7 +259,7 @@ class ThongKeKhuVucController extends Controller
                 $endDate = date('Y-m-t', strtotime($startDate));
 
                 // Get total production for the given month
-                $monthlyData = $this->getTotalSanLuongWithMaTram($maTinh, $startDate, $endDate);
+                $monthlyData = $this->getTotalSanLuongWithMaTram($maTinh, $khuVuc, "", $startDate, $endDate);
                 $monthlyTotal = array_sum($monthlyData);
 
                 // Add the monthly total to the yearly and quarterly totals

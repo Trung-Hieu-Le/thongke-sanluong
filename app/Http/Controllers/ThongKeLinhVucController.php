@@ -90,11 +90,12 @@ class ThongKeLinhVucController extends Controller
 
     private function getDistinctDays($khuVuc, $linhVuc, $ngayChon, $timeFormat, $startDate, $endDate)
     {
-        $maTinhs = DB::table('tbl_tinh')
-            ->where('ten_khu_vuc', $khuVuc)
-            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
-            ->pluck('ma_tinh')
-            ->toArray();
+        $maTinhs = DB::table('tbl_tram')
+            ->where('khu_vuc', $khuVuc)
+            ->whereIn('khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+            ->distinct()
+            ->orderBy('ma_tinh')
+            ->pluck('ma_tinh')->toArray();
         [$whereClauseSanLuong, $whereClauseKiemDinh] = $this->whereClauseTimeFormat($ngayChon, $timeFormat, $startDate, $endDate);
         if ($linhVuc == "EC") {
             $distinctQuery = DB::table('tbl_sanluong')
@@ -245,10 +246,10 @@ class ThongKeLinhVucController extends Controller
                 return response()->json(['error' => 'Thời gian không hợp lệ']);
         }
 
-        $khuVucs = DB::table('tbl_tinh')
+        $khuVucs = DB::table('tbl_tram')
             ->distinct()
-            ->whereIn('ten_khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
-            ->pluck('ten_khu_vuc');
+            ->whereIn('khu_vuc', ['TTKV1', 'TTKV2', 'TTKV3', 'TTGPHTVT'])
+            ->pluck('khu_vuc');
 
         $results = [];
 
