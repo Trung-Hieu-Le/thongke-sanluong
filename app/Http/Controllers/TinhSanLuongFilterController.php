@@ -36,7 +36,7 @@ class TinhSanLuongFilterController extends Controller
         $dayCondition = count($days) > 0 ? "AND SanLuong_Ngay IN (" . implode(',', $days) . ")" : "";
         $thaoLapDayCondition = count($days) > 0 ? "AND DATE_FORMAT(STR_TO_DATE(ThaoLap_Ngay, '%d/%m/%Y'), '%d%m%Y') IN (" . implode(',', $days) . ")" : "";
         $kiemDinhDayCondition = count($days) > 0 ? "AND DATE_FORMAT(STR_TO_DATE(KiemDinh_Ngay, '%d/%m/%Y'), '%d%m%Y') IN (" . implode(',', $days) . ")" : "";
-        $searchCondition = !empty($searchMaTram) ? "AND SanLuong_Tram LIKE '%$searchMaTram%'" : "";
+        $searchCondition = !empty($searchMaTram) ? "AND tbl_sanluong.SanLuong_Tram LIKE '%$searchMaTram%'" : "";
         $searchCondition2 = !empty($searchMaTram) ? "AND ThaoLap_MaTram LIKE '%$searchMaTram%'" : "";
         $searchCondition3 = !empty($searchMaTram) ? "AND KiemDinh_MaTram LIKE '%$searchMaTram%'" : "";
         $searchCondition4 = !empty($searchMaTram) ? "AND tbl_hinhanh.ma_tram LIKE '%$searchMaTram%'" : '';
@@ -52,7 +52,9 @@ class TinhSanLuongFilterController extends Controller
         $perPage = 100; // Number of items per page
 
         if ($userRole != 0 && $userRole != 1) {
-            $sanluongData = DB::table('tbl_sanluong')
+            $sanluongData = DB::table(DB::raw("(SELECT SanLuong_Tram, HopDong_Id, SanLuong_TenHangMuc, max(SanLuong_Id) as first_SanLuong_Id
+                FROM tbl_sanluong WHERE ten_hinh_anh_da_xong <> '' GROUP BY SanLuong_Tram, HopDong_Id, SanLuong_TenHangMuc) as first_sanluong"))
+                ->join('tbl_sanluong', 'first_sanluong.first_SanLuong_Id', '=', 'tbl_sanluong.SanLuong_Id')
                 ->leftJoin(DB::raw('(SELECT ma_tram, hopdong_id, MAX(tram_id) as max_tram_id FROM tbl_tram GROUP BY ma_tram, hopdong_id) as max_tram'), function ($join) {
                     $join->on('tbl_sanluong.SanLuong_Tram', '=', 'max_tram.ma_tram')
                         ->on('tbl_sanluong.HopDong_Id', '=', 'max_tram.hopdong_id');
@@ -158,7 +160,9 @@ class TinhSanLuongFilterController extends Controller
 
             $mergedData = $sanluongData->merge($thaolapData)->merge($kiemdinhData)->merge($hinhanhLeftData)->sortBy('SanLuong_Tram');
         } else {
-            $mergedData = DB::table('tbl_sanluong')
+            $mergedData = DB::table(DB::raw("(SELECT SanLuong_Tram, HopDong_Id, SanLuong_TenHangMuc, max(SanLuong_Id) as first_SanLuong_Id
+                FROM tbl_sanluong WHERE ten_hinh_anh_da_xong <> '' GROUP BY SanLuong_Tram, HopDong_Id, SanLuong_TenHangMuc) as first_sanluong"))
+                ->join('tbl_sanluong', 'first_sanluong.first_SanLuong_Id', '=', 'tbl_sanluong.SanLuong_Id')
                 ->leftJoin(DB::raw('(SELECT ma_tram, hopdong_id, MAX(tram_id) as max_tram_id FROM tbl_tram GROUP BY ma_tram, hopdong_id) as max_tram'), function ($join) {
                     $join->on('tbl_sanluong.SanLuong_Tram', '=', 'max_tram.ma_tram')
                         ->on('tbl_sanluong.HopDong_Id', '=', 'max_tram.hopdong_id');

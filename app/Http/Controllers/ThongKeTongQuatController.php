@@ -344,7 +344,9 @@ class ThongKeTongQuatController extends Controller
         if (!empty($linhVuc) && $linhVuc != "EC") {
             $sanluongData = collect();
         } else {
-            $sanluongQuery = DB::table('tbl_sanluong')
+            $sanluongQuery = DB::table(DB::raw("(SELECT SanLuong_Tram, HopDong_Id, SanLuong_TenHangMuc, max(SanLuong_Id) as first_SanLuong_Id
+            FROM tbl_sanluong WHERE ten_hinh_anh_da_xong <> '' GROUP BY SanLuong_Tram, HopDong_Id, SanLuong_TenHangMuc) as first_sanluong"))
+                ->join('tbl_sanluong', 'first_sanluong.first_SanLuong_Id', '=', 'tbl_sanluong.SanLuong_Id')
                 ->leftJoin(DB::raw('(SELECT ma_tram, hopdong_id, MAX(tram_id) as max_tram_id FROM tbl_tram GROUP BY ma_tram, hopdong_id) as max_tram'), function ($join) {
                     $join->on('tbl_sanluong.SanLuong_Tram', '=', 'max_tram.ma_tram')
                         ->on('tbl_sanluong.HopDong_Id', '=', 'max_tram.hopdong_id');
