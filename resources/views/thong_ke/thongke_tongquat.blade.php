@@ -563,12 +563,14 @@
                     const totalKPI = dataKPI.reduce((acc, curr) => acc + curr, 0);
                     const totalTotal = dataTotal.reduce((acc, curr) => acc + curr, 0);
                     const totalPercentage = totalKPI ? ((totalTotal / totalKPI) * 100).toFixed(2) : 'N/A';
+                    
 
                     data.forEach(detail => {
                         const khuVucId = detail.ten_khu_vuc; // Sử dụng `ten_khu_vuc` làm ID
+                        const percentage = detail.kpi ? (detail.total / 1e7 / detail.kpi).toFixed(2) : "100";
                         document.getElementById(`total-${khuVucId}`).textContent = number_format(detail.total, 0, ',', '.');
-                        document.getElementById(`kpi-${khuVucId}`).textContent = detail.kpi + "%";
                         document.getElementById(`totalKpi-${khuVucId}`).textContent = number_format(detail.kpi, 2, ',', '.') + " tỉ đồng";
+                        document.getElementById(`kpi-${khuVucId}`).textContent = percentage + "%";
                     });
                     
 
