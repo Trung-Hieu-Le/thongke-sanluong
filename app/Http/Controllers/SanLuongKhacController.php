@@ -50,12 +50,8 @@ class SanLuongKhacController extends Controller
             ->select('HopDong_Id', 'HopDong_SoHopDong', 'HopDong_TenHopDong')
             ->get()->toArray();
         $khuvucs = DB::table('tbl_sanluongkhac_noidung')->select('khu_vuc')->distinct()->get();
-        return view('san_luong.sanluong_add', compact('hopdongs', 'khuvucs'));
-    }
-    public function getNoiDungByKhuVuc($khuVuc)
-    {
-        $noidungs = DB::table('tbl_sanluongkhac_noidung')->where('khu_vuc', $khuVuc)->get();
-        return response()->json($noidungs);
+        $noidungs = DB::table('tbl_sanluongkhac_noidung')->select('noi_dung')->distinct()->orderBy('noi_dung')->get();
+        return view('san_luong.sanluong_add', compact('hopdongs', 'khuvucs', 'noidungs'));
     }
 
     public function handleAddSanLuong(Request $request)
@@ -92,7 +88,7 @@ class SanLuongKhacController extends Controller
         $sanLuong = DB::table('tbl_sanluong_khac')->where('SanLuong_Id', $request->id)->first();
         $hopdongs = DB::table('tbl_hopdong')->get();
         $khuvucs = DB::table('tbl_sanluongkhac_noidung')->select('khu_vuc')->distinct()->get();
-        $noidungs = DB::table('tbl_sanluongkhac_noidung')->where('khu_vuc', $sanLuong->SanLuong_KhuVuc)->get();
+        $noidungs = DB::table('tbl_sanluongkhac_noidung')->select('noi_dung')->distinct()->orderBy('noi_dung')->get();
         if (!$sanLuong) {
             return redirect()->route('sanluongkhac.index')->with('error', 'Không tìm thấy sản lượng');
         }

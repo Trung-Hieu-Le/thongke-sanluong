@@ -48,6 +48,9 @@
                         <label for="SanLuong_TenHangMuc">Lĩnh vực:</label>
                         <select class="form-control" id="SanLuong_TenHangMuc" name="SanLuong_TenHangMuc" required>
                             <option value="">Chọn lĩnh vực</option>
+                            @foreach($noidungs as $noidung)
+                                <option value="{{ $noidung->noi_dung }}">{{ $noidung->noi_dung }}</option>
+                            @endforeach
                         </select>
                     </div>
                     {{-- <div class="form-group m-2">
@@ -72,7 +75,7 @@
         </div>
     </div>
     
-    <script>
+    {{-- <script>
         document.getElementById('khu_vuc').addEventListener('change', function() {
             var khuVuc = this.value;
             fetch(`/sanluong-khac/noidung/${khuVuc}`)
@@ -88,6 +91,6 @@
                     });
                 });
         });
-    </script>
+    </script> --}}
 </body>
 </html>

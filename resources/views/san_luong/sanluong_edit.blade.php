@@ -78,7 +78,7 @@
         </div>
     </div>
     
-    <script>
+    {{-- <script>
         document.getElementById('khu_vuc').addEventListener('change', function() {
             var khuVuc = this.value;
             console.log(khuVuc);
@@ -95,7 +95,7 @@
                     });
                 });
         });
-    </script>
+    </script> --}}
 </body>
 </html>
  
