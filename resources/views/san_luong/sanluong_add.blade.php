@@ -61,7 +61,7 @@
                 <div class="col">
                     <div class="form-group m-2">
                         <label for="SanLuong_Gia">Sản Lượng Ngày:</label>
-                        <input type="text" class="form-control" id="SanLuong_Gia" name="SanLuong_Gia" pattern="^\d+(\.\d{1,4})?$" title="Vui lòng nhập số (đến chữ số thập phân thứ tư)" required>
+                        <input type="text" class="form-control" id="SanLuong_Gia" name="SanLuong_Gia" pattern="^-?\d+(\.\d{1,4})?$" title="Vui lòng nhập số (đến chữ số thập phân thứ tư)" required>
                     </div>
                     <div class="form-group m-2">
                         <label for="SanLuong_Ngay">Ngày:</label>

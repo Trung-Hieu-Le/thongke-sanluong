@@ -36,7 +36,7 @@ class SanLuongKhacController extends Controller
         if ($search) {
             $query->where('SanLuong_TenHangMuc', 'like', '%' . $search . '%');
         }
-        $data = $query->simplePaginate(100);
+        $data = $query->paginate(100);
 
         return view('san_luong.sanluong_view', compact('data', 'days', 'search', 'users'));
     }

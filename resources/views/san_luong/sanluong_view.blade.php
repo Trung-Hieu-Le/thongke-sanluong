@@ -87,6 +87,9 @@
                         @endforeach
                     </tbody>
                 </table>
+                <div class="my-3">
+                    {{ $data->appends(request()->all())->links() }}
+                </div>
                 @else
                 <div class="alert alert-danger container">
                     Bạn không đủ thẩm quyền để xem Sản lượng khác.
